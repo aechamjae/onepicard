@@ -1,7 +1,7 @@
-// 탐욕형 AI: 낼 수 있는 카드를 비싼 것부터 내고, 선장 스킬을 쓰고, 유리한 교환이 아니면 배를 노린다.
+// AI: 낼 수 있는 카드를 비싼 것부터 내고, 선장 스킬을 쓰고, 공격은 후보마다 미리 쳐 보고 레이스·갑판을 평가해 고른다.
 // 난이도가 낮을수록 정해진 확률로 아무 행동이나 골라 실수한다.
 import { CARDS, FACTIONS } from './cards.js';
-import { RULES, canPlay, canUseSkill, costOf, legalAttackTargets, hasKeyword, targetable } from './engine.js';
+import { RULES, applyAction, canPlay, canUseSkill, costOf, legalAttackTargets, hasKeyword, targetable } from './engine.js';
 
 export const AI_LEVELS = {
   easy: { mistake: 0.55 },
@@ -219,8 +219,88 @@ function chooseAttack(s) {
   return null;
 }
 
+// ── 공격 탐색 ──
+// 공격 후보마다 판을 복제해 실제로 쳐 보고, 남은 공격은 위의 규칙대로 마저 친 뒤 결과를 평가한다.
+
+function cloneState(s) {
+  return {
+    ...s,
+    log: [],
+    players: s.players.map((p) => ({
+      ...p,
+      deck: [...p.deck],
+      hand: [...p.hand],
+      board: p.board.map((c) => ({ ...c, gained: [...(c.gained || [])] })),
+    })),
+  };
+}
+
+// 상대 턴 시작에 살아 있을 선원들만으로, 배만 때리면 몇 턴에 이기는지. 수호 선원의 체력은 배를 지키는 몫으로 친다.
+function clock(attacker, victim) {
+  const crews = attacker.board.filter((c) => c.atk > 0 && !doomed(c));
+  if (!crews.length) return 99;
+  const guardHp = victim.board.filter((c) => hasKeyword(c, 'guard') && !doomed(c)).reduce((n, c) => n + c.hp, 0);
+  const power = crews.reduce((n, c) => n + c.atk + (c.tension || 0), 0);
+  const loot = crews.reduce((n, c) => n + 1 + (hasKeyword(c, 'plunder') ? 1 : 0), 0);
+  return Math.min(
+    Math.ceil(Math.max(1, victim.hull + guardHp) / power),
+    Math.ceil(Math.max(1, RULES.treasureToWin - attacker.treasure) / loot),
+  );
+}
+
+// 선원 하나의 값어치. 망령(한 번 더 일어남), 보호막, 유언처럼 숫자에 안 보이는 값도 더한다.
+function crewWorth(c) {
+  const d = CARDS[c.defId];
+  let w = c.atk * 1.2 + c.hp * 0.8;
+  if (hasKeyword(c, 'ghost') && !c.revived) w += c.atk * 1.2 + 0.8;
+  if (c.shield) w += c.atk;
+  if (d.onDeath) w += 2;
+  if (d.onTurnEnd) w += 3;
+  if (hasKeyword(c, 'grow') && c.grown < RULES.growLimit) w += 2;
+  return w;
+}
+
+// 내 턴이 끝난 뒤 판을 내 입장에서 점수로 매긴다. 다음은 상대 차례다.
+function evaluate(s, pi) {
+  if (s.winner !== null) return s.winner === pi ? 1e6 : -1e6;
+  const me = s.players[pi];
+  const foe = s.players[1 - pi];
+  const strength = (p) => p.board.filter((c) => !doomed(c)).reduce((n, c) => n + crewWorth(c), 0);
+  // 상대가 먼저 움직이니, 내 시계가 상대 시계보다 짧아야 레이스에서 이긴다.
+  const margin = Math.max(-4, Math.min(4, clock(foe, me) - clock(me, foe)));
+  return margin * 6 + (margin > 0 ? 10 : 0)
+    + strength(me) - strength(foe)
+    + (me.hull - foe.hull) * 0.5
+    + (me.treasure - foe.treasure) * 0.8;
+}
+
+function rollout(s, pi) {
+  for (let i = 0; i < 12 && s.winner === null; i++) {
+    const a = chooseAttack(s);
+    if (!a || applyAction(s, a)) break;
+  }
+  return evaluate(s, pi);
+}
+
+function searchAttack(s) {
+  const pi = s.current;
+  const me = s.players[pi];
+  let best = null;
+  let bestScore = rollout(cloneState(s), pi); // 규칙대로만 쳤을 때가 기준
+  for (const a of me.board.filter((c) => c.canAttack)) {
+    for (const target of legalAttackTargets(s, pi, a)) {
+      const action = { type: 'attack', attacker: a.uid, target };
+      const t = cloneState(s);
+      if (applyAction(t, action)) continue;
+      const score = rollout(t, pi);
+      if (score > bestScore + 0.01) { bestScore = score; best = action; }
+    }
+  }
+  return best || chooseAttack(s);
+}
+
 export function aiNextAction(s, level = 'hard') {
   const { mistake } = AI_LEVELS[level] ?? AI_LEVELS.hard;
   if (mistake && s.rng() < mistake) return randomAction(s);
-  return choosePlay(s) || chooseSkill(s) || chooseAttack(s) || { type: 'end' };
+  return choosePlay(s) || chooseSkill(s) || searchAttack(s) || { type: 'end' };
 }
