@@ -1,0 +1,10 @@
+{
+  "name": "고무팔 해적단",
+  "short_name": "고무팔",
+  "start_url": ".",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#072536",
+  "theme_color": "#072536",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

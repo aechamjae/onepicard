@@ -11,6 +11,8 @@ python3 -m http.server 8000
 # 브라우저에서 http://localhost:8000
 ```
 
+화면은 **가로가 기본**입니다. 폰에서는 게임을 시작하면 전체 화면 가로 모드로 바뀌고(지원하는 브라우저), 홈 화면에 추가하면 가로로 열립니다.
+
 GitHub Pages: 저장소 **Settings → Pages → Branch: `main` / `(root)`** 로 켜면 바로 공개 주소가 생깁니다.
 
 ## 규칙 요약

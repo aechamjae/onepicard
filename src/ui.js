@@ -15,6 +15,7 @@ let state = null;
 let selected = null; // {kind:'hand', index} | {kind:'attacker', uid}
 let busy = false; // 연출 중이거나 AI 차례
 
+const compactQuery = matchMedia('(orientation: landscape) and (max-height: 520px)');
 const isMyTurn = () => state && state.current === ME && state.winner === null && !busy;
 
 // ── 고무팔 그리기 ──
@@ -175,7 +176,9 @@ function hintText(myTurn) {
   }
   if (selected?.kind === 'hand') {
     const d = CARDS[state.players[ME].hand[selected.index].defId];
-    return d.target === 'foeCrew' ? '🎯 대상 적 선원을 고르세요.' : '🎯 대상 아군 선원을 고르세요.';
+    const about = `「${d.name}」 ${d.text || (d.keywords || []).map((k) => KEYWORDS[k].name).join('·')}`;
+    if (!d.target) return `${about} · 한 번 더 누르면 낸다`;
+    return `${about} · ${d.target === 'foeCrew' ? '🎯 대상 적 선원을 고르세요.' : '🎯 대상 아군 선원을 고르세요.'}`;
   }
   return '카드를 내거나, 빛나는 선원을 눌러 공격하세요.';
 }
@@ -391,11 +394,13 @@ async function act(action) {
 
 function onHand(i) {
   if (!isMyTurn()) return;
-  if (selected?.kind === 'hand' && selected.index === i) { selected = null; render(); return; }
+  const d = CARDS[state.players[ME].hand[i].defId];
+  const again = selected?.kind === 'hand' && selected.index === i;
+  if (again && (d.target || !compactQuery.matches)) { selected = null; render(); return; }
   const err = canPlay(state, ME, i);
   if (err) { toast(err); return; }
-  const d = CARDS[state.players[ME].hand[i].defId];
-  if (d.target) { selected = { kind: 'hand', index: i }; render(); return; }
+  // 카드가 작은 화면에서는 첫 번째 누름에 설명을 보여 주고, 두 번째에 낸다.
+  if (d.target || (compactQuery.matches && !again)) { selected = { kind: 'hand', index: i }; render(); return; }
   act({ type: 'play', handIndex: i });
 }
 
@@ -493,12 +498,15 @@ function showStart() {
   $('start').hidden = false;
   $('gameover').hidden = true;
   $('game').hidden = true;
+  document.body.classList.remove('playing');
 }
 
 async function startGame(factionId) {
   const others = Object.keys(FACTIONS).filter((f) => f !== factionId);
   const aiFaction = others[Math.floor(Math.random() * others.length)];
   state = createGame({ playerFaction: factionId, aiFaction });
+  document.body.classList.add('playing');
+  goLandscape();
   selected = null;
   busy = false;
   $('start').hidden = true;
@@ -506,6 +514,16 @@ async function startGame(factionId) {
   const all = new Set(state.players.flatMap((p) => p.board.map((c) => c.uid)));
   render(all);
   showBanner(`🌊 VS ${FACTIONS[aiFaction].emblem} ${FACTIONS[aiFaction].name}`, 1200);
+}
+
+// 폰이면 전체 화면으로 바꾸고 가로로 고정해 본다. 지원하지 않는 브라우저(iOS 등)는 조용히 넘어간다.
+function goLandscape() {
+  if (!matchMedia('(pointer: coarse)').matches || document.fullscreenElement) return;
+  const el = document.documentElement;
+  if (!el.requestFullscreen) return;
+  el.requestFullscreen({ navigationUI: 'hide' })
+    .then(() => screen.orientation?.lock?.('landscape'))
+    .catch(() => {});
 }
 
 function showGameOver() {
@@ -525,6 +543,11 @@ $('foe-hud').onclick = onFoeShip;
 $('end-btn').onclick = endTurn;
 $('restart-btn').onclick = showStart;
 $('rules-btn').onclick = () => { $('rules').hidden = false; };
+$('rules-btn2').onclick = () => { $('rules').hidden = false; };
+$('log-btn').onclick = () => { $('log-ov').hidden = false; $('log').scrollTop = $('log').scrollHeight; };
+$('log-close').onclick = () => { $('log-ov').hidden = true; };
+$('log-ov').onclick = (e) => { if (e.target.id === 'log-ov') $('log-ov').hidden = true; };
+$('portrait-btn').onclick = () => document.body.classList.add('allow-portrait');
 $('rules-close').onclick = () => { $('rules').hidden = true; };
 $('rules').onclick = (e) => { if (e.target.id === 'rules') $('rules').hidden = true; };
 $('inspect').onclick = () => { $('inspect').hidden = true; };
