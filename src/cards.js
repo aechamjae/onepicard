@@ -166,7 +166,7 @@ export const CARDS = {
     onTurnEnd: (g) => g.gainTreasure(1),
   },
 
-  // ── 고무팔 곡예단 ── (arm: true 인 카드는 늘어나는 팔 그림으로 그린다)
+  // ── 고무팔 해적단 ── (arm: true 인 카드는 늘어나는 팔 그림으로 그린다)
   rookie: { name: '고무줄 견습생', type: 'crew', cost: 1, atk: 1, hp: 1, art: '🤸', arm: true, keywords: ['elastic'], text: '' },
   boxer: { name: '고무주먹 권투사', type: 'crew', cost: 2, atk: 2, hp: 3, art: '😤', arm: true, keywords: ['tension'], text: '' },
   whip: { name: '채찍팔 갑판장', type: 'crew', cost: 3, atk: 3, hp: 2, art: '😼', arm: true, keywords: ['reach'], text: '' },
@@ -486,7 +486,7 @@ export const CARDS = {
 // skill: 선장 스킬. 한 턴에 한 번, 바람을 써서 쓴다.
 export const FACTIONS = {
   stretch: {
-    name: '고무팔 곡예단',
+    name: '고무팔 해적단',
     emblem: '🤸',
     desc: '고무팔을 쭉 뻗어 여러 적을 한꺼번에 후려치고, 팔을 당겨 모은 탄력으로 한 방을 노린다.',
     skill: {
