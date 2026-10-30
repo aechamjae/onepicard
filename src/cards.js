@@ -8,6 +8,7 @@ export const KEYWORDS = {
   sneak: { name: '잠입', desc: '수호 선원을 무시하고 적 배를 공격할 수 있다.' },
   reach: { name: '뻗기', desc: '적 선원을 공격하면 그 양옆의 적 선원에게도 1 피해.' },
   elastic: { name: '탄성', desc: '받는 피해가 1 줄어든다.' },
+  tension: { name: '탄력', desc: '공격하지 않고 턴을 마치면 팔을 당겨 탄력 +1(최대 3). 다음 공격 때 탄력만큼 더 세게 친다.' },
 };
 
 export const CARDS = {
@@ -89,26 +90,33 @@ export const CARDS = {
     onTurnEnd: (g) => g.gainTreasure(1),
   },
 
-  // ── 탄성 곡예단 ──
-  rookie: { name: '고무줄 견습생', type: 'crew', cost: 1, atk: 1, hp: 1, art: '🤸', keywords: ['elastic'], text: '' },
-  boxer: { name: '휘어팔 권투사', type: 'crew', cost: 2, atk: 2, hp: 2, art: '🥊', keywords: ['reach'], text: '' },
-  whip: { name: '채찍팔 갑판장', type: 'crew', cost: 3, atk: 3, hp: 2, art: '🪢', keywords: ['reach'], text: '' },
+  // ── 고무팔 곡예단 ── (arm: true 인 카드는 늘어나는 팔 그림으로 그린다)
+  rookie: { name: '고무줄 견습생', type: 'crew', cost: 1, atk: 1, hp: 1, art: '🤸', arm: true, keywords: ['elastic'], text: '' },
+  boxer: { name: '고무주먹 권투사', type: 'crew', cost: 2, atk: 2, hp: 3, art: '😤', arm: true, keywords: ['tension'], text: '' },
+  whip: { name: '채찍팔 갑판장', type: 'crew', cost: 3, atk: 3, hp: 2, art: '😼', arm: true, keywords: ['reach'], text: '' },
   balloon: { name: '풍선배 방패수', type: 'crew', cost: 3, atk: 1, hp: 4, art: '🎈', keywords: ['guard', 'elastic'], text: '' },
-  catapult: { name: '새총팔 투척수', type: 'crew', cost: 4, atk: 3, hp: 2, art: '🏹', keywords: ['reach', 'elastic'], text: '' },
-  ringmaster: { name: '거인팔 곡예단장', type: 'crew', cost: 6, atk: 4, hp: 5, art: '🎪', keywords: ['reach', 'elastic'], text: '' },
+  spring: { name: '용수철 포수', type: 'crew', cost: 4, atk: 3, hp: 4, art: '😆', arm: true, keywords: ['tension', 'elastic'], text: '' },
+  catapult: { name: '새총팔 투척수', type: 'crew', cost: 4, atk: 3, hp: 2, art: '😝', arm: true, keywords: ['reach', 'elastic'], text: '' },
+  ringmaster: { name: '거인팔 곡예단장', type: 'crew', cost: 6, atk: 4, hp: 5, art: '🤠', arm: true, keywords: ['reach', 'tension'], text: '' },
   slingshot: {
-    name: '당겨서 쏘기', type: 'tactic', cost: 2, art: '🪃', target: 'allyCrew',
-    text: '아군 선원 하나에게 공격력 +2. 이번 턴에 한 번 더 공격할 수 있다.',
-    effect: (g, t) => { g.buff(t, 2, 0); g.ready(t); },
+    name: '고무줄 새총', type: 'tactic', cost: 2, art: '🪃', target: 'allyCrew',
+    text: '아군 선원 하나의 팔을 끝까지 당긴다: 탄력 3, 이번 턴에 바로 공격할 수 있다.',
+    effect: (g, t) => { g.setTension(t, 3); g.ready(t); },
   },
   grab: {
     name: '휘감아 던지기', type: 'tactic', cost: 3, art: '🌀', target: 'foeCrew',
-    text: '적 선원 하나를 상대 손패로 되돌린다.',
+    text: '긴 팔로 적 선원 하나를 붙잡아 상대 손패로 던져 버린다.',
     effect: (g, t) => g.bounce(t),
   },
 };
 
 export const FACTIONS = {
+  stretch: {
+    name: '고무팔 곡예단',
+    emblem: '🤸',
+    desc: '고무팔을 쭉 뻗어 여러 적을 한꺼번에 후려치고, 팔을 당겨 모은 탄력으로 한 방을 노린다.',
+    deck: { deckhand: 2, lookout: 1, rookie: 3, boxer: 3, whip: 3, balloon: 2, spring: 2, catapult: 2, ringmaster: 2, slingshot: 2, grab: 2 },
+  },
   red: {
     name: '붉은 돛 해적단',
     emblem: '🏴‍☠️',
@@ -120,11 +128,5 @@ export const FACTIONS = {
     emblem: '🐙',
     desc: '수비형. 수호 선원으로 버티고 거대한 함장으로 누른다.',
     deck: { deckhand: 2, lookout: 2, sentinel: 3, harpoon: 3, tide: 2, turtle: 2, abyss: 1, anchor: 2, volley: 1, cannon: 2, repair: 2, map: 2 },
-  },
-  stretch: {
-    name: '탄성 곡예단',
-    emblem: '🤸',
-    desc: '변칙형. 늘어나는 팔로 여러 적을 한꺼번에 치고, 고무 몸으로 피해를 튕겨 낸다.',
-    deck: { deckhand: 2, lookout: 2, rookie: 3, boxer: 3, whip: 3, balloon: 2, catapult: 2, ringmaster: 2, slingshot: 2, grab: 2, map: 1 },
   },
 };

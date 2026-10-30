@@ -83,6 +83,7 @@ function startTurn(s) {
   for (const c of p.board) {
     c.canAttack = !c.frozen;
     c.frozen = false;
+    c.attacked = false;
   }
   log(s, `── ${p.name}의 턴 (바람 ${p.wind}) ──`);
   drawCards(s, s.current, 1);
@@ -171,6 +172,10 @@ function effectApi(s, pi) {
       f.crew.hp += hp;
       f.crew.maxHp += hp;
     },
+    setTension: (uid, n) => {
+      const f = findCrew(s, uid);
+      if (f) f.crew.tension = n;
+    },
     ready: (uid) => {
       const f = findCrew(s, uid);
       if (f) f.crew.canAttack = true;
@@ -243,6 +248,7 @@ export function applyAction(s, action) {
         uid: card.uid, defId: card.defId,
         atk: d.atk, hp: d.hp, maxHp: d.hp,
         canAttack: (d.keywords || []).includes('charge'), frozen: false,
+        attacked: false, tension: 0,
       });
       log(s, `${me.name}: 「${d.name}」 승선.`);
       if (d.onPlay) d.onPlay(g);
@@ -262,16 +268,20 @@ export function applyAction(s, action) {
       return foe.board.some((c) => hasKeyword(c, 'guard')) ? '수호 선원부터 공격해야 한다.' : '공격할 수 없는 대상이다.';
     }
     attacker.canAttack = false;
+    attacker.attacked = true;
+    const power = attacker.atk + (attacker.tension || 0);
+    if (attacker.tension) log(s, `🌀 당겨 둔 고무팔이 튕겨 나간다! (공격력 +${attacker.tension})`);
+    attacker.tension = 0;
     const aName = CARDS[attacker.defId].name;
     if (action.target === 'ship') {
       const loot = 1 + (hasKeyword(attacker, 'plunder') ? 1 : 0);
-      foe.hull -= attacker.atk;
+      foe.hull -= power;
       me.treasure += loot;
-      log(s, `⚔ 「${aName}」이(가) ${foe.name}의 배를 습격! 선체 ${attacker.atk} 피해, 보물 ${loot}개 획득. (${me.treasure}/${RULES.treasureToWin})`);
+      log(s, `⚔ 「${aName}」이(가) ${foe.name}의 배를 습격! 선체 ${power} 피해, 보물 ${loot}개 획득. (${me.treasure}/${RULES.treasureToWin})`);
     } else {
       const defender = foe.board.find((c) => c.uid === action.target);
       const idx = foe.board.indexOf(defender);
-      hurt(defender, attacker.atk);
+      hurt(defender, power);
       hurt(attacker, defender.atk);
       log(s, `⚔ 「${aName}」 vs 「${CARDS[defender.defId].name}」`);
       if (hasKeyword(attacker, 'reach')) {
@@ -287,6 +297,9 @@ export function applyAction(s, action) {
 
   if (action.type === 'end') {
     const g = effectApi(s, pi);
+    for (const c of me.board) {
+      if (hasKeyword(c, 'tension') && !c.attacked && c.tension < 3) c.tension++;
+    }
     for (const c of [...me.board]) {
       const d = CARDS[c.defId];
       if (d.onTurnEnd) d.onTurnEnd(g);

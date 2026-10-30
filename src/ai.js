@@ -27,7 +27,7 @@ const TACTIC_AI = {
     return t.length ? t[0].uid : false;
   },
   slingshot: (me) => {
-    // 이번 턴에 막 낸(아직 공격 못 하는) 선원을 깨워 바로 공격시킨다.
+    // 아직 공격 못 하는 선원 중 가장 센 선원의 팔을 당긴다.
     const sleepy = me.board.filter((c) => !c.canAttack && !c.frozen).sort((a, b) => b.atk - a.atk);
     return sleepy.length ? sleepy[0].uid : false;
   },
@@ -69,10 +69,11 @@ function chooseAttack(s) {
   const foe = s.players[1 - pi];
   const attackers = me.board.filter((c) => c.canAttack).sort((a, b) => b.atk - a.atk);
   for (const a of attackers) {
+    const power = a.atk + (a.tension || 0);
     const legal = legalAttackTargets(s, pi, a);
     const canHitShip = legal.includes('ship');
     const loot = 1 + (hasKeyword(a, 'plunder') ? 1 : 0);
-    if (canHitShip && (foe.hull - a.atk <= 0 || me.treasure + loot >= RULES.treasureToWin)) {
+    if (canHitShip && (foe.hull - power <= 0 || me.treasure + loot >= RULES.treasureToWin)) {
       return { type: 'attack', attacker: a.uid, target: 'ship' };
     }
     let best = null;
@@ -80,7 +81,7 @@ function chooseAttack(s) {
     for (const uid of legal) {
       if (uid === 'ship') continue;
       const d = foe.board.find((c) => c.uid === uid);
-      const kills = dmg(a.atk, d) >= d.hp;
+      const kills = dmg(power, d) >= d.hp;
       const survives = dmg(d.atk, a) < a.hp;
       let score = 0;
       if (kills && survives) score = 10 + value(d);
@@ -89,6 +90,8 @@ function chooseAttack(s) {
       if (score > bestScore) { bestScore = score; best = uid; }
     }
     if (best !== null) return { type: 'attack', attacker: a.uid, target: best };
+    // 탄력이 덜 찼으면 팔을 더 당기며 기다린다.
+    if (hasKeyword(a, 'tension') && a.tension < 1 && !canHitShip) continue;
     if (canHitShip) return { type: 'attack', attacker: a.uid, target: 'ship' };
   }
   return null;

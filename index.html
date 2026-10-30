@@ -2,46 +2,67 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>해적의 바다</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#072536">
+  <title>고무팔 해적단</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="sea" aria-hidden="true"></div>
+
   <header class="topbar">
-    <h1>🏴‍☠️ 해적의 바다</h1>
+    <h1 class="logo"><span>🤸</span> 고무팔 해적단</h1>
     <button id="rules-btn" class="ghost">규칙</button>
   </header>
 
   <main id="game" hidden>
-    <section id="foe-ship" class="ship foe" aria-label="상대 배"></section>
-    <section id="foe-board" class="board" aria-label="상대 선원"></section>
+    <section id="foe-hud" class="hud foe" aria-label="상대 배"></section>
+    <section id="foe-board" class="deck-board foe" aria-label="상대 선원"></section>
 
-    <div class="midline">
+    <div class="channel">
       <p id="hint"></p>
-      <button id="end-btn">턴 종료</button>
+      <button id="end-btn">⚓ 턴 종료</button>
     </div>
 
-    <section id="my-board" class="board" aria-label="내 선원"></section>
-    <section id="my-ship" class="ship me" aria-label="내 배"></section>
+    <section id="my-board" class="deck-board me" aria-label="내 선원"></section>
+    <section id="my-hud" class="hud me" aria-label="내 배"></section>
+
     <section id="hand" aria-label="손패"></section>
 
     <details id="log-box">
-      <summary>항해 일지</summary>
+      <summary>📜 항해 일지</summary>
       <ol id="log"></ol>
     </details>
   </main>
 
+  <!-- 고무팔이 늘어나는 공격 효과를 그리는 층 -->
+  <svg id="fx" aria-hidden="true"></svg>
+
   <div id="start" class="overlay">
-    <div class="panel">
-      <h2>해적단을 고르세요</h2>
-      <p class="sub">AI는 나머지 해적단 중 하나를 맡습니다.</p>
+    <div class="panel start-panel">
+      <div class="hero" aria-hidden="true">
+        <span class="hero-face">🤠</span>
+        <div class="hero-arm">
+          <svg viewBox="0 0 200 40" preserveAspectRatio="none">
+            <path class="arm-outline" d="M0 20 Q12.5 6 25 20 T50 20 T75 20 T100 20 T125 20 T150 20 T175 20 T200 20"/>
+            <path class="arm-skin" d="M0 20 Q12.5 6 25 20 T50 20 T75 20 T100 20 T125 20 T150 20 T175 20 T200 20"/>
+          </svg>
+        </div>
+        <span class="hero-glove"></span>
+      </div>
+      <h2 class="title">고무팔 해적단</h2>
+      <p class="sub">팔을 쭉 뻗어 적을 후려치고 보물을 털어라!</p>
       <div id="faction-list"></div>
     </div>
   </div>
 
   <div id="gameover" class="overlay" hidden>
     <div class="panel">
-      <h2 id="gameover-title"></h2>
+      <div id="gameover-emoji" class="big-emoji"></div>
+      <h2 id="gameover-title" class="title"></h2>
       <p id="gameover-text" class="sub"></p>
       <button id="restart-btn">다시 출항</button>
     </div>
@@ -49,21 +70,36 @@
 
   <div id="rules" class="overlay" hidden>
     <div class="panel rules">
-      <h2>규칙</h2>
+      <h2 class="title">규칙</h2>
       <ul>
-        <li><b>승리</b>: 보물 10개를 모으거나, 상대 배의 선체(20)를 0으로 만들면 이깁니다.</li>
-        <li><b>바람</b>: 매 턴 최대 바람이 1씩 늘고(최대 10) 다시 채워집니다. 카드를 내려면 왼쪽 위 숫자만큼 바람이 필요합니다.</li>
-        <li><b>선원</b>: 낸 다음 턴부터 공격할 수 있습니다. 선원끼리 싸우면 서로의 공격력만큼 체력이 깎입니다.</li>
-        <li><b>습격</b>: 선원이 상대 배를 공격하면 선체를 깎고 <b>보물 1개</b>를 얻습니다.</li>
-        <li><b>전술</b>: 한 번 쓰고 버리는 카드입니다.</li>
-        <li><b>돌격</b> 낸 턴에 바로 공격 · <b>수호</b> 상대는 이 선원부터 공격해야 함 · <b>약탈</b> 배 습격 시 보물 +1 · <b>잠입</b> 수호를 무시하고 배를 습격 · <b>뻗기</b> 적 선원을 치면 양옆 적 선원에게도 1 피해 · <b>탄성</b> 받는 피해 1 감소</li>
-        <li>후공은 카드를 더 받고 <b>행운의 동전</b>(바람 +1)을 받습니다. 덱이 비면 매 턴 피해가 커집니다.</li>
-        <li><b>조작</b>: 손패를 눌러 내고, 공격할 선원을 누른 뒤 적 선원이나 적 배를 누르세요.</li>
+        <li><b>승리</b>: 보물 10개를 모으거나 상대 배의 선체(20)를 0으로 만들면 이깁니다.</li>
+        <li><b>바람 ⛵</b>: 매 턴 1씩 늘고(최대 10) 다시 채워집니다. 카드 왼쪽 위 숫자만큼 바람을 써서 카드를 냅니다.</li>
+        <li><b>선원</b>은 낸 다음 턴부터 공격합니다. 선원끼리 싸우면 서로의 공격력만큼 체력이 깎입니다.</li>
+        <li><b>습격</b>: 상대 배를 공격하면 선체를 깎고 <b>보물 1개</b>를 얻습니다.</li>
+        <li><b>전술</b>은 한 번 쓰고 버리는 카드입니다.</li>
+      </ul>
+      <h3>고무팔 키워드</h3>
+      <ul>
+        <li><b>뻗기</b>: 팔을 휘둘러, 공격한 적 선원의 양옆에게도 1 피해</li>
+        <li><b>탄성</b>: 고무 몸이라 받는 피해 1 감소</li>
+        <li><b>탄력</b>: 공격하지 않고 턴을 마치면 팔을 당겨 탄력 +1(최대 3). 다음 공격 때 그만큼 더 세게 칩니다.</li>
+      </ul>
+      <h3>그 밖의 키워드</h3>
+      <ul>
+        <li><b>돌격</b> 낸 턴에 바로 공격 · <b>수호</b> 상대는 이 선원부터 공격해야 함 · <b>약탈</b> 배 습격 시 보물 +1 · <b>잠입</b> 수호를 무시하고 배를 습격</li>
+        <li>후공은 카드를 더 받고 <b>행운의 동전</b>(이번 턴 바람 +1)을 받습니다. 덱이 비면 매 턴 피해가 커집니다.</li>
+      </ul>
+      <h3>조작</h3>
+      <ul>
+        <li>손패를 눌러 내고, 빛나는 내 선원을 누른 뒤 적 선원이나 적 배를 누르면 공격합니다.</li>
+        <li>바다에 있는 카드를 누르면 자세한 설명을 볼 수 있습니다.</li>
       </ul>
       <button id="rules-close">닫기</button>
     </div>
   </div>
 
+  <div id="inspect" class="overlay" hidden></div>
+  <div id="banner" aria-live="polite"></div>
   <div id="toast" role="status"></div>
 
   <script type="module" src="src/ui.js"></script>
