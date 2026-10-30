@@ -74,6 +74,7 @@
       <h2 class="title">고무팔 해적단</h2>
       <p class="sub">팔을 쭉 뻗어 적을 후려치고 보물을 털어라!</p>
       <div id="faction-list"></div>
+      <button id="dex-btn" class="ghost dex-open">📖 카드 도감</button>
     </div>
   </div>
 
@@ -96,15 +97,9 @@
         <li><b>습격</b>: 상대 배를 공격하면 선체를 깎고 <b>보물 1개</b>를 얻습니다.</li>
         <li><b>전술</b>은 한 번 쓰고 버리는 카드입니다.</li>
       </ul>
-      <h3>고무팔 키워드</h3>
+      <h3>키워드</h3>
+      <ul id="kw-rules" class="kw-rules"></ul>
       <ul>
-        <li><b>뻗기</b>: 팔을 휘둘러, 공격한 적 선원의 양옆에게도 1 피해</li>
-        <li><b>탄성</b>: 고무 몸이라 받는 피해 1 감소</li>
-        <li><b>탄력</b>: 공격하지 않고 턴을 마치면 팔을 당겨 탄력 +1(최대 3). 다음 공격 때 그만큼 더 세게 칩니다.</li>
-      </ul>
-      <h3>그 밖의 키워드</h3>
-      <ul>
-        <li><b>돌격</b> 낸 턴에 바로 공격 · <b>수호</b> 상대는 이 선원부터 공격해야 함 · <b>약탈</b> 배 습격 시 보물 +1 · <b>잠입</b> 수호를 무시하고 배를 습격</li>
         <li>후공은 카드를 더 받고 <b>행운의 동전</b>(이번 턴 바람 +1)을 받습니다. 덱이 비면 매 턴 피해가 커집니다.</li>
       </ul>
       <h3>조작</h3>
@@ -113,6 +108,18 @@
         <li>바다에 있는 카드를 누르면 자세한 설명을 볼 수 있습니다.</li>
       </ul>
       <button id="rules-close">닫기</button>
+    </div>
+  </div>
+
+  <div id="dex" class="overlay" hidden>
+    <div class="panel dex-panel">
+      <div class="dex-head">
+        <h2 class="title">📖 카드 도감</h2>
+        <button id="dex-close" class="ghost">닫기</button>
+      </div>
+      <div id="dex-tabs" class="dex-tabs" role="tablist"></div>
+      <p id="dex-desc" class="sub"></p>
+      <div id="dex-cards" class="dex-cards"></div>
     </div>
   </div>
 

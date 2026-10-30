@@ -36,7 +36,31 @@ const TACTIC_AI = {
     return t.length ? t[0].uid : false;
   },
   volley: (me, foe) => foe.board.filter((c) => c.hp <= 2).length >= 2 || foe.board.length >= 4,
+  tsunami: (me, foe) => foe.board.length >= 3 || foe.board.filter((c) => c.hp <= 3).length >= 2,
+  hotpot: (me, foe) => foe.board.length >= 3,
+  maelstrom: (me, foe) => foe.board.reduce((n, c) => n + value(c), 0) >= me.board.reduce((n, c) => n + value(c), 0) + 6,
+  barrel: (me, foe) => strongest(foe.board, (c) => (c.hp <= 1 ? 10 : 0) + c.atk),
+  bounty: (me, foe) => strongest(foe.board.filter((c) => dmg(4, c) >= c.hp), value),
+  firebomb: (me, foe) => strongest(foe.board, value),
+  curse: (me, foe) => strongest(foe.board.filter((c) => c.atk >= 3), (c) => c.atk),
+  bananapeel: (me, foe) => strongest(foe.board.filter((c) => c.atk >= 3), (c) => c.atk),
+  oil: (me) => strongest(me.board, (c) => c.atk),
+  overclock: (me, foe) => strongest(me.board.filter((c) => !c.canAttack && !c.frozen), (c) => c.atk) || (foe.hull <= 6 && strongest(me.board, (c) => c.atk)),
+  flag: (me) => me.board.length >= 2,
+  drum: (me) => me.board.length >= 2,
+  grog: (me) => me.board.filter((c) => c.canAttack).length >= 2,
+  feast: (me) => me.board.length >= 2 || me.hull <= 15,
+  bigbounce: (me) => me.board.length >= 2,
+  seance: (me) => me.board.length <= RULES.boardLimit - 2,
+  troop: (me) => me.board.length <= RULES.boardLimit - 2,
+  blueprint: (me) => me.hand.length <= 4 && me.hull > 6,
 };
+
+// 점수가 가장 높은 선원의 uid. 없으면 false.
+function strongest(list, score) {
+  if (!list.length) return false;
+  return [...list].sort((a, b) => score(b) - score(a))[0].uid;
+}
 
 function choosePlay(s) {
   const pi = s.current;
@@ -56,8 +80,11 @@ function choosePlay(s) {
       continue;
     }
     if (d.type === 'crew') return { type: 'play', handIndex: i };
-    const decision = TACTIC_AI[id] ? TACTIC_AI[id](me, foe) : true;
+    let decision = TACTIC_AI[id] ? TACTIC_AI[id](me, foe) : true;
     if (decision === false) continue;
+    // 판단 규칙이 없는 대상 지정 카드는 가장 센 대상을 고른다.
+    if (d.target && decision === true) decision = strongest(d.target === 'foeCrew' ? foe.board : me.board, value);
+    if (d.target && decision === false) continue;
     return d.target ? { type: 'play', handIndex: i, target: decision } : { type: 'play', handIndex: i };
   }
   return null;

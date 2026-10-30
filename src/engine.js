@@ -8,6 +8,8 @@ export const RULES = {
   boardLimit: 5,
   handLimit: 8,
   startHand: 4,
+  burnDamage: 2,
+  growLimit: 2,
 };
 
 let uidSeq = 1;
@@ -46,7 +48,7 @@ export function createGame({ playerFaction, aiFaction, rng = Math.random, names 
     ],
   };
   drawCards(s, 0, RULES.startHand - 1); // 선공은 1장 적게
-  drawCards(s, 1, RULES.startHand + 1); // 후공은 1장 더 + 행운의 동전
+  drawCards(s, 1, RULES.startHand); // 후공은 1장 더 + 행운의 동전
   s.players[1].hand.push({ uid: uidSeq++, defId: 'coin' });
   startTurn(s);
   return s;
@@ -86,6 +88,11 @@ function startTurn(s) {
     c.attacked = false;
   }
   log(s, `── ${p.name}의 턴 (바람 ${p.wind}) ──`);
+  for (const c of p.board.filter((c) => c.burning)) {
+    hurt(c, RULES.burnDamage);
+    log(s, `🔥 「${CARDS[c.defId].name}」이(가) 화상으로 ${RULES.burnDamage} 피해.`);
+  }
+  removeDead(s);
   drawCards(s, s.current, 1);
   checkWinner(s);
 }
@@ -109,13 +116,38 @@ function checkWinner(s) {
   }
 }
 
+// 쓰러진 선원을 치운다. 망령은 한 번 되살아나고, 유언(onDeath)은 치운 뒤에 발동한다.
 function removeDead(s) {
-  for (const p of s.players) {
+  s.players.forEach((p, pi) => {
+    const dead = [];
     for (const c of p.board.filter((c) => c.hp <= 0)) {
-      log(s, `☠ ${p.name}의 「${CARDS[c.defId].name}」이(가) 쓰러졌다.`);
+      if (hasKeyword(c, 'ghost') && !c.revived) {
+        c.revived = true;
+        c.hp = 1;
+        c.burning = false;
+        log(s, `👻 「${CARDS[c.defId].name}」이(가) 망령이 되어 다시 일어났다!`);
+      } else {
+        dead.push(c);
+      }
     }
-    p.board = p.board.filter((c) => c.hp > 0);
-  }
+    if (!dead.length) return;
+    p.board = p.board.filter((c) => !dead.includes(c));
+    for (const c of dead) {
+      log(s, `☠ ${p.name}의 「${CARDS[c.defId].name}」이(가) 쓰러졌다.`);
+      const d = CARDS[c.defId];
+      if (d.onDeath) d.onDeath(effectApi(s, pi));
+    }
+  });
+}
+
+function makeCrew(uid, defId) {
+  const d = CARDS[defId];
+  return {
+    uid, defId,
+    atk: d.atk, hp: d.hp, maxHp: d.hp,
+    canAttack: (d.keywords || []).includes('charge'), frozen: false,
+    attacked: false, tension: 0, burning: false, revived: false, grown: 0,
+  };
 }
 
 export function findCrew(s, uid) {
@@ -165,12 +197,57 @@ function effectApi(s, pi) {
       log(s, `「${CARDS[f.crew.defId].name}」에게 ${dealt} 피해.`);
       removeDead(s);
     },
+    damageMyShip: (n) => {
+      me.hull -= n;
+      log(s, `💥 ${me.name}의 배에 ${n} 피해.`);
+    },
+    damageAllFoes: (n) => {
+      for (const c of [...foe.board]) hurt(c, n);
+      log(s, `모든 적 선원에게 ${n} 피해.`);
+      removeDead(s);
+    },
+    damageAll: (n) => {
+      for (const c of [...me.board, ...foe.board]) hurt(c, n);
+      log(s, `바다 위 모든 선원에게 ${n} 피해.`);
+      removeDead(s);
+    },
+    isAlive: (uid) => !!findCrew(s, uid),
     buff: (uid, atk, hp) => {
       const f = findCrew(s, uid);
       if (!f) return;
-      f.crew.atk += atk;
+      f.crew.atk = Math.max(0, f.crew.atk + atk);
       f.crew.hp += hp;
       f.crew.maxHp += hp;
+    },
+    buffAll: (atk, hp) => {
+      for (const c of me.board) {
+        c.atk += atk;
+        c.hp += hp;
+        c.maxHp += hp;
+      }
+    },
+    tensionAll: (n) => {
+      for (const c of me.board) c.tension = Math.min(3, (c.tension || 0) + n);
+    },
+    burn: (uid) => {
+      const f = findCrew(s, uid);
+      if (!f) return;
+      f.crew.burning = true;
+      log(s, `🔥 「${CARDS[f.crew.defId].name}」에 불이 붙었다.`);
+    },
+    burnAllFoes: () => {
+      for (const c of foe.board) c.burning = true;
+      if (foe.board.length) log(s, '🔥 적 선원 모두에게 불이 붙었다.');
+    },
+    summon: (defId, n = 1) => {
+      for (let i = 0; i < n && me.board.length < RULES.boardLimit; i++) {
+        me.board.push(makeCrew(uidSeq++, defId));
+        log(s, `${me.name}: 「${CARDS[defId].name}」 합류.`);
+      }
+    },
+    randomAllyCrew: (exceptUid) => {
+      const list = me.board.filter((c) => c.uid !== exceptUid);
+      return list.length ? list[Math.floor(s.rng() * list.length)] : null;
     },
     setTension: (uid, n) => {
       const f = findCrew(s, uid);
@@ -244,14 +321,10 @@ export function applyAction(s, action) {
     me.hand.splice(action.handIndex, 1);
     const g = effectApi(s, pi);
     if (d.type === 'crew') {
-      me.board.push({
-        uid: card.uid, defId: card.defId,
-        atk: d.atk, hp: d.hp, maxHp: d.hp,
-        canAttack: (d.keywords || []).includes('charge'), frozen: false,
-        attacked: false, tension: 0,
-      });
+      const crew = makeCrew(card.uid, card.defId);
+      me.board.push(crew);
       log(s, `${me.name}: 「${d.name}」 승선.`);
-      if (d.onPlay) d.onPlay(g);
+      if (d.onPlay) d.onPlay(g, crew);
     } else {
       log(s, `${me.name}: 「${d.name}」 사용.`);
       d.effect(g, action.target);
@@ -281,9 +354,13 @@ export function applyAction(s, action) {
     } else {
       const defender = foe.board.find((c) => c.uid === action.target);
       const idx = foe.board.indexOf(defender);
-      hurt(defender, power);
+      const dealt = hurt(defender, power);
       hurt(attacker, defender.atk);
       log(s, `⚔ 「${aName}」 vs 「${CARDS[defender.defId].name}」`);
+      if (dealt && hasKeyword(attacker, 'scorch') && defender.hp > 0) {
+        defender.burning = true;
+        log(s, `🔥 「${CARDS[defender.defId].name}」에 불이 붙었다.`);
+      }
       if (hasKeyword(attacker, 'reach')) {
         for (const side of [foe.board[idx - 1], foe.board[idx + 1]]) {
           if (side && hurt(side, 1)) log(s, `🤸 뻗은 팔이 「${CARDS[side.defId].name}」도 후려쳤다.`);
@@ -299,6 +376,12 @@ export function applyAction(s, action) {
     const g = effectApi(s, pi);
     for (const c of me.board) {
       if (hasKeyword(c, 'tension') && !c.attacked && c.tension < 3) c.tension++;
+      if (hasKeyword(c, 'grow') && c.grown < RULES.growLimit) {
+        c.grown++;
+        c.atk++;
+        c.hp++;
+        c.maxHp++;
+      }
     }
     for (const c of [...me.board]) {
       const d = CARDS[c.defId];

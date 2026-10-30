@@ -71,8 +71,18 @@ function cardEl(card, factionId, { inHand = false, showText = inHand } = {}) {
     ${isCrew ? `<div class="gem atk${tension ? ' boost' : ''}">${atk}</div>
       <div class="gem hp${card.maxHp && hp < card.maxHp ? ' hurt' : ''}">${hp}</div>` : ''}
     ${tension ? `<div class="tension">탄력+${tension}</div>` : ''}
-    ${card.frozen ? '<div class="status" title="다음 턴 공격 불가">⚓</div>' : ''}`;
+    ${statusIcons(card)}`;
+  if (card.revived) el.classList.add('revived');
   return el;
+}
+
+function statusIcons(card) {
+  const icons = [];
+  if (card.frozen) icons.push('<span title="다음 턴 공격 불가">⚓</span>');
+  if (card.burning) icons.push('<span title="불붙음: 턴 시작마다 피해">🔥</span>');
+  if (card.revived) icons.push('<span title="망령으로 되살아남">👻</span>');
+  if (card.grown) icons.push(`<span title="성장">⚙${card.grown}</span>`);
+  return icons.length ? `<div class="status">${icons.join('')}</div>` : '';
 }
 
 function hudHtml(p, mine) {
@@ -464,6 +474,9 @@ function inspect(card, pi) {
   const kws = (d.keywords || []).map((k) => `<li><b>${KEYWORDS[k].name}</b> ${KEYWORDS[k].desc}</li>`);
   if (card.tension) kws.push(`<li><b>탄력 ${card.tension}</b> 다음 공격 때 공격력 +${card.tension}</li>`);
   if (card.frozen) kws.push('<li><b>⚓ 묶임</b> 다음 턴에 공격할 수 없다.</li>');
+  if (card.burning) kws.push(`<li><b>🔥 불붙음</b> 주인의 턴이 시작될 때마다 ${RULES.burnDamage} 피해.</li>`);
+  if (card.revived) kws.push('<li><b>👻 되살아남</b> 이미 한 번 되살아났다.</li>');
+  if (card.grown) kws.push(`<li><b>⚙ 성장 ${card.grown}</b> 태엽이 감겨 강해졌다.</li>`);
   if (kws.length) box.insertAdjacentHTML('beforeend', `<ul class="kw-list">${kws.join('')}</ul>`);
   const ov = $('inspect');
   ov.innerHTML = '';
@@ -478,6 +491,48 @@ function toast(msg) {
   t.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+// ── 카드 도감 ──
+
+let dexTab = null;
+
+function openDex() {
+  const tabs = $('dex-tabs');
+  tabs.innerHTML = '';
+  const groups = [...Object.keys(FACTIONS), 'neutral'];
+  dexTab ??= groups[0];
+  for (const g of groups) {
+    const b = document.createElement('button');
+    b.className = `dex-tab${g === dexTab ? ' on' : ''}`;
+    b.setAttribute('role', 'tab');
+    b.textContent = g === 'neutral' ? '🧭 공용' : `${FACTIONS[g].emblem} ${FACTIONS[g].name}`;
+    b.onclick = () => { dexTab = g; openDex(); };
+    tabs.append(b);
+  }
+  // 공용 = 여러 덱에 들어가거나 어느 덱에도 안 들어가는 카드. 진영 = 그 진영 덱에만 들어가는 카드와 그 진영이 부르는 토큰.
+  const owners = {};
+  for (const [f, { deck }] of Object.entries(FACTIONS)) for (const id of Object.keys(deck)) (owners[id] ??= []).push(f);
+  const home = (id) => (owners[id]?.length === 1 ? owners[id][0] : 'neutral');
+  const tokenHome = { spirit: 'ghost', monkey: 'monkey' };
+  const ids = Object.keys(CARDS).filter((id) => id !== 'coin' && (tokenHome[id] ?? home(id)) === dexTab)
+    .sort((a, b) => CARDS[a].cost - CARDS[b].cost);
+  $('dex-desc').textContent = dexTab === 'neutral'
+    ? '여러 해적단이 함께 쓰는 카드입니다.'
+    : `${FACTIONS[dexTab].desc} 덱 24장.`;
+  const box = $('dex-cards');
+  box.innerHTML = '';
+  for (const id of ids) {
+    const d = CARDS[id];
+    const wrap = document.createElement('div');
+    wrap.className = 'dex-item';
+    wrap.append(cardEl({ uid: id, defId: id }, dexTab === 'neutral' ? (owners[id]?.[0] ?? 'stretch') : dexTab, { inHand: true }));
+    const n = dexTab !== 'neutral' ? FACTIONS[dexTab].deck[id] : null;
+    const label = d.token ? '불려 나오는 카드' : n ? `덱에 ${n}장` : (owners[id] ?? []).map((f) => FACTIONS[f].emblem).join(' ');
+    wrap.insertAdjacentHTML('beforeend', `<span class="dex-count">${label}</span>`);
+    box.append(wrap);
+  }
+  $('dex').hidden = false;
 }
 
 // ── 시작과 끝 ──
@@ -551,6 +606,9 @@ $('portrait-btn').onclick = () => document.body.classList.add('allow-portrait');
 $('rules-close').onclick = () => { $('rules').hidden = true; };
 $('rules').onclick = (e) => { if (e.target.id === 'rules') $('rules').hidden = true; };
 $('inspect').onclick = () => { $('inspect').hidden = true; };
+$('dex-btn').onclick = openDex;
+$('dex-close').onclick = () => { $('dex').hidden = true; };
+$('kw-rules').innerHTML = Object.values(KEYWORDS).map((k) => `<li><b>${k.name}</b> ${k.desc}</li>`).join('');
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
   $('inspect').hidden = true;
