@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>해적의 바다</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>🏴‍☠️ 해적의 바다</h1>
+    <button id="rules-btn" class="ghost">규칙</button>
+  </header>
+
+  <main id="game" hidden>
+    <section id="foe-ship" class="ship foe" aria-label="상대 배"></section>
+    <section id="foe-board" class="board" aria-label="상대 선원"></section>
+
+    <div class="midline">
+      <p id="hint"></p>
+      <button id="end-btn">턴 종료</button>
+    </div>
+
+    <section id="my-board" class="board" aria-label="내 선원"></section>
+    <section id="my-ship" class="ship me" aria-label="내 배"></section>
+    <section id="hand" aria-label="손패"></section>
+
+    <details id="log-box">
+      <summary>항해 일지</summary>
+      <ol id="log"></ol>
+    </details>
+  </main>
+
+  <div id="start" class="overlay">
+    <div class="panel">
+      <h2>해적단을 고르세요</h2>
+      <p class="sub">고르지 않은 쪽은 AI가 맡습니다.</p>
+      <div id="faction-list"></div>
+    </div>
+  </div>
+
+  <div id="gameover" class="overlay" hidden>
+    <div class="panel">
+      <h2 id="gameover-title"></h2>
+      <p id="gameover-text" class="sub"></p>
+      <button id="restart-btn">다시 출항</button>
+    </div>
+  </div>
+
+  <div id="rules" class="overlay" hidden>
+    <div class="panel rules">
+      <h2>규칙</h2>
+      <ul>
+        <li><b>승리</b>: 보물 10개를 모으거나, 상대 배의 선체(20)를 0으로 만들면 이깁니다.</li>
+        <li><b>바람</b>: 매 턴 최대 바람이 1씩 늘고(최대 10) 다시 채워집니다. 카드를 내려면 왼쪽 위 숫자만큼 바람이 필요합니다.</li>
+        <li><b>선원</b>: 낸 다음 턴부터 공격할 수 있습니다. 선원끼리 싸우면 서로의 공격력만큼 체력이 깎입니다.</li>
+        <li><b>습격</b>: 선원이 상대 배를 공격하면 선체를 깎고 <b>보물 1개</b>를 얻습니다.</li>
+        <li><b>전술</b>: 한 번 쓰고 버리는 카드입니다.</li>
+        <li><b>돌격</b> 낸 턴에 바로 공격 · <b>수호</b> 상대는 이 선원부터 공격해야 함 · <b>약탈</b> 배 습격 시 보물 +1 · <b>잠입</b> 수호를 무시하고 배를 습격</li>
+        <li>후공은 카드를 더 받고 <b>행운의 동전</b>(바람 +1)을 받습니다. 덱이 비면 매 턴 피해가 커집니다.</li>
+        <li><b>조작</b>: 손패를 눌러 내고, 공격할 선원을 누른 뒤 적 선원이나 적 배를 누르세요.</li>
+      </ul>
+      <button id="rules-close">닫기</button>
+    </div>
+  </div>
+
+  <div id="toast" role="status"></div>
+
+  <script type="module" src="src/ui.js"></script>
+</body>
+</html>
