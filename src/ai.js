@@ -149,10 +149,21 @@ function choosePlay(s) {
   return null;
 }
 
+// 선원들이 배를 때리기만 하면 몇 턴 뒤에 이기는지(선체·보물 중 빠른 쪽).
+function raceTurns(attacker, victim) {
+  const crews = attacker.board.filter((c) => c.atk > 0);
+  if (!crews.length) return Infinity;
+  const power = crews.reduce((n, c) => n + c.atk + (c.tension || 0), 0);
+  const loot = crews.reduce((n, c) => n + 1 + (hasKeyword(c, 'plunder') ? 1 : 0), 0);
+  return Math.min(Math.ceil(victim.hull / power), Math.ceil((RULES.treasureToWin - attacker.treasure) / loot));
+}
+
 function chooseAttack(s) {
   const pi = s.current;
   const me = s.players[pi];
   const foe = s.players[1 - pi];
+  // 내가 먼저 움직이니 같은 턴 수면 내가 이긴다. 상대가 더 빠르면 배 대신 공격 선원을 끊는다.
+  const losingRace = raceTurns(foe, me) < raceTurns(me, foe);
   const attackers = me.board.filter((c) => c.canAttack).sort((a, b) => b.atk - a.atk);
   for (const a of attackers) {
     const power = a.atk + (a.tension || 0);
@@ -173,6 +184,7 @@ function chooseAttack(s) {
       let score = 0;
       if (kills && survives) score = 10 + value(d);
       else if (kills && value(d) >= value(a)) score = 5 + value(d) - value(a);
+      else if (kills && losingRace) score = 3 + d.atk + (hasKeyword(d, 'plunder') ? 2 : 0);
       else if (!canHitShip && survives) score = 1; // 수호를 깎아 둔다
       if (score > bestScore) { bestScore = score; best = uid; }
     }

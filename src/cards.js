@@ -206,7 +206,7 @@ export const CARDS = {
     onPlay: (g) => g.draw(1),
     onDeath: (g) => g.draw(1),
   },
-  shroud: { name: '수의 경비병', type: 'crew', cost: 5, atk: 1, hp: 4, art: '🧟', keywords: ['guard', 'ghost'], text: '' },
+  shroud: { name: '수의 경비병', type: 'crew', cost: 4, atk: 1, hp: 4, art: '🧟', keywords: ['guard', 'ghost'], text: '' },
   banshee: {
     name: '비명 망령', type: 'crew', cost: 4, atk: 3, hp: 3, art: '😱',
     text: '유언: 모든 적 선원에게 1 피해.',
@@ -274,7 +274,7 @@ export const CARDS = {
   chimp: { name: '장난꾸러기 원숭이', type: 'crew', cost: 1, atk: 1, hp: 1, art: '🐒', keywords: ['charge'], text: '' },
   monkey: { name: '꼬마 원숭이', type: 'crew', cost: 1, atk: 1, hp: 1, art: '🐵', keywords: ['charge'], token: true, text: '' },
   banana: {
-    name: '바나나 상인', type: 'crew', cost: 2, atk: 1, hp: 2, art: '🍌',
+    name: '바나나 상인', type: 'crew', cost: 2, atk: 1, hp: 3, art: '🍌',
     text: '등장: 꼬마 원숭이(1/1 돌격) 1마리를 부른다.',
     onPlay: (g) => g.summon('monkey', 1),
   },
@@ -285,7 +285,7 @@ export const CARDS = {
     text: '등장: 다른 아군 선원 모두에게 공격력 +1.',
     onPlay: (g, self) => { g.buffAll(1, 0); g.buff(self.uid, -1, 0); },
   },
-  gorilla: { name: '고릴라 갑판장', type: 'crew', cost: 4, atk: 4, hp: 5, art: '🦍', text: '' },
+  gorilla: { name: '고릴라 갑판장', type: 'crew', cost: 4, atk: 4, hp: 6, art: '🦍', text: '' },
   kingkong: {
     name: '원숭이 왕', type: 'crew', cost: 7, atk: 5, hp: 6, art: '👑',
     text: '등장: 꼬마 원숭이(1/1 돌격) 2마리를 부른다.',
@@ -293,8 +293,8 @@ export const CARDS = {
   },
   troop: {
     name: '원숭이 떼', type: 'tactic', cost: 3, art: '🙈',
-    text: '꼬마 원숭이(1/1 돌격) 3마리를 부른다.',
-    effect: (g) => g.summon('monkey', 3),
+    text: '꼬마 원숭이(1/1 돌격) 2마리를 부른다.',
+    effect: (g) => g.summon('monkey', 2),
   },
   bananapeel: {
     name: '바나나 껍질', type: 'tactic', cost: 1, art: '🥴', target: 'foeCrew',
@@ -376,7 +376,7 @@ export const FACTIONS = {
     emblem: '👻',
     desc: '끈질긴형. 쓰러져도 망령으로 다시 일어나고, 쓰러질 때 유언을 남긴다.',
     skill: {
-      name: '혼 부르기', art: '🕯️', cost: 3,
+      name: '혼 부르기', art: '🕯️', cost: 2,
       text: '떠도는 혼(1/1 망령)을 1명 불러낸다.',
       effect: (g) => g.summon('spirit', 1),
     },

@@ -1,5 +1,5 @@
 // AI끼리 여러 판을 돌려 오류와 진영 밸런스를 확인한다. 사용: node tools/simulate.js [판수]
-import { createGame, applyAction } from '../src/engine.js';
+import { createGame, applyAction, RULES } from '../src/engine.js';
 import { aiNextAction } from '../src/ai.js';
 import { FACTIONS } from '../src/cards.js';
 
@@ -26,7 +26,7 @@ for (const [a, b] of pairs) {
       const w = s.winner === 0 ? a : b;
       wins[a][1]++; wins[b][1]++; wins[w][0]++;
     }
-    if (s.players[s.winner].treasure >= 10) st.byTreasure++;
+    if (s.players[s.winner].treasure >= RULES.treasureToWin) st.byTreasure++;
   }
 }
 for (const [k, v] of Object.entries(stats)) {

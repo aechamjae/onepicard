@@ -3,7 +3,7 @@ import { CARDS, FACTIONS } from './cards.js';
 
 export const RULES = {
   startHull: 20,
-  treasureToWin: 10,
+  treasureToWin: 12,
   maxWind: 10,
   boardLimit: 5,
   handLimit: 8,
