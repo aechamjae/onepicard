@@ -129,6 +129,13 @@ export function hasKeyword(crew, kw) {
   return (CARDS[crew.defId].keywords || []).includes(kw);
 }
 
+// 선원에게 피해를 준다. 탄성이 있으면 1 줄어든다. 실제로 들어간 피해를 돌려준다.
+function hurt(crew, n) {
+  const dealt = hasKeyword(crew, 'elastic') ? Math.max(0, n - 1) : n;
+  crew.hp -= dealt;
+  return dealt;
+}
+
 // 카드 효과가 쓰는 도구 모음. pi는 카드를 낸 플레이어.
 function effectApi(s, pi) {
   const me = s.players[pi];
@@ -153,8 +160,8 @@ function effectApi(s, pi) {
     damageCrew: (uid, n) => {
       const f = findCrew(s, uid);
       if (!f) return;
-      f.crew.hp -= n;
-      log(s, `「${CARDS[f.crew.defId].name}」에게 ${n} 피해.`);
+      const dealt = hurt(f.crew, n);
+      log(s, `「${CARDS[f.crew.defId].name}」에게 ${dealt} 피해.`);
       removeDead(s);
     },
     buff: (uid, atk, hp) => {
@@ -163,6 +170,23 @@ function effectApi(s, pi) {
       f.crew.atk += atk;
       f.crew.hp += hp;
       f.crew.maxHp += hp;
+    },
+    ready: (uid) => {
+      const f = findCrew(s, uid);
+      if (f) f.crew.canAttack = true;
+    },
+    bounce: (uid) => {
+      const f = findCrew(s, uid);
+      if (!f) return;
+      const owner = s.players[f.owner];
+      owner.board = owner.board.filter((c) => c !== f.crew);
+      const name = CARDS[f.crew.defId].name;
+      if (owner.hand.length >= RULES.handLimit) {
+        log(s, `🌀 「${name}」이(가) 바다 멀리 던져졌다.`);
+      } else {
+        owner.hand.push({ uid: f.crew.uid, defId: f.crew.defId });
+        log(s, `🌀 「${name}」이(가) ${owner.name}의 손패로 되돌아갔다.`);
+      }
     },
     freeze: (uid) => {
       const f = findCrew(s, uid);
@@ -246,9 +270,15 @@ export function applyAction(s, action) {
       log(s, `⚔ 「${aName}」이(가) ${foe.name}의 배를 습격! 선체 ${attacker.atk} 피해, 보물 ${loot}개 획득. (${me.treasure}/${RULES.treasureToWin})`);
     } else {
       const defender = foe.board.find((c) => c.uid === action.target);
-      defender.hp -= attacker.atk;
-      attacker.hp -= defender.atk;
+      const idx = foe.board.indexOf(defender);
+      hurt(defender, attacker.atk);
+      hurt(attacker, defender.atk);
       log(s, `⚔ 「${aName}」 vs 「${CARDS[defender.defId].name}」`);
+      if (hasKeyword(attacker, 'reach')) {
+        for (const side of [foe.board[idx - 1], foe.board[idx + 1]]) {
+          if (side && hurt(side, 1)) log(s, `🤸 뻗은 팔이 「${CARDS[side.defId].name}」도 후려쳤다.`);
+        }
+      }
       removeDead(s);
     }
     checkWinner(s);

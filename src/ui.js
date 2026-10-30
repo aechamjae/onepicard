@@ -30,7 +30,8 @@ function showStart() {
 }
 
 function startGame(factionId) {
-  const aiFaction = Object.keys(FACTIONS).find((f) => f !== factionId);
+  const others = Object.keys(FACTIONS).filter((f) => f !== factionId);
+  const aiFaction = others[Math.floor(Math.random() * others.length)];
   state = createGame({ playerFaction: factionId, aiFaction });
   selected = null;
   $('start').hidden = true;

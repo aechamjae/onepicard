@@ -3,6 +3,7 @@ import { CARDS } from './cards.js';
 import { RULES, canPlay, legalAttackTargets, hasKeyword } from './engine.js';
 
 const value = (c) => c.atk + c.hp;
+const dmg = (n, target) => (hasKeyword(target, 'elastic') ? Math.max(0, n - 1) : n);
 
 // 카드별 사용 판단. 대상(uid)을 돌려주거나, 대상 없는 카드면 true, 쓰지 않으려면 false.
 const TACTIC_AI = {
@@ -23,6 +24,15 @@ const TACTIC_AI = {
 
   anchor: (me, foe) => {
     const t = foe.board.filter((c) => c.atk >= 3).sort((a, b) => b.atk - a.atk);
+    return t.length ? t[0].uid : false;
+  },
+  slingshot: (me) => {
+    // 이번 턴에 막 낸(아직 공격 못 하는) 선원을 깨워 바로 공격시킨다.
+    const sleepy = me.board.filter((c) => !c.canAttack && !c.frozen).sort((a, b) => b.atk - a.atk);
+    return sleepy.length ? sleepy[0].uid : false;
+  },
+  grab: (me, foe) => {
+    const t = foe.board.filter((c) => CARDS[c.defId].cost >= 4).sort((a, b) => CARDS[b.defId].cost - CARDS[a.defId].cost);
     return t.length ? t[0].uid : false;
   },
   volley: (me, foe) => foe.board.filter((c) => c.hp <= 2).length >= 2 || foe.board.length >= 4,
@@ -70,8 +80,8 @@ function chooseAttack(s) {
     for (const uid of legal) {
       if (uid === 'ship') continue;
       const d = foe.board.find((c) => c.uid === uid);
-      const kills = a.atk >= d.hp;
-      const survives = d.atk < a.hp;
+      const kills = dmg(a.atk, d) >= d.hp;
+      const survives = dmg(d.atk, a) < a.hp;
       let score = 0;
       if (kills && survives) score = 10 + value(d);
       else if (kills && value(d) >= value(a)) score = 5 + value(d) - value(a);
