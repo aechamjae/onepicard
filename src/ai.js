@@ -1,7 +1,7 @@
 // 탐욕형 AI: 낼 수 있는 카드를 비싼 것부터 내고, 선장 스킬을 쓰고, 유리한 교환이 아니면 배를 노린다.
 // 난이도가 낮을수록 정해진 확률로 아무 행동이나 골라 실수한다.
 import { CARDS, FACTIONS } from './cards.js';
-import { RULES, canPlay, canUseSkill, legalAttackTargets, hasKeyword, targetable } from './engine.js';
+import { RULES, canPlay, canUseSkill, costOf, legalAttackTargets, hasKeyword, targetable } from './engine.js';
 
 export const AI_LEVELS = {
   easy: { mistake: 0.55 },
@@ -64,6 +64,20 @@ const TACTIC_AI = {
   seance: (me) => me.board.length <= RULES.boardLimit - 2,
   troop: (me) => me.board.length <= RULES.boardLimit - 2,
   blueprint: (me) => me.hand.length <= 4 && me.hull > 6,
+  slashcut: (me, foe) => strongest(foe.board.filter((c) => dmg(2, c) >= c.hp), value) || strongest(foe.board.filter((c) => c.atk >= 4), (c) => c.atk),
+  meditate: (me) => strongest(me.board, (c) => c.atk + (hasKeyword(c, 'guard') ? 3 : 0)),
+  bladestorm: (me, foe) => foe.board.filter((c) => dmg(2, c) >= c.hp).length >= 2 || foe.board.length >= 4,
+  unfurl: (me) => me.hand.length <= 6,
+  headwind: (me, foe) => strongest(foe.board.filter((c) => CARDS[c.defId].cost >= 3), (c) => CARDS[c.defId].cost + c.atk),
+  goldrain: (me) => me.board.length >= 2,
+  insurance: (me) => me.hull <= RULES.startHull - 4,
+  buyout: (me, foe) => {
+    if (me.treasure > 0 && me.board.length < RULES.boardLimit) {
+      const t = strongest(foe.board.filter((c) => c.atk <= 4 && !CARDS[c.defId].token), value);
+      if (t) return t;
+    }
+    return strongest(foe.board.filter((c) => dmg(2, c) >= c.hp), value);
+  },
 };
 
 // 점수가 가장 높은 선원의 uid. 없으면 false.
@@ -81,6 +95,9 @@ const SKILL_AI = {
   flame: (me, foe) => strongest(foe.board.filter((c) => !c.burning), value),
   monkey: (me) => me.board.length < RULES.boardLimit,
   clock: (me) => strongest(me.board, (c) => c.atk),
+  swords: (me) => strongest(me.board, (c) => (hasKeyword(c, 'slash') ? 0 : 10) + c.atk),
+  guild: (me) => me.hand.length <= 6 && me.deck.length > 0,
+  merchant: (me, foe) => strongest(foe.board.filter((c) => c.atk >= 3 && !c.frozen), (c) => c.atk),
 };
 
 // AI가 보는 상대: 안개 속 선원은 고를 수 없으니 뺀다.
@@ -133,7 +150,7 @@ function choosePlay(s) {
     if (canPlay(s, pi, i)) {
       // 동전 1개로 낼 수 있게 되는 선원이 있으면 동전을 먼저 쓴다.
       const coinIdx = me.hand.findIndex((c) => c.defId === 'coin');
-      if (coinIdx >= 0 && d.type === 'crew' && d.cost === me.wind + 1 && me.board.length < RULES.boardLimit) {
+      if (coinIdx >= 0 && d.type === 'crew' && costOf(me, id) === me.wind + 1 && me.board.length < RULES.boardLimit) {
         return { type: 'play', handIndex: coinIdx };
       }
       continue;

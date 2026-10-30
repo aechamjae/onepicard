@@ -34,7 +34,7 @@ function makePlayer(name, factionId, isAI, rng, hull) {
   return {
     name, factionId, isAI,
     hull, maxHull: hull, treasure: 0,
-    maxWind: 0, wind: 0, fatigue: 0, skillUsed: false,
+    maxWind: 0, wind: 0, fatigue: 0, skillUsed: false, discount: 0,
     deck: buildDeck(factionId, rng), hand: [], board: [],
   };
 }
@@ -87,6 +87,7 @@ function startTurn(s) {
   p.maxWind = Math.min(RULES.maxWind, p.maxWind + 1);
   p.wind = p.maxWind;
   p.skillUsed = false;
+  p.discount = 0;
   for (const c of p.board) {
     c.canAttack = !c.frozen;
     c.frozen = false;
@@ -154,6 +155,7 @@ function makeCrew(uid, defId) {
     canAttack: (d.keywords || []).includes('charge'), frozen: false,
     attacked: false, tension: 0, burning: false, revived: false, grown: 0,
     shield: (d.keywords || []).includes('shield'), stealth: (d.keywords || []).includes('stealth'), doubled: false,
+    gained: [], // 카드 효과로 얻은 키워드
   };
 }
 
@@ -166,7 +168,12 @@ export function findCrew(s, uid) {
 }
 
 export function hasKeyword(crew, kw) {
-  return (CARDS[crew.defId].keywords || []).includes(kw);
+  return (CARDS[crew.defId].keywords || []).includes(kw) || !!crew.gained?.includes(kw);
+}
+
+// 순풍으로 깎인 실제 비용.
+export function costOf(p, defId) {
+  return Math.max(0, CARDS[defId].cost - (p.discount || 0));
 }
 
 // 선원에게 피해를 준다. 탄성이 있으면 1 줄어든다. 실제로 들어간 피해를 돌려준다.
@@ -204,6 +211,37 @@ function effectApi(s, pi) {
     damageFoeShip: (n) => {
       foe.hull -= n;
       log(s, `💥 ${foe.name}의 배에 ${n} 피해.`);
+    },
+    // 거래: 보물이 있으면 1개를 써서 true. 없으면 false.
+    trade: () => {
+      if (me.treasure < 1) return false;
+      me.treasure--;
+      log(s, `💰 ${me.name}이(가) 보물 1개를 내고 거래했다. (${me.treasure}/${RULES.treasureToWin})`);
+      return true;
+    },
+    grant: (uid, kw) => {
+      const f = findCrew(s, uid);
+      if (!f) return;
+      if (!hasKeyword(f.crew, kw)) f.crew.gained.push(kw);
+      if (kw === 'charge') f.crew.canAttack = true;
+    },
+    // 적 선원을 내 편으로 데려온다. 내 갑판이 가득 차면 실패.
+    steal: (uid) => {
+      const f = findCrew(s, uid);
+      if (!f || f.owner === pi || me.board.length >= RULES.boardLimit) return false;
+      foe.board = foe.board.filter((c) => c !== f.crew);
+      f.crew.canAttack = false;
+      f.crew.tension = 0;
+      me.board.push(f.crew);
+      log(s, `🤝 「${CARDS[f.crew.defId].name}」이(가) 금화에 넘어와 ${me.name} 편이 되었다!`);
+      return true;
+    },
+    slay: (uid) => {
+      const f = findCrew(s, uid);
+      if (!f) return;
+      f.crew.hp = 0;
+      log(s, `⚔ 「${CARDS[f.crew.defId].name}」이(가) 단칼에 베였다.`);
+      removeDead(s);
     },
     gainTreasure: (n) => {
       me.treasure += n;
@@ -331,6 +369,7 @@ export function canUseSkill(s, pi) {
   const sk = FACTIONS[p.factionId].skill;
   if (p.skillUsed) return '선장 스킬은 한 턴에 한 번만 쓸 수 있다.';
   if (sk.cost > p.wind) return '바람이 부족하다.';
+  if (sk.treasureCost && p.treasure < sk.treasureCost) return '보물이 부족하다.';
   return sk.target ? targetError(s, pi, sk.target) : null;
 }
 
@@ -339,7 +378,7 @@ export function canPlay(s, pi, handIndex) {
   const card = p.hand[handIndex];
   if (!card) return '그 카드가 없다.';
   const d = CARDS[card.defId];
-  if (d.cost > p.wind) return '바람이 부족하다.';
+  if (costOf(p, card.defId) > p.wind) return '바람이 부족하다.';
   if (d.type === 'crew' && p.board.length >= RULES.boardLimit) return `선원은 ${RULES.boardLimit}명까지만 둘 수 있다.`;
   return d.target ? targetError(s, pi, d.target) : null;
 }
@@ -358,7 +397,8 @@ export function applyAction(s, action) {
     const card = me.hand[action.handIndex];
     const d = CARDS[card.defId];
     if (d.target && !validTarget(s, pi, d.target, action.target)) return '대상을 골라야 한다.';
-    me.wind -= d.cost;
+    me.wind -= costOf(me, card.defId);
+    me.discount = 0;
     me.hand.splice(action.handIndex, 1);
     const g = effectApi(s, pi);
     if (d.type === 'crew') {
@@ -370,6 +410,10 @@ export function applyAction(s, action) {
       log(s, `${me.name}: 「${d.name}」 사용.`);
       d.effect(g, action.target);
     }
+    if ((d.keywords || []).includes('tailwind')) {
+      me.discount = 1;
+      log(s, `🍃 순풍이 분다! 다음 카드 비용 -1.`);
+    }
     checkWinner(s);
     return null;
   }
@@ -380,6 +424,7 @@ export function applyAction(s, action) {
     const sk = FACTIONS[me.factionId].skill;
     if (sk.target && !validTarget(s, pi, sk.target, action.target)) return '대상을 골라야 한다.';
     me.wind -= sk.cost;
+    if (sk.treasureCost) me.treasure -= sk.treasureCost;
     me.skillUsed = true;
     log(s, `✨ ${me.name}: 선장 스킬 「${sk.name}」!`);
     sk.effect(effectApi(s, pi), action.target);
@@ -414,9 +459,11 @@ export function applyAction(s, action) {
       const defender = foe.board.find((c) => c.uid === action.target);
       const idx = foe.board.indexOf(defender);
       const dealt = hurt(defender, power);
-      const thorns = hasKeyword(defender, 'thorns') ? 1 : 0;
-      const back = hurt(attacker, defender.atk + thorns);
+      const slash = hasKeyword(attacker, 'slash');
+      const thorns = hasKeyword(defender, 'thorns') && !slash ? 1 : 0;
+      const back = slash ? 0 : hurt(attacker, defender.atk + thorns);
       if (thorns) log(s, `🌵 가시에 찔렸다!`);
+      if (slash) log(s, `⚔ 일섬! 반격을 받지 않았다.`);
       if (hasKeyword(attacker, 'lifesteal')) heal(s, me, dealt);
       if (hasKeyword(defender, 'lifesteal')) heal(s, foe, back);
       log(s, `⚔ 「${aName}」 vs 「${CARDS[defender.defId].name}」`);

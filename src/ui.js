@@ -1,6 +1,6 @@
 // 화면 그리기, 연출, 입력 처리. 규칙 판단은 모두 engine.js에 맡긴다.
 import { CARDS, FACTIONS, KEYWORDS } from './cards.js';
-import { RULES, createGame, applyAction, canPlay, canUseSkill, legalAttackTargets, hasKeyword, targetable } from './engine.js';
+import { RULES, createGame, applyAction, canPlay, canUseSkill, costOf, legalAttackTargets, hasKeyword, targetable } from './engine.js';
 import { aiNextAction } from './ai.js';
 import { DIFFICULTIES } from './difficulty.js';
 
@@ -68,7 +68,8 @@ function armArt(face, tension = 0) {
 
 // ── 그리기 ──
 
-function cardEl(card, factionId, { inHand = false, showText = inHand } = {}) {
+// owner: 손패 카드의 주인. 주면 순풍으로 깎인 비용을 보여 준다.
+function cardEl(card, factionId, { inHand = false, showText = inHand, owner = null } = {}) {
   const d = CARDS[card.defId];
   const el = document.createElement('div');
   el.className = `card ${d.type} f-${factionId}`;
@@ -77,7 +78,8 @@ function cardEl(card, factionId, { inHand = false, showText = inHand } = {}) {
   const tension = card.tension || 0;
   const atk = (card.atk ?? d.atk) + tension;
   const hp = card.hp ?? d.hp;
-  const chips = (d.keywords || []).map((k) => `<span class="chip k-${k}">${KEYWORDS[k].name}</span>`).join('');
+  const chips = [...(d.keywords || []), ...(card.gained || [])].map((k) => `<span class="chip k-${k}">${KEYWORDS[k].name}</span>`).join('');
+  const cost = owner ? costOf(owner, card.defId) : d.cost;
   el.innerHTML = `
     <div class="frame">
       <div class="art">${d.arm ? armArt(d.art, tension) : `<span class="emoji">${d.art}</span>`}</div>
@@ -86,7 +88,7 @@ function cardEl(card, factionId, { inHand = false, showText = inHand } = {}) {
       ${showText && d.text ? `<div class="text">${d.text}</div>` : ''}
       ${!isCrew ? '<div class="ribbon">전술</div>' : ''}
     </div>
-    ${inHand ? `<div class="cost">${d.cost}</div>` : ''}
+    ${inHand ? `<div class="cost${cost < d.cost ? ' cheap' : ''}">${cost}</div>` : ''}
     ${isCrew ? `<div class="gem atk${tension ? ' boost' : ''}">${atk}</div>
       <div class="gem hp${card.maxHp && hp < card.maxHp ? ' hurt' : ''}">${hp}</div>` : ''}
     ${tension ? `<div class="tension">탄력+${tension}</div>` : ''}
@@ -180,7 +182,7 @@ function render(entered = new Set()) {
   hand.innerHTML = '';
   let anyPlayable = false;
   me.hand.forEach((card, i) => {
-    const el = cardEl(card, me.factionId, { inHand: true });
+    const el = cardEl(card, me.factionId, { inHand: true, owner: me });
     const playable = myTurn && !canPlay(state, ME, i);
     anyPlayable ||= playable;
     el.classList.add(playable ? 'playable' : 'unaffordable');
@@ -193,7 +195,7 @@ function render(entered = new Set()) {
   const sk = skillOf(ME);
   const skillBtn = $('skill-btn');
   const skillErr = canUseSkill(state, ME);
-  skillBtn.innerHTML = `<span class="sk-cost">${sk.cost}</span>${sk.art} ${sk.name}`;
+  skillBtn.innerHTML = `<span class="sk-cost">${sk.cost}</span>${sk.art} ${sk.name}${sk.treasureCost ? ` <small>💰${sk.treasureCost}</small>` : ''}`;
   skillBtn.title = `선장 스킬: ${sk.text}`;
   skillBtn.disabled = !myTurn;
   skillBtn.classList.toggle('usable', myTurn && !skillErr);
@@ -530,7 +532,7 @@ function inspect(card, pi) {
   const box = document.createElement('div');
   box.className = 'inspect-box';
   box.append(cardEl(card, state.players[pi].factionId, { showText: true }));
-  const kws = (d.keywords || []).map((k) => `<li><b>${KEYWORDS[k].name}</b> ${KEYWORDS[k].desc}</li>`);
+  const kws = [...(d.keywords || []), ...(card.gained || [])].map((k) => `<li><b>${KEYWORDS[k].name}</b> ${KEYWORDS[k].desc}</li>`);
   if (card.tension) kws.push(`<li><b>탄력 ${card.tension}</b> 다음 공격 때 공격력 +${card.tension}</li>`);
   if (card.frozen) kws.push('<li><b>⚓ 묶임</b> 다음 턴에 공격할 수 없다.</li>');
   if (card.burning) kws.push(`<li><b>🔥 불붙음</b> 주인의 턴이 시작될 때마다 ${RULES.burnDamage} 피해.</li>`);
@@ -565,7 +567,7 @@ function openDex() {
     const b = document.createElement('button');
     b.className = `dex-tab${g === dexTab ? ' on' : ''}`;
     b.setAttribute('role', 'tab');
-    b.textContent = g === 'neutral' ? '🧭 공용' : `${FACTIONS[g].emblem} ${FACTIONS[g].name}`;
+    b.textContent = g === 'neutral' ? '🃏 공용' : `${FACTIONS[g].emblem} ${FACTIONS[g].name}`;
     b.onclick = () => { dexTab = g; openDex(); };
     tabs.append(b);
   }
@@ -579,7 +581,7 @@ function openDex() {
   const skill = FACTIONS[dexTab]?.skill;
   $('dex-desc').innerHTML = dexTab === 'neutral'
     ? '여러 해적단이 함께 쓰는 카드입니다.'
-    : `${FACTIONS[dexTab].desc} 덱 24장.<span class="dex-skill">✨ 선장 스킬 ${skill.art} <b>${skill.name}</b> (바람 ${skill.cost}) — ${skill.text}</span>`;
+    : `${FACTIONS[dexTab].desc} 덱 24장.<span class="dex-skill">✨ 선장 스킬 ${skill.art} <b>${skill.name}</b> (바람 ${skill.cost}${skill.treasureCost ? ` · 보물 ${skill.treasureCost}` : ''}) — ${skill.text}</span>`;
   const box = $('dex-cards');
   box.innerHTML = '';
   for (const id of ids) {

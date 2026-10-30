@@ -196,6 +196,9 @@ main[hidden] { display: none; }
 .chip.k-shield { background: #4fb3ff; color: #062033; }
 .chip.k-thorns { background: #3f8f4a; }
 .chip.k-stealth { background: #6c7a89; }
+.chip.k-slash { background: #d9dde3; color: #1d2430; }
+.chip.k-tailwind { background: #6fd3b4; color: #0b3328; }
+.chip.k-trade { background: #f2c94c; color: #3a2a00; }
 .card.shielded .frame { box-shadow: inset 0 1px 0 #ffffff55, 0 0 0 2px #8fd6ff, 0 0 12px #4fb3ff; }
 .card.stealthy { opacity: .6; }
 .card.stealthy .art { filter: blur(1px) grayscale(.4); }
@@ -209,6 +212,7 @@ main[hidden] { display: none; }
   display: grid; place-items: center; font-family: var(--display); font-size: 1rem; color: #052433;
   background: radial-gradient(circle at 35% 30%, #e4f7ff, var(--wind) 55%, #2f8fbf); border: 2px solid #fff;
 }
+.card .cost.cheap { background: radial-gradient(circle at 35% 30%, #eafff7, #6fd3b4 55%, #1f8a6c); box-shadow: 0 0 8px #6fd3b4; }
 .card .gem {
   position: absolute; z-index: 2; bottom: -11px; width: 30px; height: 30px; border-radius: 50%;
   display: grid; place-items: center; font-family: var(--display); font-size: 1.05rem; color: #fff;
@@ -239,6 +243,9 @@ main[hidden] { display: none; }
 .f-flame { --fa: #ff7a2f; --fb: #7d1a0b; --fc: #ffd36b; --art-bg: radial-gradient(circle at 50% 70%, #fff3b8, #ff9a3d 70%, #c43c12); }
 .f-monkey { --fa: #5fae3c; --fb: #234d17; --fc: #e6f59a; --art-bg: radial-gradient(circle at 50% 35%, #f6ffd0, #7cb850); }
 .f-clock { --fa: #b39a6c; --fb: #3f3322; --fc: #f3dca2; --art-bg: repeating-conic-gradient(from 0deg, #efe2c2 0 15deg, #dccaa0 15deg 30deg); }
+.f-swords { --fa: #8a96a8; --fb: #232a36; --fc: #e9eef5; --art-bg: linear-gradient(160deg, #f4f6fa 0 45%, #c9d1dc 45% 55%, #f4f6fa 55%); }
+.f-guild { --fa: #2f9e8f; --fb: #123a45; --fc: #bff3e6; --art-bg: radial-gradient(circle at 50% 40%, #f2fff9, #8fd8c4); }
+.f-merchant { --fa: #e0b03a; --fb: #5a3d0a; --fc: #fff0b3; --art-bg: radial-gradient(circle at 50% 35%, #fff8d6, #e2b54a); }
 .card.tactic { --fa: #f6e7c2; --fb: #d8b874; --name: #3b2410; --art-bg: radial-gradient(circle, #fffaf0, #e8d3a2); }
 .card.tactic .name { text-shadow: none; }
 .card.tactic .text { background: #3b241018; color: #3b2410; }
