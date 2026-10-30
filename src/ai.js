@@ -1,9 +1,19 @@
-// 간단한 탐욕형 AI: 낼 수 있는 카드를 비싼 것부터 내고, 유리한 교환이 아니면 배를 노린다.
-import { CARDS } from './cards.js';
-import { RULES, canPlay, legalAttackTargets, hasKeyword } from './engine.js';
+// 탐욕형 AI: 낼 수 있는 카드를 비싼 것부터 내고, 선장 스킬을 쓰고, 유리한 교환이 아니면 배를 노린다.
+// 난이도가 낮을수록 정해진 확률로 아무 행동이나 골라 실수한다.
+import { CARDS, FACTIONS } from './cards.js';
+import { RULES, canPlay, canUseSkill, legalAttackTargets, hasKeyword, targetable } from './engine.js';
+
+export const AI_LEVELS = {
+  easy: { mistake: 0.55 },
+  normal: { mistake: 0.35 },
+  hard: { mistake: 0 },
+};
 
 const value = (c) => c.atk + c.hp;
-const dmg = (n, target) => (hasKeyword(target, 'elastic') ? Math.max(0, n - 1) : n);
+const dmg = (n, target) => {
+  if (target.shield) return 0;
+  return hasKeyword(target, 'elastic') ? Math.max(0, n - 1) : n;
+};
 
 // 카드별 사용 판단. 대상(uid)을 돌려주거나, 대상 없는 카드면 true, 쓰지 않으려면 false.
 const TACTIC_AI = {
@@ -62,10 +72,59 @@ function strongest(list, score) {
   return [...list].sort((a, b) => score(b) - score(a))[0].uid;
 }
 
-function choosePlay(s) {
+// 선장 스킬 판단. 대상(uid), true(대상 없음), false(안 씀).
+const SKILL_AI = {
+  stretch: (me, foe) => strongest(foe.board.filter((c) => dmg(1, c) >= c.hp), value) || strongest(foe.board, (c) => c.atk),
+  red: () => true,
+  deep: (me) => strongest(me.board, (c) => (hasKeyword(c, 'guard') ? 10 : 0) + c.hp),
+  ghost: (me) => me.board.length < RULES.boardLimit,
+  flame: (me, foe) => strongest(foe.board.filter((c) => !c.burning), value),
+  monkey: (me) => me.board.length < RULES.boardLimit,
+  clock: (me) => strongest(me.board, (c) => c.atk),
+};
+
+// AI가 보는 상대: 안개 속 선원은 고를 수 없으니 뺀다.
+const foeView = (foe) => ({ ...foe, board: targetable(foe.board) });
+
+function chooseSkill(s) {
+  const pi = s.current;
+  const me = s.players[pi];
+  if (canUseSkill(s, pi)) return null;
+  const sk = FACTIONS[me.factionId].skill;
+  const foe = foeView(s.players[1 - pi]);
+  let decision = SKILL_AI[me.factionId] ? SKILL_AI[me.factionId](me, foe) : true;
+  if (sk.target && decision === true) decision = strongest(sk.target === 'foeCrew' ? foe.board : me.board, value);
+  if (decision === false) return null;
+  return sk.target ? { type: 'skill', target: decision } : { type: 'skill' };
+}
+
+// 지금 할 수 있는 행동을 모두 모아 그중 하나를 무작위로 고른다(실수).
+function randomAction(s) {
   const pi = s.current;
   const me = s.players[pi];
   const foe = s.players[1 - pi];
+  const pick = (list) => list[Math.floor(s.rng() * list.length)];
+  const targetFor = (kind) => pick((kind === 'foeCrew' ? targetable(foe.board) : me.board).map((c) => c.uid));
+  const options = [{ type: 'end' }];
+  me.hand.forEach((card, i) => {
+    if (canPlay(s, pi, i)) return;
+    const d = CARDS[card.defId];
+    options.push(d.target ? { type: 'play', handIndex: i, target: targetFor(d.target) } : { type: 'play', handIndex: i });
+  });
+  if (!canUseSkill(s, pi)) {
+    const sk = FACTIONS[me.factionId].skill;
+    options.push(sk.target ? { type: 'skill', target: targetFor(sk.target) } : { type: 'skill' });
+  }
+  for (const a of me.board.filter((c) => c.canAttack)) {
+    options.push({ type: 'attack', attacker: a.uid, target: pick(legalAttackTargets(s, pi, a)) });
+  }
+  return pick(options);
+}
+
+function choosePlay(s) {
+  const pi = s.current;
+  const me = s.players[pi];
+  const foe = foeView(s.players[1 - pi]);
   const order = me.hand
     .map((card, i) => ({ i, d: CARDS[card.defId], id: card.defId }))
     .sort((a, b) => b.d.cost - a.d.cost);
@@ -108,8 +167,9 @@ function chooseAttack(s) {
     for (const uid of legal) {
       if (uid === 'ship') continue;
       const d = foe.board.find((c) => c.uid === uid);
+      const thorns = hasKeyword(d, 'thorns') ? 1 : 0;
       const kills = dmg(power, d) >= d.hp;
-      const survives = dmg(d.atk, a) < a.hp;
+      const survives = dmg(d.atk + thorns, a) < a.hp;
       let score = 0;
       if (kills && survives) score = 10 + value(d);
       else if (kills && value(d) >= value(a)) score = 5 + value(d) - value(a);
@@ -124,6 +184,8 @@ function chooseAttack(s) {
   return null;
 }
 
-export function aiNextAction(s) {
-  return choosePlay(s) || chooseAttack(s) || { type: 'end' };
+export function aiNextAction(s, level = 'hard') {
+  const { mistake } = AI_LEVELS[level] ?? AI_LEVELS.hard;
+  if (mistake && s.rng() < mistake) return randomAction(s);
+  return choosePlay(s) || chooseSkill(s) || chooseAttack(s) || { type: 'end' };
 }

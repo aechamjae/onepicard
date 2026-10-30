@@ -30,25 +30,29 @@ function buildDeck(factionId, rng) {
   return shuffle(deck, rng);
 }
 
-function makePlayer(name, factionId, isAI, rng) {
+function makePlayer(name, factionId, isAI, rng, hull) {
   return {
     name, factionId, isAI,
-    hull: RULES.startHull, treasure: 0,
-    maxWind: 0, wind: 0, fatigue: 0,
+    hull, maxHull: hull, treasure: 0,
+    maxWind: 0, wind: 0, fatigue: 0, skillUsed: false,
     deck: buildDeck(factionId, rng), hand: [], board: [],
   };
 }
 
-export function createGame({ playerFaction, aiFaction, rng = Math.random, names = ['나', 'AI'] }) {
+// handicap: 난이도에 따른 시작 조건. hull = [나, AI] 시작 선체, extraCards = [나, AI] 추가 시작 카드.
+export function createGame({
+  playerFaction, aiFaction, rng = Math.random, names = ['나', 'AI'],
+  handicap = { hull: [RULES.startHull, RULES.startHull], extraCards: [0, 0] },
+}) {
   const s = {
     rng, turn: 0, current: 0, winner: null, log: [],
     players: [
-      makePlayer(names[0], playerFaction, false, rng),
-      makePlayer(names[1], aiFaction, true, rng),
+      makePlayer(names[0], playerFaction, false, rng, handicap.hull[0]),
+      makePlayer(names[1], aiFaction, true, rng, handicap.hull[1]),
     ],
   };
-  drawCards(s, 0, RULES.startHand - 1); // 선공은 1장 적게
-  drawCards(s, 1, RULES.startHand); // 후공은 1장 더 + 행운의 동전
+  drawCards(s, 0, RULES.startHand - 1 + handicap.extraCards[0]); // 선공은 1장 적게
+  drawCards(s, 1, RULES.startHand + handicap.extraCards[1]); // 후공은 1장 더 + 행운의 동전
   s.players[1].hand.push({ uid: uidSeq++, defId: 'coin' });
   startTurn(s);
   return s;
@@ -82,10 +86,12 @@ function startTurn(s) {
   const p = s.players[s.current];
   p.maxWind = Math.min(RULES.maxWind, p.maxWind + 1);
   p.wind = p.maxWind;
+  p.skillUsed = false;
   for (const c of p.board) {
     c.canAttack = !c.frozen;
     c.frozen = false;
     c.attacked = false;
+    c.doubled = false;
   }
   log(s, `── ${p.name}의 턴 (바람 ${p.wind}) ──`);
   for (const c of p.board.filter((c) => c.burning)) {
@@ -147,6 +153,7 @@ function makeCrew(uid, defId) {
     atk: d.atk, hp: d.hp, maxHp: d.hp,
     canAttack: (d.keywords || []).includes('charge'), frozen: false,
     attacked: false, tension: 0, burning: false, revived: false, grown: 0,
+    shield: (d.keywords || []).includes('shield'), stealth: (d.keywords || []).includes('stealth'), doubled: false,
   };
 }
 
@@ -164,9 +171,21 @@ export function hasKeyword(crew, kw) {
 
 // 선원에게 피해를 준다. 탄성이 있으면 1 줄어든다. 실제로 들어간 피해를 돌려준다.
 function hurt(crew, n) {
+  if (n <= 0) return 0;
+  if (crew.shield) {
+    crew.shield = false; // 보호막이 대신 맞고 깨진다
+    return 0;
+  }
   const dealt = hasKeyword(crew, 'elastic') ? Math.max(0, n - 1) : n;
   crew.hp -= dealt;
   return dealt;
+}
+
+function heal(s, p, n) {
+  if (n <= 0) return;
+  const before = p.hull;
+  p.hull = Math.min(p.maxHull, p.hull + n);
+  if (p.hull > before) log(s, `🦇 ${p.name}의 선체 ${p.hull - before} 회복.`);
 }
 
 // 카드 효과가 쓰는 도구 모음. pi는 카드를 낸 플레이어.
@@ -179,7 +198,7 @@ function effectApi(s, pi) {
     gainWind: (n) => { me.wind += n; },
     healShip: (n) => {
       const before = me.hull;
-      me.hull = Math.min(RULES.startHull, me.hull + n);
+      me.hull = Math.min(me.maxHull, me.hull + n);
       log(s, `🔧 ${me.name}의 선체 ${me.hull - before} 회복.`);
     },
     damageFoeShip: (n) => {
@@ -270,6 +289,10 @@ function effectApi(s, pi) {
         log(s, `🌀 「${name}」이(가) ${owner.name}의 손패로 되돌아갔다.`);
       }
     },
+    shield: (uid) => {
+      const f = findCrew(s, uid);
+      if (f) f.crew.shield = true;
+    },
     freeze: (uid) => {
       const f = findCrew(s, uid);
       if (f) f.crew.frozen = true;
@@ -278,14 +301,37 @@ function effectApi(s, pi) {
   };
 }
 
+// 안개 속에 숨은 선원은 공격이나 대상 지정 카드로 고를 수 없다.
+export const targetable = (board) => board.filter((c) => !c.stealth);
+
 export function legalAttackTargets(s, pi, attacker) {
-  const foe = s.players[1 - pi];
-  const guards = foe.board.filter((c) => hasKeyword(c, 'guard'));
+  const visible = targetable(s.players[1 - pi].board);
+  const guards = visible.filter((c) => hasKeyword(c, 'guard'));
   if (guards.length) {
     const ids = guards.map((c) => c.uid);
     return attacker && hasKeyword(attacker, 'sneak') ? ['ship', ...ids] : ids;
   }
-  return ['ship', ...foe.board.map((c) => c.uid)];
+  return ['ship', ...visible.map((c) => c.uid)];
+}
+
+// 대상 지정이 필요한 카드·스킬이 지금 쓸 수 있는 대상이 있는지 확인한다.
+function targetError(s, pi, kind) {
+  if (kind === 'foeCrew' && !targetable(s.players[1 - pi].board).length) return '대상이 될 적 선원이 없다.';
+  if (kind === 'allyCrew' && !s.players[pi].board.length) return '대상이 될 아군 선원이 없다.';
+  return null;
+}
+
+function validTarget(s, pi, kind, uid) {
+  if (kind === 'foeCrew') return targetable(s.players[1 - pi].board).some((c) => c.uid === uid);
+  return s.players[pi].board.some((c) => c.uid === uid);
+}
+
+export function canUseSkill(s, pi) {
+  const p = s.players[pi];
+  const sk = FACTIONS[p.factionId].skill;
+  if (p.skillUsed) return '선장 스킬은 한 턴에 한 번만 쓸 수 있다.';
+  if (sk.cost > p.wind) return '바람이 부족하다.';
+  return sk.target ? targetError(s, pi, sk.target) : null;
 }
 
 export function canPlay(s, pi, handIndex) {
@@ -295,9 +341,7 @@ export function canPlay(s, pi, handIndex) {
   const d = CARDS[card.defId];
   if (d.cost > p.wind) return '바람이 부족하다.';
   if (d.type === 'crew' && p.board.length >= RULES.boardLimit) return `선원은 ${RULES.boardLimit}명까지만 둘 수 있다.`;
-  if (d.target === 'foeCrew' && s.players[1 - pi].board.length === 0) return '대상이 될 적 선원이 없다.';
-  if (d.target === 'allyCrew' && p.board.length === 0) return '대상이 될 아군 선원이 없다.';
-  return null;
+  return d.target ? targetError(s, pi, d.target) : null;
 }
 
 // action: {type:'play', handIndex, target?} | {type:'attack', attacker, target:'ship'|uid} | {type:'end'}
@@ -313,10 +357,7 @@ export function applyAction(s, action) {
     if (err) return err;
     const card = me.hand[action.handIndex];
     const d = CARDS[card.defId];
-    if (d.target) {
-      const owner = d.target === 'foeCrew' ? foe : me;
-      if (!owner.board.some((c) => c.uid === action.target)) return '대상을 골라야 한다.';
-    }
+    if (d.target && !validTarget(s, pi, d.target, action.target)) return '대상을 골라야 한다.';
     me.wind -= d.cost;
     me.hand.splice(action.handIndex, 1);
     const g = effectApi(s, pi);
@@ -333,6 +374,19 @@ export function applyAction(s, action) {
     return null;
   }
 
+  if (action.type === 'skill') {
+    const err = canUseSkill(s, pi);
+    if (err) return err;
+    const sk = FACTIONS[me.factionId].skill;
+    if (sk.target && !validTarget(s, pi, sk.target, action.target)) return '대상을 골라야 한다.';
+    me.wind -= sk.cost;
+    me.skillUsed = true;
+    log(s, `✨ ${me.name}: 선장 스킬 「${sk.name}」!`);
+    sk.effect(effectApi(s, pi), action.target);
+    checkWinner(s);
+    return null;
+  }
+
   if (action.type === 'attack') {
     const attacker = me.board.find((c) => c.uid === action.attacker);
     if (!attacker) return '공격할 선원이 없다.';
@@ -342,6 +396,10 @@ export function applyAction(s, action) {
     }
     attacker.canAttack = false;
     attacker.attacked = true;
+    if (attacker.stealth) {
+      attacker.stealth = false;
+      log(s, `🌫 「${CARDS[attacker.defId].name}」이(가) 안개 속에서 튀어나왔다!`);
+    }
     const power = attacker.atk + (attacker.tension || 0);
     if (attacker.tension) log(s, `🌀 당겨 둔 고무팔이 튕겨 나간다! (공격력 +${attacker.tension})`);
     attacker.tension = 0;
@@ -350,12 +408,17 @@ export function applyAction(s, action) {
       const loot = 1 + (hasKeyword(attacker, 'plunder') ? 1 : 0);
       foe.hull -= power;
       me.treasure += loot;
+      if (hasKeyword(attacker, 'lifesteal')) heal(s, me, power);
       log(s, `⚔ 「${aName}」이(가) ${foe.name}의 배를 습격! 선체 ${power} 피해, 보물 ${loot}개 획득. (${me.treasure}/${RULES.treasureToWin})`);
     } else {
       const defender = foe.board.find((c) => c.uid === action.target);
       const idx = foe.board.indexOf(defender);
       const dealt = hurt(defender, power);
-      hurt(attacker, defender.atk);
+      const thorns = hasKeyword(defender, 'thorns') ? 1 : 0;
+      const back = hurt(attacker, defender.atk + thorns);
+      if (thorns) log(s, `🌵 가시에 찔렸다!`);
+      if (hasKeyword(attacker, 'lifesteal')) heal(s, me, dealt);
+      if (hasKeyword(defender, 'lifesteal')) heal(s, foe, back);
       log(s, `⚔ 「${aName}」 vs 「${CARDS[defender.defId].name}」`);
       if (dealt && hasKeyword(attacker, 'scorch') && defender.hp > 0) {
         defender.burning = true;
@@ -367,6 +430,11 @@ export function applyAction(s, action) {
         }
       }
       removeDead(s);
+    }
+    // 연타: 한 턴에 한 번 더 공격할 수 있다.
+    if (hasKeyword(attacker, 'double') && !attacker.doubled && attacker.hp > 0) {
+      attacker.doubled = true;
+      attacker.canAttack = true;
     }
     checkWinner(s);
     return null;

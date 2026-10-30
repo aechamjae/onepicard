@@ -1,7 +1,8 @@
 // 화면 그리기, 연출, 입력 처리. 규칙 판단은 모두 engine.js에 맡긴다.
 import { CARDS, FACTIONS, KEYWORDS } from './cards.js';
-import { RULES, createGame, applyAction, canPlay, legalAttackTargets, hasKeyword } from './engine.js';
+import { RULES, createGame, applyAction, canPlay, canUseSkill, legalAttackTargets, hasKeyword, targetable } from './engine.js';
 import { aiNextAction } from './ai.js';
+import { DIFFICULTIES } from './difficulty.js';
 
 const ME = 0;
 const FOE = 1;
@@ -14,6 +15,24 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 let state = null;
 let selected = null; // {kind:'hand', index} | {kind:'attacker', uid}
 let busy = false; // 연출 중이거나 AI 차례
+let difficulty = loadDifficulty();
+
+function loadDifficulty() {
+  try {
+    const saved = localStorage.getItem('difficulty');
+    if (saved in DIFFICULTIES) return saved;
+  } catch {}
+  return 'normal';
+}
+
+const skillOf = (pi) => FACTIONS[state.players[pi].factionId].skill;
+
+// 지금 고른 카드나 스킬이 요구하는 대상 종류('foeCrew' | 'allyCrew' | undefined)
+function selectedTargetKind() {
+  if (selected?.kind === 'hand') return CARDS[state.players[ME].hand[selected.index].defId].target;
+  if (selected?.kind === 'skill') return skillOf(ME).target;
+  return undefined;
+}
 
 const compactQuery = matchMedia('(orientation: landscape) and (max-height: 520px)');
 const isMyTurn = () => state && state.current === ME && state.winner === null && !busy;
@@ -73,12 +92,16 @@ function cardEl(card, factionId, { inHand = false, showText = inHand } = {}) {
     ${tension ? `<div class="tension">탄력+${tension}</div>` : ''}
     ${statusIcons(card)}`;
   if (card.revived) el.classList.add('revived');
+  if (card.shield) el.classList.add('shielded');
+  if (card.stealth) el.classList.add('stealthy');
   return el;
 }
 
 function statusIcons(card) {
   const icons = [];
   if (card.frozen) icons.push('<span title="다음 턴 공격 불가">⚓</span>');
+  if (card.shield) icons.push('<span title="보호막">🛡</span>');
+  if (card.stealth) icons.push('<span title="안개 속에 숨음">🌫</span>');
   if (card.burning) icons.push('<span title="불붙음: 턴 시작마다 피해">🔥</span>');
   if (card.revived) icons.push('<span title="망령으로 되살아남">👻</span>');
   if (card.grown) icons.push(`<span title="성장">⚙${card.grown}</span>`);
@@ -88,7 +111,7 @@ function statusIcons(card) {
 function hudHtml(p, mine) {
   const f = FACTIONS[p.factionId];
   const hull = Math.max(0, p.hull);
-  const pct = (hull / RULES.startHull) * 100;
+  const pct = Math.min(100, (hull / p.maxHull) * 100);
   const coins = Array.from({ length: RULES.treasureToWin }, (_, i) => `<i class="${i < p.treasure ? 'on' : ''}"></i>`).join('');
   const sails = Array.from({ length: p.maxWind }, (_, i) => `<i class="${i < p.wind ? 'on' : ''}"></i>`).join('');
   return `
@@ -114,10 +137,10 @@ function validTargets() {
     const legal = legalAttackTargets(state, ME, attacker);
     return { foeCrew: legal.filter((t) => t !== 'ship'), allyCrew: [], ship: legal.includes('ship') };
   }
-  const d = CARDS[state.players[ME].hand[selected.index].defId];
+  const kind = selectedTargetKind();
   return {
-    foeCrew: d.target === 'foeCrew' ? state.players[FOE].board.map((c) => c.uid) : [],
-    allyCrew: d.target === 'allyCrew' ? state.players[ME].board.map((c) => c.uid) : [],
+    foeCrew: kind === 'foeCrew' ? targetable(state.players[FOE].board).map((c) => c.uid) : [],
+    allyCrew: kind === 'allyCrew' ? state.players[ME].board.map((c) => c.uid) : [],
     ship: false,
   };
 }
@@ -167,9 +190,19 @@ function render(entered = new Set()) {
   });
 
   const anyReady = me.board.some((c) => c.canAttack);
+  const sk = skillOf(ME);
+  const skillBtn = $('skill-btn');
+  const skillErr = canUseSkill(state, ME);
+  skillBtn.innerHTML = `<span class="sk-cost">${sk.cost}</span>${sk.art} ${sk.name}`;
+  skillBtn.title = `선장 스킬: ${sk.text}`;
+  skillBtn.disabled = !myTurn;
+  skillBtn.classList.toggle('usable', myTurn && !skillErr);
+  skillBtn.classList.toggle('used', me.skillUsed);
+  skillBtn.classList.toggle('selected', selected?.kind === 'skill');
+
   const endBtn = $('end-btn');
   endBtn.disabled = !myTurn;
-  endBtn.classList.toggle('nudge', myTurn && !anyPlayable && !anyReady);
+  endBtn.classList.toggle('nudge', myTurn && !anyPlayable && !anyReady && !!skillErr);
   $('hint').textContent = hintText(myTurn);
 
   const log = $('log');
@@ -183,6 +216,10 @@ function hintText(myTurn) {
   if (selected?.kind === 'attacker') {
     const c = state.players[ME].board.find((c) => c.uid === selected.uid);
     return CARDS[c.defId].arm ? '🤸 팔을 뻗을 적 선원이나 적 배를 고르세요!' : '⚔ 공격할 적 선원이나 적 배를 고르세요.';
+  }
+  if (selected?.kind === 'skill') {
+    const sk = skillOf(ME);
+    return `✨「${sk.name}」 ${sk.text} · ${sk.target === 'foeCrew' ? '🎯 대상 적 선원을 고르세요.' : '🎯 대상 아군 선원을 고르세요.'}`;
   }
   if (selected?.kind === 'hand') {
     const d = CARDS[state.players[ME].hand[selected.index].defId];
@@ -319,7 +356,7 @@ async function showCast(card, pi) {
 
 function snapshot() {
   const crews = new Map();
-  state.players.forEach((p, pi) => p.board.forEach((c) => crews.set(c.uid, { hp: c.hp, pi, elastic: hasKeyword(c, 'elastic') })));
+  state.players.forEach((p, pi) => p.board.forEach((c) => crews.set(c.uid, { hp: c.hp, pi, elastic: hasKeyword(c, 'elastic'), shield: c.shield })));
   return { crews, hull: state.players.map((p) => p.hull), treasure: state.players.map((p) => p.treasure) };
 }
 
@@ -340,6 +377,10 @@ async function showAftermath(before) {
     } else if (c.hp < b.hp) {
       floatText(centerOf(el), `-${b.hp - c.hp}`);
       el.classList.add(b.elastic ? 'boing' : 'hit');
+      wait = Math.max(wait, 380);
+    } else if (b.shield && !c.shield) {
+      floatText(centerOf(el), '🛡 막았다!', 'word');
+      el.classList.add('boing');
       wait = Math.max(wait, 380);
     } else if (c.hp > b.hp) {
       floatText(centerOf(el), `+${c.hp - b.hp}`, 'heal');
@@ -371,6 +412,11 @@ async function perform(action) {
   if (action.type === 'attack') {
     const a = state.players[pi].board.find((c) => c.uid === action.attacker);
     if (a?.canAttack && legalAttackTargets(state, pi, a).includes(action.target)) await animateAttack(action);
+  } else if (action.type === 'skill') {
+    if (!canUseSkill(state, pi)) {
+      const sk = skillOf(pi);
+      await showBanner(`✨ ${sk.art} ${sk.name}<span class="who">${pi === ME ? '선장 스킬!' : 'AI 선장 스킬!'}</span>`, 900);
+    }
   } else if (action.type === 'play') {
     const card = state.players[pi].hand[action.handIndex];
     if (card && !canPlay(state, pi, action.handIndex) && (pi === FOE || CARDS[card.defId].type === 'tactic')) {
@@ -414,13 +460,25 @@ function onHand(i) {
   act({ type: 'play', handIndex: i });
 }
 
+// 고른 카드나 스킬을 대상에게 쓴다.
+function useOn(uid) {
+  if (selected.kind === 'skill') act({ type: 'skill', target: uid });
+  else act({ type: 'play', handIndex: selected.index, target: uid });
+}
+
+function onSkill() {
+  if (!isMyTurn()) return;
+  if (selected?.kind === 'skill') { selected = null; render(); return; }
+  const err = canUseSkill(state, ME);
+  if (err) { toast(err); return; }
+  if (skillOf(ME).target) { selected = { kind: 'skill' }; render(); return; }
+  act({ type: 'skill' });
+}
+
 function onMyCrew(uid) {
   const c = state.players[ME].board.find((c) => c.uid === uid);
   if (!isMyTurn()) { inspect(c, ME); return; }
-  if (selected?.kind === 'hand' && CARDS[state.players[ME].hand[selected.index].defId].target === 'allyCrew') {
-    act({ type: 'play', handIndex: selected.index, target: uid });
-    return;
-  }
+  if (selectedTargetKind() === 'allyCrew') { useOn(uid); return; }
   if (selected?.kind === 'attacker' && selected.uid === uid) { selected = null; render(); return; }
   if (!c.canAttack) { inspect(c, ME); return; }
   selected = { kind: 'attacker', uid };
@@ -432,8 +490,9 @@ function onFoeCrew(uid) {
   if (!isMyTurn() || !selected) { inspect(c, FOE); return; }
   if (selected.kind === 'attacker') {
     act({ type: 'attack', attacker: selected.uid, target: uid });
-  } else if (CARDS[state.players[ME].hand[selected.index].defId].target === 'foeCrew') {
-    act({ type: 'play', handIndex: selected.index, target: uid });
+  } else if (selectedTargetKind() === 'foeCrew') {
+    if (c.stealth) { toast('안개 속에 숨어 있어 고를 수 없다.'); return; }
+    useOn(uid);
   }
 }
 
@@ -456,7 +515,7 @@ async function runAI() {
   await showBanner('🤖 AI의 차례', 900);
   for (let steps = 0; state.current === FOE && state.winner === null; steps++) {
     await sleep(AI_DELAY);
-    const action = steps > 40 ? { type: 'end' } : aiNextAction(state);
+    const action = steps > 40 ? { type: 'end' } : aiNextAction(state, DIFFICULTIES[difficulty].ai);
     const ok = await perform(action);
     if (!ok) await perform({ type: 'end' }); // 안전장치
   }
@@ -517,9 +576,10 @@ function openDex() {
   const tokenHome = { spirit: 'ghost', monkey: 'monkey' };
   const ids = Object.keys(CARDS).filter((id) => id !== 'coin' && (tokenHome[id] ?? home(id)) === dexTab)
     .sort((a, b) => CARDS[a].cost - CARDS[b].cost);
-  $('dex-desc').textContent = dexTab === 'neutral'
+  const skill = FACTIONS[dexTab]?.skill;
+  $('dex-desc').innerHTML = dexTab === 'neutral'
     ? '여러 해적단이 함께 쓰는 카드입니다.'
-    : `${FACTIONS[dexTab].desc} 덱 24장.`;
+    : `${FACTIONS[dexTab].desc} 덱 24장.<span class="dex-skill">✨ 선장 스킬 ${skill.art} <b>${skill.name}</b> (바람 ${skill.cost}) — ${skill.text}</span>`;
   const box = $('dex-cards');
   box.innerHTML = '';
   for (const id of ids) {
@@ -537,7 +597,27 @@ function openDex() {
 
 // ── 시작과 끝 ──
 
+function renderDifficulty() {
+  const box = $('diff-list');
+  box.innerHTML = '';
+  for (const [id, d] of Object.entries(DIFFICULTIES)) {
+    const b = document.createElement('button');
+    b.className = `diff${id === difficulty ? ' on' : ''}`;
+    b.setAttribute('role', 'radio');
+    b.setAttribute('aria-checked', String(id === difficulty));
+    b.textContent = `${d.emoji} ${d.name}`;
+    b.onclick = () => {
+      difficulty = id;
+      try { localStorage.setItem('difficulty', id); } catch {}
+      renderDifficulty();
+    };
+    box.append(b);
+  }
+  $('diff-desc').textContent = DIFFICULTIES[difficulty].desc;
+}
+
 function showStart() {
+  renderDifficulty();
   const list = $('faction-list');
   list.innerHTML = '';
   for (const [id, f] of Object.entries(FACTIONS)) {
@@ -559,7 +639,7 @@ function showStart() {
 async function startGame(factionId) {
   const others = Object.keys(FACTIONS).filter((f) => f !== factionId);
   const aiFaction = others[Math.floor(Math.random() * others.length)];
-  state = createGame({ playerFaction: factionId, aiFaction });
+  state = createGame({ playerFaction: factionId, aiFaction, handicap: DIFFICULTIES[difficulty].handicap });
   document.body.classList.add('playing');
   goLandscape();
   selected = null;
@@ -568,7 +648,8 @@ async function startGame(factionId) {
   $('game').hidden = false;
   const all = new Set(state.players.flatMap((p) => p.board.map((c) => c.uid)));
   render(all);
-  showBanner(`🌊 VS ${FACTIONS[aiFaction].emblem} ${FACTIONS[aiFaction].name}`, 1200);
+  const diff = DIFFICULTIES[difficulty];
+  showBanner(`🌊 VS ${FACTIONS[aiFaction].emblem} ${FACTIONS[aiFaction].name}<span class="who">${diff.emoji} ${diff.name}</span>`, 1300);
 }
 
 // 폰이면 전체 화면으로 바꾸고 가로로 고정해 본다. 지원하지 않는 브라우저(iOS 등)는 조용히 넘어간다.
@@ -596,6 +677,7 @@ function showGameOver() {
 // ── 연결 ──
 $('foe-hud').onclick = onFoeShip;
 $('end-btn').onclick = endTurn;
+$('skill-btn').onclick = onSkill;
 $('restart-btn').onclick = showStart;
 $('rules-btn').onclick = () => { $('rules').hidden = false; };
 $('rules-btn2').onclick = () => { $('rules').hidden = false; };
