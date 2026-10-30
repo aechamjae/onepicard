@@ -106,7 +106,9 @@ function statusIcons(card) {
   if (card.stealth) icons.push('<span title="안개 속에 숨음">🌫</span>');
   if (card.burning) icons.push('<span title="불붙음: 턴 시작마다 피해">🔥</span>');
   if (card.revived) icons.push('<span title="망령으로 되살아남">👻</span>');
+  if (card.submerged) icons.push('<span title="잠항 중: 공격·대상 지정 불가">🌊</span>');
   if (card.grown) icons.push(`<span title="성장">⚙${card.grown}</span>`);
+  if (card.charged) icons.push(`<span title="공명">🌩${card.charged}</span>`);
   return icons.length ? `<div class="status">${icons.join('')}</div>` : '';
 }
 
@@ -537,6 +539,7 @@ function inspect(card, pi) {
   if (card.frozen) kws.push('<li><b>⚓ 묶임</b> 다음 턴에 공격할 수 없다.</li>');
   if (card.burning) kws.push(`<li><b>🔥 불붙음</b> 주인의 턴이 시작될 때마다 ${RULES.burnDamage} 피해.</li>`);
   if (card.revived) kws.push('<li><b>👻 되살아남</b> 이미 한 번 되살아났다.</li>');
+  if (card.submerged) kws.push('<li><b>🌊 잠항 중</b> 내 다음 턴이 올 때까지 공격하거나 대상으로 고를 수 없다.</li>');
   if (card.grown) kws.push(`<li><b>⚙ 성장 ${card.grown}</b> 태엽이 감겨 강해졌다.</li>`);
   if (kws.length) box.insertAdjacentHTML('beforeend', `<ul class="kw-list">${kws.join('')}</ul>`);
   const ov = $('inspect');
@@ -575,7 +578,7 @@ function openDex() {
   const owners = {};
   for (const [f, { deck }] of Object.entries(FACTIONS)) for (const id of Object.keys(deck)) (owners[id] ??= []).push(f);
   const home = (id) => (owners[id]?.length === 1 ? owners[id][0] : 'neutral');
-  const tokenHome = { spirit: 'ghost', monkey: 'monkey' };
+  const tokenHome = { spirit: 'ghost', monkey: 'monkey', spark: 'storm' };
   const ids = Object.keys(CARDS).filter((id) => id !== 'coin' && (tokenHome[id] ?? home(id)) === dexTab)
     .sort((a, b) => CARDS[a].cost - CARDS[b].cost);
   const skill = FACTIONS[dexTab]?.skill;

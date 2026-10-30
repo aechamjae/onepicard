@@ -199,6 +199,8 @@ main[hidden] { display: none; }
 .chip.k-slash { background: #d9dde3; color: #1d2430; }
 .chip.k-tailwind { background: #6fd3b4; color: #0b3328; }
 .chip.k-trade { background: #f2c94c; color: #3a2a00; }
+.chip.k-submerge { background: #2b6cb0; }
+.chip.k-resonance { background: #9b8cff; color: #1a1240; }
 .card.shielded .frame { box-shadow: inset 0 1px 0 #ffffff55, 0 0 0 2px #8fd6ff, 0 0 12px #4fb3ff; }
 .card.stealthy { opacity: .6; }
 .card.stealthy .art { filter: blur(1px) grayscale(.4); }
@@ -245,6 +247,8 @@ main[hidden] { display: none; }
 .f-clock { --fa: #b39a6c; --fb: #3f3322; --fc: #f3dca2; --art-bg: repeating-conic-gradient(from 0deg, #efe2c2 0 15deg, #dccaa0 15deg 30deg); }
 .f-swords { --fa: #8a96a8; --fb: #232a36; --fc: #e9eef5; --art-bg: linear-gradient(160deg, #f4f6fa 0 45%, #c9d1dc 45% 55%, #f4f6fa 55%); }
 .f-guild { --fa: #2f9e8f; --fb: #123a45; --fc: #bff3e6; --art-bg: radial-gradient(circle at 50% 40%, #f2fff9, #8fd8c4); }
+.f-surgeon { --fa: #e2e8f0; --fb: #2d3a4a; --fc: #ffd84d; --art-bg: radial-gradient(circle at 50% 35%, #ffffff, #b9c7d6); }
+.f-storm { --fa: #6f63d9; --fb: #1b1640; --fc: #fff27a; --art-bg: radial-gradient(circle at 50% 30%, #e9e6ff, #6d64b8); }
 .f-merchant { --fa: #e0b03a; --fb: #5a3d0a; --fc: #fff0b3; --art-bg: radial-gradient(circle at 50% 35%, #fff8d6, #e2b54a); }
 .card.tactic { --fa: #f6e7c2; --fb: #d8b874; --name: #3b2410; --art-bg: radial-gradient(circle, #fffaf0, #e8d3a2); }
 .card.tactic .name { text-shadow: none; }

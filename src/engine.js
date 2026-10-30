@@ -10,6 +10,7 @@ export const RULES = {
   startHand: 4,
   burnDamage: 2,
   growLimit: 2,
+  resonanceLimit: 2,
 };
 
 let uidSeq = 1;
@@ -91,6 +92,7 @@ function startTurn(s) {
   for (const c of p.board) {
     c.canAttack = !c.frozen;
     c.frozen = false;
+    c.submerged = false;
     c.attacked = false;
     c.doubled = false;
   }
@@ -155,6 +157,7 @@ function makeCrew(uid, defId) {
     canAttack: (d.keywords || []).includes('charge'), frozen: false,
     attacked: false, tension: 0, burning: false, revived: false, grown: 0,
     shield: (d.keywords || []).includes('shield'), stealth: (d.keywords || []).includes('stealth'), doubled: false,
+    submerged: (d.keywords || []).includes('submerge'),
     gained: [], // 카드 효과로 얻은 키워드
   };
 }
@@ -235,6 +238,22 @@ function effectApi(s, pi) {
       me.board.push(f.crew);
       log(s, `🤝 「${CARDS[f.crew.defId].name}」이(가) 금화에 넘어와 ${me.name} 편이 되었다!`);
       return true;
+    },
+    // 공격력과 체력을 뒤바꾼다. 체력이 0이 되면 쓰러진다.
+    swapStats: (uid) => {
+      const f = findCrew(s, uid);
+      if (!f) return;
+      const c = f.crew;
+      [c.atk, c.hp] = [c.hp, c.atk];
+      c.maxHp = c.hp;
+      log(s, `🩺 「${CARDS[c.defId].name}」의 공격력과 체력이 뒤바뀌었다. (${c.atk}/${c.hp})`);
+      removeDead(s);
+    },
+    addToHand: (defId, n = 1) => {
+      for (let i = 0; i < n; i++) {
+        if (me.hand.length >= RULES.handLimit) break;
+        me.hand.push({ uid: uidSeq++, defId });
+      }
     },
     slay: (uid) => {
       const f = findCrew(s, uid);
@@ -339,8 +358,8 @@ function effectApi(s, pi) {
   };
 }
 
-// 안개 속에 숨은 선원은 공격이나 대상 지정 카드로 고를 수 없다.
-export const targetable = (board) => board.filter((c) => !c.stealth);
+// 안개 속에 숨었거나 잠항 중인 선원은 공격이나 대상 지정 카드로 고를 수 없다.
+export const targetable = (board) => board.filter((c) => !c.stealth && !c.submerged);
 
 export function legalAttackTargets(s, pi, attacker) {
   const visible = targetable(s.players[1 - pi].board);
@@ -409,6 +428,9 @@ export function applyAction(s, action) {
     } else {
       log(s, `${me.name}: 「${d.name}」 사용.`);
       d.effect(g, action.target);
+      const charged = me.board.filter((c) => hasKeyword(c, 'resonance') && (c.charged || 0) < RULES.resonanceLimit);
+      for (const c of charged) { c.atk++; c.charged = (c.charged || 0) + 1; }
+      if (charged.length) log(s, `🌩 공명! 선원 ${charged.length}명의 공격력 +1.`);
     }
     if ((d.keywords || []).includes('tailwind')) {
       me.discount = 1;

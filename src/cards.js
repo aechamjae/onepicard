@@ -19,6 +19,8 @@ export const KEYWORDS = {
   grow: { name: '성장', desc: '내 턴이 끝날 때마다 공격력 +1, 체력 +1 (최대 2번).' },
   slash: { name: '일섬', desc: '적 선원을 공격할 때 반격 피해(가시 포함)를 받지 않는다.' },
   tailwind: { name: '순풍', desc: '이 카드를 내면 이번 턴에 다음으로 내는 카드의 비용이 1 줄어든다.' },
+  submerge: { name: '잠항', desc: '낸 뒤 내 다음 턴이 올 때까지 바닷속에 숨어, 공격이나 대상 지정 카드로 고를 수 없다.' },
+  resonance: { name: '공명', desc: '내가 전술 카드를 쓸 때마다 공격력 +1 (최대 2번).' },
   trade: { name: '거래', desc: '낼 때 보물이 있으면 1개를 자동으로 써서 카드에 적힌 추가 효과를 낸다.' },
 };
 
@@ -439,7 +441,7 @@ export const CARDS = {
     onPlay: (g, self) => { if (g.trade()) g.grant(self.uid, 'guard'); },
   },
   usurer: {
-    name: '고리대금업자', type: 'crew', cost: 3, atk: 2, hp: 3, art: '🤑',
+    name: '고리대금업자', type: 'crew', cost: 3, atk: 2, hp: 4, art: '🤑',
     text: '내 턴이 끝날 때 보물 1개를 얻는다.',
     onTurnEnd: (g) => g.gainTreasure(1),
   },
@@ -480,6 +482,103 @@ export const CARDS = {
     name: '해상 보험', type: 'tactic', cost: 2, art: '📑', keywords: ['trade'],
     text: '내 배의 선체를 4 회복한다. 거래: 카드 1장을 뽑는다.',
     effect: (g) => { g.healShip(4); if (g.trade()) g.draw(1); },
+  },
+
+  // ── 잠수함 외과단 ──
+  intern: { name: '수습 의사', type: 'crew', cost: 1, atk: 2, hp: 2, art: '🧑‍⚕️', keywords: ['submerge'], text: '' },
+  engineer: { name: '잠수함 기관사', type: 'crew', cost: 2, atk: 3, hp: 3, art: '🔩', keywords: ['submerge'], text: '' },
+  headnurse: {
+    name: '간호장', type: 'crew', cost: 2, atk: 2, hp: 3, art: '💉',
+    text: '등장: 내 배의 선체를 3 회복한다.',
+    onPlay: (g) => g.healShip(3),
+  },
+  walrus: { name: '바다코끼리 조타수', type: 'crew', cost: 3, atk: 3, hp: 5, art: '🦭', keywords: ['guard'], text: '' },
+  sedative: {
+    name: '마취 저격수', type: 'crew', cost: 3, atk: 2, hp: 3, art: '🎯',
+    text: '등장: 공격력이 가장 높은 적 선원 하나는 다음 턴에 공격할 수 없다.',
+    onPlay: (g) => {
+      const list = g.foe.board.filter((c) => !c.stealth && !c.submerged).sort((a, b) => b.atk - a.atk);
+      if (list.length) g.freeze(list[0].uid);
+    },
+  },
+  incisor: {
+    name: '절개 검객', type: 'crew', cost: 4, atk: 3, hp: 4, art: '🔪', keywords: ['submerge'],
+    text: '등장: 공격력이 가장 높은 적 선원 하나의 공격력과 체력을 뒤바꾸고 1 피해.',
+    onPlay: (g) => {
+      const list = g.foe.board.filter((c) => !c.stealth && !c.submerged).sort((a, b) => b.atk - a.atk);
+      if (list.length) { g.swapStats(list[0].uid); g.damageCrew(list[0].uid, 1); }
+    },
+  },
+  torpedo: { name: '잠수함 포수', type: 'crew', cost: 5, atk: 5, hp: 5, art: '🚤', keywords: ['submerge'], text: '' },
+  chiefsurgeon: {
+    name: '수석 집도의', type: 'crew', cost: 7, atk: 5, hp: 6, art: '🫀', keywords: ['submerge'],
+    text: '등장: 모든 적 선원의 공격력과 체력을 뒤바꾼다.',
+    onPlay: (g) => g.foe.board.map((c) => c.uid).forEach((uid) => g.swapStats(uid)),
+  },
+  incision: {
+    name: '공간 절개', type: 'tactic', cost: 2, art: '✂️', target: 'foeCrew',
+    text: '적 선원 하나의 공격력과 체력을 뒤바꾸고 1 피해.',
+    effect: (g, t) => { g.swapStats(t); g.damageCrew(t, 1); },
+  },
+  transplant: {
+    name: '장기 이식', type: 'tactic', cost: 1, art: '🫁', target: 'allyCrew',
+    text: '아군 선원 하나의 공격력과 체력을 뒤바꾼다. 카드 1장을 뽑는다.',
+    effect: (g, t) => { g.swapStats(t); g.draw(1); },
+  },
+  surgery: {
+    name: '응급 수술', type: 'tactic', cost: 2, art: '🩹', target: 'allyCrew',
+    text: '아군 선원 하나의 체력을 모두 회복하고 보호막을 씌운다.',
+    effect: (g, t) => { const c = g.me.board.find((c) => c.uid === t); if (c) c.hp = c.maxHp; g.shield(t); },
+  },
+
+  // ── 폭풍 주술단 ──
+  spark: {
+    name: '번개 조각', type: 'tactic', cost: 0, art: '⚡', token: true,
+    text: '무작위 적 선원에게 1 피해. 적 선원이 없으면 적 배에 1 피해.',
+    effect: (g) => { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 1); else g.damageFoeShip(1); },
+  },
+  breeze: { name: '바람 견습생', type: 'crew', cost: 1, atk: 1, hp: 2, art: '🌀', keywords: ['resonance'], text: '' },
+  cloud: {
+    name: '구름 술사', type: 'crew', cost: 2, atk: 1, hp: 3, art: '☁️', keywords: ['resonance'],
+    text: '등장: 번개 조각 1장을 손에 넣는다.',
+    onPlay: (g) => g.addToHand('spark', 1),
+  },
+  wavepriest: { name: '파도 무녀', type: 'crew', cost: 3, atk: 1, hp: 5, art: '🌊', keywords: ['guard', 'resonance'], text: '' },
+  drummer: { name: '천둥 고수', type: 'crew', cost: 3, atk: 2, hp: 3, art: '🥁', keywords: ['resonance'], text: '' },
+  stormcaller: {
+    name: '폭풍 주술사', type: 'crew', cost: 4, atk: 3, hp: 4, art: '🧙', keywords: ['resonance'],
+    text: '등장: 카드 1장을 뽑는다.',
+    onPlay: (g) => g.draw(1),
+  },
+  twister: {
+    name: '회오리 마녀', type: 'crew', cost: 5, atk: 4, hp: 4, art: '🌪️',
+    text: '등장: 모든 적 선원에게 1 피해.',
+    onPlay: (g) => g.damageAllFoes(1),
+  },
+  stormlord: {
+    name: '폭풍의 군주', type: 'crew', cost: 7, atk: 5, hp: 6, art: '🌩️', keywords: ['resonance'],
+    text: '등장: 번개 조각 3장을 손에 넣는다.',
+    onPlay: (g) => g.addToHand('spark', 3),
+  },
+  bolt: {
+    name: '낙뢰', type: 'tactic', cost: 3, art: '🌩️', target: 'foeCrew',
+    text: '적 선원 하나에게 3 피해.',
+    effect: (g, t) => g.damageCrew(t, 3),
+  },
+  windread: {
+    name: '바람결 읽기', type: 'tactic', cost: 1, art: '🍃',
+    text: '카드 1장을 뽑는다.',
+    effect: (g) => g.draw(1),
+  },
+  static: {
+    name: '정전기', type: 'tactic', cost: 1, art: '✨', target: 'allyCrew',
+    text: '아군 선원 하나에게 공격력 +2.',
+    effect: (g, t) => g.buff(t, 2, 0),
+  },
+  downpour: {
+    name: '폭풍우', type: 'tactic', cost: 5, art: '⛈️',
+    text: '모든 적 선원에게 2 피해.',
+    effect: (g) => g.damageAllFoes(2),
   },
 };
 
@@ -583,6 +682,28 @@ export const FACTIONS = {
       effect: (g) => g.draw(1),
     },
     deck: { novice: 2, surveyor: 2, sailmender: 2, compass: 2, lighthouse: 2, shortcut: 2, guildmaster: 1, admiral: 1, unfurl: 2, headwind: 2, anchor: 1, cannon: 2, map: 1, rum: 1, repair: 1 },
+  },
+  surgeon: {
+    name: '잠수함 외과단',
+    emblem: '🩺',
+    desc: '수술형. 잠항으로 숨어 있다가, 적 선원의 공격력과 체력을 뒤바꿔 무력하게 만든다.',
+    skill: {
+      name: '메스', art: '🔪', cost: 2, target: 'foeCrew',
+      text: '적 선원 하나에게 1 피해. 무작위 아군 선원 체력 +1.',
+      effect: (g, t) => { g.damageCrew(t, 1); const a = g.randomAllyCrew(); if (a) g.buff(a.uid, 0, 1); },
+    },
+    deck: { intern: 3, engineer: 2, headnurse: 2, walrus: 2, sedative: 2, incisor: 2, torpedo: 2, chiefsurgeon: 1, incision: 2, transplant: 2, surgery: 1, cannon: 1, lookout: 1, repair: 1 },
+  },
+  storm: {
+    name: '폭풍 주술단',
+    emblem: '🌩️',
+    desc: '주문형. 전술 카드를 쓸 때마다 공명하는 선원들이 점점 강해진다.',
+    skill: {
+      name: '바람 부르기', art: '🌬️', cost: 2,
+      text: '번개 조각(0비용: 무작위 적 선원에게 1 피해) 1장을 손에 넣는다.',
+      effect: (g) => g.addToHand('spark', 1),
+    },
+    deck: { breeze: 3, cloud: 2, wavepriest: 2, drummer: 2, stormcaller: 2, twister: 1, stormlord: 1, bolt: 2, windread: 2, static: 2, downpour: 1, cannon: 1, barrel: 2, map: 1 },
   },
   merchant: {
     name: '황금 상인조합',

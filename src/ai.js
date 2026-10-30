@@ -70,6 +70,15 @@ const TACTIC_AI = {
   unfurl: (me) => me.hand.length <= 6,
   headwind: (me, foe) => strongest(foe.board.filter((c) => CARDS[c.defId].cost >= 3), (c) => CARDS[c.defId].cost + c.atk),
   goldrain: (me) => me.board.length >= 2,
+  // 뒤바꾼 뒤 1 피해: 공격력이 1 이하면 쓰러지고, 아니면 공격력이 체력보다 큰 선원일수록 이득이다.
+  incision: (me, foe) => strongest(foe.board.filter((c) => c.atk <= 1 || c.atk - c.hp >= 1), (c) => (c.atk <= 1 ? 20 + value(c) : c.atk - c.hp)),
+  transplant: (me) => strongest(me.board.filter((c) => c.hp - c.atk >= 2 && !hasKeyword(c, 'guard')), (c) => c.hp - c.atk),
+  surgery: (me) => strongest(me.board.filter((c) => c.maxHp - c.hp >= 2), (c) => c.maxHp - c.hp + c.atk),
+  spark: () => true,
+  bolt: (me, foe) => TACTIC_AI.cannon(me, foe),
+  windread: (me) => me.hand.length <= 6,
+  static: (me) => TACTIC_AI.rum(me),
+  downpour: (me, foe) => TACTIC_AI.bladestorm(me, foe),
   insurance: (me) => me.hull <= RULES.startHull - 4,
   buyout: (me, foe) => {
     if (me.treasure > 0 && me.board.length < RULES.boardLimit) {
@@ -97,6 +106,8 @@ const SKILL_AI = {
   clock: (me) => strongest(me.board, (c) => c.atk),
   swords: (me) => strongest(me.board, (c) => (hasKeyword(c, 'slash') ? 0 : 10) + c.atk),
   guild: (me) => me.hand.length <= 6 && me.deck.length > 0,
+  surgeon: (me, foe) => strongest(foe.board.filter((c) => dmg(1, c) >= c.hp), value) || strongest(foe.board, (c) => c.atk),
+  storm: (me) => me.hand.length <= 6,
   merchant: (me, foe) => strongest(foe.board.filter((c) => c.atk >= 3 && !c.frozen), (c) => c.atk),
 };
 
