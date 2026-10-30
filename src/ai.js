@@ -166,6 +166,8 @@ function choosePlay(s) {
   return null;
 }
 
+const doomed = (c) => c.burning && c.hp <= RULES.burnDamage && !c.shield && !(hasKeyword(c, 'ghost') && !c.revived);
+
 // 선원들이 배를 때리기만 하면 몇 턴 뒤에 이기는지(선체·보물 중 빠른 쪽).
 function raceTurns(attacker, victim) {
   const crews = attacker.board.filter((c) => c.atk > 0);
@@ -195,11 +197,15 @@ function chooseAttack(s) {
     for (const uid of legal) {
       if (uid === 'ship') continue;
       const d = foe.board.find((c) => c.uid === uid);
-      const thorns = hasKeyword(d, 'thorns') ? 1 : 0;
+      // 불붙어 곧 타 죽을 선원은 주인 턴 시작에 쓰러지니 굳이 칠 필요가 없다.
+      if (doomed(d)) continue;
+      const slash = hasKeyword(a, 'slash');
+      const back = slash ? 0 : d.atk + (hasKeyword(d, 'thorns') ? 1 : 0);
       const kills = dmg(power, d) >= d.hp;
-      const survives = dmg(d.atk + thorns, a) < a.hp;
+      const survives = a.hp - dmg(back, a) > (a.burning ? RULES.burnDamage : 0);
       let score = 0;
-      if (kills && survives) score = 10 + value(d);
+      if (kills && doomed(a)) score = 5 + value(d); // 어차피 타 죽을 선원은 마지막으로 하나 데려간다
+      else if (kills && survives) score = 10 + value(d);
       else if (kills && value(d) >= value(a)) score = 5 + value(d) - value(a);
       else if (kills && losingRace) score = 3 + d.atk + (hasKeyword(d, 'plunder') ? 2 : 0);
       else if (!canHitShip && survives) score = 1; // 수호를 깎아 둔다
