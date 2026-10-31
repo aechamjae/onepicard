@@ -76,6 +76,7 @@ const TACTIC_AI = {
   surgery: (me) => strongest(me.board.filter((c) => c.maxHp - c.hp >= 2), (c) => c.maxHp - c.hp + c.atk),
   spark: () => true,
   bolt: (me, foe) => TACTIC_AI.cannon(me, foe),
+  takt: (me, foe) => TACTIC_AI.cannon(me, foe),
   windread: (me) => me.hand.length <= 6,
   static: (me) => TACTIC_AI.rum(me),
   downpour: (me, foe) => TACTIC_AI.bladestorm(me, foe),

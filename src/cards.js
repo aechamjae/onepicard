@@ -515,6 +515,11 @@ export const CARDS = {
     text: '등장: 모든 적 선원의 공격력과 체력을 뒤바꾼다.',
     onPlay: (g) => g.foe.board.map((c) => c.uid).forEach((uid) => g.swapStats(uid)),
   },
+  takt: {
+    name: '텍트', type: 'tactic', cost: 2, art: '🛘', target: 'foeCrew',
+    text: '적 선원 하나에게 3 피해.',
+    effect: (g, t) => g.damageCrew(t, 3),
+  },
   incision: {
     name: '공간 절개', type: 'tactic', cost: 2, art: '✂️', target: 'foeCrew',
     text: '적 선원 하나의 공격력과 체력을 뒤바꾸고 1 피해.',
@@ -692,7 +697,7 @@ export const FACTIONS = {
       text: '적 선원 하나에게 1 피해. 무작위 아군 선원 체력 +1.',
       effect: (g, t) => { g.damageCrew(t, 1); const a = g.randomAllyCrew(); if (a) g.buff(a.uid, 0, 1); },
     },
-    deck: { intern: 3, engineer: 2, headnurse: 2, walrus: 2, sedative: 2, incisor: 2, torpedo: 2, chiefsurgeon: 1, incision: 2, transplant: 2, surgery: 1, cannon: 1, lookout: 1, repair: 1 },
+    deck: { intern: 3, engineer: 2, headnurse: 2, walrus: 2, sedative: 2, incisor: 2, torpedo: 2, chiefsurgeon: 1, incision: 2, transplant: 2, surgery: 1, takt: 1, lookout: 1, repair: 1 },
   },
   storm: {
     name: '폭풍 주술단',
