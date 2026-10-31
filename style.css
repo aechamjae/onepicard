@@ -155,6 +155,11 @@ main[hidden] { display: none; }
 .diff { padding: 6px 16px; font-size: .95rem; background: transparent; color: var(--ink); box-shadow: none; }
 .diff.on { background: linear-gradient(180deg, #ffd96a, var(--gold) 50%, var(--gold-deep)); color: #3a2200; box-shadow: 0 2px 0 #7a4f00; }
 .diff-desc { margin: 2px 0 12px; font-size: .82rem; color: var(--ink-dim); }
+.mode-list { margin: 0 auto 8px; }
+.pick-title { margin: 0 0 10px; font-family: var(--display); color: var(--gold); display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }
+.pick-title[hidden], .diff-wrap[hidden], .diff-desc[hidden] { display: none; }
+.pick-title button { padding: 3px 12px; font-size: .8rem; }
+.overlay.handoff { background: #021018; backdrop-filter: none; }
 .dex-skill { display: block; margin-top: 6px; padding: 6px 10px; border-radius: 10px; background: #8a5cf033; color: #e8dcff; }
 #end-btn.nudge { animation: bounce 1.2s ease-in-out infinite; }
 
@@ -371,6 +376,7 @@ main[hidden] { display: none; }
 .start-panel { max-width: 860px; }
 #faction-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
 #faction-list .faction { margin: 0; }
+#faction-list .faction.picked { outline: 3px solid var(--gold); outline-offset: 2px; }
 .dex-open { margin-top: 14px; }
 
 /* 카드 도감 */

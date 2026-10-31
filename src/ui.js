@@ -4,8 +4,9 @@ import { RULES, createGame, applyAction, canPlay, canUseSkill, costOf, legalAtta
 import { aiNextAction } from './ai.js';
 import { DIFFICULTIES } from './difficulty.js';
 
-const ME = 0;
-const FOE = 1;
+// 화면 아래쪽(나)과 위쪽(상대)에 놓일 플레이어. 친구 모드에서는 턴마다 뒤바뀐다.
+let ME = 0;
+let FOE = 1;
 const AI_DELAY = 550;
 
 const $ = (id) => document.getElementById(id);
@@ -16,6 +17,16 @@ let state = null;
 let selected = null; // {kind:'hand', index} | {kind:'attacker', uid}
 let busy = false; // 연출 중이거나 AI 차례
 let difficulty = loadDifficulty();
+let mode = loadMode(); // 'ai' | 'duo'(친구와 한 폰에서 번갈아)
+let duoPick = null; // 친구 모드에서 1P가 고른 진영
+
+function loadMode() {
+  try { if (localStorage.getItem('mode') === 'duo') return 'duo'; } catch {}
+  return 'ai';
+}
+const isDuo = () => mode === 'duo';
+// 화면에 보일 이름: AI 대전은 나/AI, 친구 모드는 1P/2P.
+const label = (pi) => (isDuo() ? state.players[pi].name : pi === ME ? '당신' : 'AI');
 
 function loadDifficulty() {
   try {
@@ -121,7 +132,7 @@ function hudHtml(p, mine) {
   return `
     <div class="hud-top">
       <span class="emblem">${f.emblem}</span><span class="hud-name">${f.name}</span>
-      <span class="tag">${mine ? '나' : 'AI'}</span>
+      <span class="tag">${isDuo() ? p.name : mine ? '나' : 'AI'}</span>
       <span class="counts">🂠 ${p.hand.length} · 덱 ${p.deck.length}</span>
     </div>
     <div class="meter" title="선체">
@@ -216,7 +227,7 @@ function render(entered = new Set()) {
 
 function hintText(myTurn) {
   if (state.winner !== null) return '';
-  if (!myTurn) return state.current === FOE ? '🤖 AI가 공격을 준비하는 중...' : '';
+  if (!myTurn) return state.current === FOE && !isDuo() ? '🤖 AI가 공격을 준비하는 중...' : '';
   if (selected?.kind === 'attacker') {
     const c = state.players[ME].board.find((c) => c.uid === selected.uid);
     return CARDS[c.defId].arm ? '🤸 팔을 뻗을 적 선원이나 적 배를 고르세요!' : '⚔ 공격할 적 선원이나 적 배를 고르세요.';
@@ -354,7 +365,7 @@ function showBanner(html, ms = 1100) {
 async function showCast(card, pi) {
   const wrap = document.createElement('div');
   wrap.append(cardEl(card, state.players[pi].factionId, { inHand: true }));
-  wrap.insertAdjacentHTML('beforeend', `<span class="who">${pi === ME ? '사용!' : 'AI가 냈다!'}</span>`);
+  wrap.insertAdjacentHTML('beforeend', `<span class="who">${pi === ME ? '사용!' : `${label(pi)}이(가) 냈다!`}</span>`);
   await showBanner(wrap.innerHTML, 1000);
 }
 
@@ -419,7 +430,7 @@ async function perform(action) {
   } else if (action.type === 'skill') {
     if (!canUseSkill(state, pi)) {
       const sk = skillOf(pi);
-      await showBanner(`✨ ${sk.art} ${sk.name}<span class="who">${pi === ME ? '선장 스킬!' : 'AI 선장 스킬!'}</span>`, 900);
+      await showBanner(`✨ ${sk.art} ${sk.name}<span class="who">${pi === ME ? '선장 스킬!' : `${label(pi)} 선장 스킬!`}</span>`, 900);
     }
   } else if (action.type === 'play') {
     const card = state.players[pi].hand[action.handIndex];
@@ -510,7 +521,25 @@ async function endTurn() {
   selected = null;
   busy = true;
   await perform({ type: 'end' });
-  await runAI();
+  if (isDuo()) handOff();
+  else await runAI();
+}
+
+// 친구 모드: 화면을 가리고, 넘겨받은 사람이 누르면 그 사람 시점으로 뒤집는다.
+function handOff() {
+  if (state.winner !== null) { busy = false; return; }
+  $('handoff-title').textContent = `${state.players[state.current].name} 차례`;
+  $('handoff-emoji').textContent = FACTIONS[state.players[state.current].factionId].emblem;
+  $('handoff').hidden = false;
+}
+
+function takeOver() {
+  $('handoff').hidden = true;
+  ME = state.current;
+  FOE = 1 - ME;
+  busy = false;
+  render();
+  showBanner(`⚓ ${state.players[ME].name} 차례!`, 900);
 }
 
 async function runAI() {
@@ -621,8 +650,46 @@ function renderDifficulty() {
   $('diff-desc').textContent = DIFFICULTIES[difficulty].desc;
 }
 
+function renderMode() {
+  const box = $('mode-list');
+  box.innerHTML = '';
+  for (const [id, text] of [['ai', '🤖 AI와 대결'], ['duo', '👥 친구와 한 폰']]) {
+    const b = document.createElement('button');
+    b.className = `diff${id === mode ? ' on' : ''}`;
+    b.setAttribute('role', 'radio');
+    b.setAttribute('aria-checked', String(id === mode));
+    b.textContent = text;
+    b.onclick = () => {
+      mode = id;
+      duoPick = null;
+      try { localStorage.setItem('mode', id); } catch {}
+      showStart();
+    };
+    box.append(b);
+  }
+  $('diff-wrap').hidden = isDuo();
+  $('diff-desc').hidden = isDuo();
+  const title = $('pick-title');
+  title.hidden = !isDuo();
+  if (isDuo()) {
+    title.innerHTML = duoPick
+      ? `<span>1P: ${FACTIONS[duoPick].emblem} ${FACTIONS[duoPick].name} · 이제 <b>2P</b>가 고르세요</span><button id="repick" class="ghost">1P 다시 고르기</button>`
+      : '<span><b>1P</b>가 먼저 진영을 고르세요</span>';
+    if (duoPick) $('repick').onclick = () => { duoPick = null; showStart(); };
+  }
+}
+
+function pickFaction(id) {
+  if (!isDuo()) { startGame(id); return; }
+  if (!duoPick) { duoPick = id; showStart(); return; }
+  const first = duoPick;
+  duoPick = null;
+  startGame(first, id);
+}
+
 function showStart() {
   renderDifficulty();
+  renderMode();
   const list = $('faction-list');
   list.innerHTML = '';
   for (const [id, f] of Object.entries(FACTIONS)) {
@@ -632,19 +699,26 @@ function showStart() {
       ${id === 'stretch' ? '<span class="badge">추천 · 고무팔</span>' : ''}
       <span class="emblem">${f.emblem}</span>
       <span><div class="fname">${f.name}</div><div class="fdesc">${f.desc}</div></span>`;
-    b.onclick = () => startGame(id);
+    if (id === duoPick) b.classList.add('picked');
+    b.onclick = () => pickFaction(id);
     list.append(b);
   }
   $('start').hidden = false;
+  $('handoff').hidden = true;
   $('gameover').hidden = true;
   $('game').hidden = true;
   document.body.classList.remove('playing');
 }
 
-async function startGame(factionId) {
+// rival: 친구 모드에서 2P가 고른 진영. 없으면 AI가 다른 진영 중 하나를 무작위로 고른다.
+async function startGame(factionId, rival = null) {
   const others = Object.keys(FACTIONS).filter((f) => f !== factionId);
-  const aiFaction = others[Math.floor(Math.random() * others.length)];
-  state = createGame({ playerFaction: factionId, aiFaction, handicap: DIFFICULTIES[difficulty].handicap });
+  const aiFaction = rival ?? others[Math.floor(Math.random() * others.length)];
+  state = createGame(isDuo()
+    ? { playerFaction: factionId, aiFaction, names: ['1P', '2P'], handicap: DIFFICULTIES.normal.handicap }
+    : { playerFaction: factionId, aiFaction, handicap: DIFFICULTIES[difficulty].handicap });
+  ME = 0;
+  FOE = 1;
   document.body.classList.add('playing');
   goLandscape();
   selected = null;
@@ -654,6 +728,10 @@ async function startGame(factionId) {
   const all = new Set(state.players.flatMap((p) => p.board.map((c) => c.uid)));
   render(all);
   const diff = DIFFICULTIES[difficulty];
+  if (isDuo()) {
+    showBanner(`${FACTIONS[factionId].emblem} 1P VS 2P ${FACTIONS[aiFaction].emblem}<span class="who">1P 먼저!</span>`, 1300);
+    return;
+  }
   showBanner(`🌊 VS ${FACTIONS[aiFaction].emblem} ${FACTIONS[aiFaction].name}<span class="who">${diff.emoji} ${diff.name}</span>`, 1300);
 }
 
@@ -668,14 +746,13 @@ function goLandscape() {
 }
 
 function showGameOver() {
-  const won = state.winner === ME;
+  const won = isDuo() || state.winner === ME;
   const winner = state.players[state.winner];
-  const loser = state.players[1 - state.winner];
   $('gameover-emoji').textContent = won ? '🏆' : '🌊';
-  $('gameover-title').textContent = won ? '승리!' : '패배...';
+  $('gameover-title').textContent = isDuo() ? `${winner.name} 승리!` : won ? '승리!' : '패배...';
   $('gameover-text').textContent = winner.treasure >= RULES.treasureToWin
-    ? `${won ? '당신' : 'AI'}이(가) 보물 ${RULES.treasureToWin}개를 모두 털었습니다.`
-    : `${loser === state.players[ME] ? '당신' : 'AI'}의 배가 침몰했습니다.`;
+    ? `${label(state.winner)}이(가) 보물 ${RULES.treasureToWin}개를 모두 털었습니다.`
+    : `${label(1 - state.winner)}의 배가 침몰했습니다.`;
   setTimeout(() => { $('gameover').hidden = false; }, 700);
 }
 
@@ -684,6 +761,7 @@ $('foe-hud').onclick = onFoeShip;
 $('end-btn').onclick = endTurn;
 $('skill-btn').onclick = onSkill;
 $('restart-btn').onclick = showStart;
+$('handoff-btn').onclick = takeOver;
 $('rules-btn').onclick = () => { $('rules').hidden = false; };
 $('rules-btn2').onclick = () => { $('rules').hidden = false; };
 $('log-btn').onclick = () => { $('log-ov').hidden = false; $('log').scrollTop = $('log').scrollHeight; };
