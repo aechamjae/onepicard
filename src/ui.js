@@ -653,7 +653,7 @@ function renderDifficulty() {
 function renderMode() {
   const box = $('mode-list');
   box.innerHTML = '';
-  for (const [id, text] of [['ai', '🤖 AI와 대결'], ['duo', '👥 친구와 한 폰']]) {
+  for (const [id, text] of [['ai', '🤖 AI와 대결'], ['duo', '👥 친구와 대결']]) {
     const b = document.createElement('button');
     b.className = `diff${id === mode ? ' on' : ''}`;
     b.setAttribute('role', 'radio');
