@@ -238,7 +238,8 @@ function hintText(myTurn) {
   }
   if (selected?.kind === 'hand') {
     const d = CARDS[state.players[ME].hand[selected.index].defId];
-    const about = `「${d.name}」 ${d.text || (d.keywords || []).map((k) => KEYWORDS[k].name).join('·')}`;
+    const kws = (d.keywords || []).map((k) => KEYWORDS[k].name).join('·');
+    const about = `「${d.name}」 ${[kws && `[${kws}]`, d.text].filter(Boolean).join(' ')}`;
     if (!d.target) return `${about} · 한 번 더 누르면 낸다`;
     return `${about} · ${d.target === 'foeCrew' ? '🎯 대상 적 선원을 고르세요.' : '🎯 대상 아군 선원을 고르세요.'}`;
   }
