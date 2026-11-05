@@ -614,7 +614,7 @@ function openDex() {
   const skill = FACTIONS[dexTab]?.skill;
   $('dex-desc').innerHTML = dexTab === 'neutral'
     ? '여러 해적단이 함께 쓰는 카드입니다.'
-    : `${FACTIONS[dexTab].desc} 덱 24장.<span class="dex-skill">✨ 선장 스킬 ${skill.art} <b>${skill.name}</b> (바람 ${skill.cost}${skill.treasureCost ? ` · 보물 ${skill.treasureCost}` : ''}) — ${skill.text}</span>`;
+    : `${FACTIONS[dexTab].desc} 덱 ${Object.values(FACTIONS[dexTab].deck).reduce((a, b) => a + b, 0)}장.<span class="dex-skill">✨ 선장 스킬 ${skill.art} <b>${skill.name}</b> (바람 ${skill.cost}${skill.treasureCost ? ` · 보물 ${skill.treasureCost}` : ''}) — ${skill.text}</span>`;
   const box = $('dex-cards');
   box.innerHTML = '';
   for (const id of ids) {

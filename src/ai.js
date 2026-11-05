@@ -75,6 +75,23 @@ const TACTIC_AI = {
   transplant: (me) => strongest(me.board.filter((c) => c.hp - c.atk >= 2 && !hasKeyword(c, 'guard')), (c) => c.hp - c.atk),
   surgery: (me) => strongest(me.board.filter((c) => c.maxHp - c.hp >= 2), (c) => c.maxHp - c.hp + c.atk),
   spark: () => true,
+  supply: (me) => me.hull <= RULES.startHull - 3 || me.hand.length <= 4,
+  bigball: (me, foe) => TACTIC_AI.cannon(me, foe),
+  plank: (me, foe) => strongest(foe.board.filter((c) => c.atk <= 3), value) || strongest(foe.board.filter((c) => dmg(2, c) >= c.hp), value),
+  pressure: (me, foe) => strongest(foe.board.filter((c) => c.hp >= 4), (c) => c.hp + c.atk),
+  deadmarch: (me) => me.board.length >= 2 && me.board.length < RULES.boardLimit,
+  volcano: (me, foe) => foe.board.some((c) => c.burning),
+  rewind: (me) => me.board.filter((c) => hasKeyword(c, 'grow')).length >= 2,
+  crescent: (me, foe) => {
+    const best = Math.max(0, ...me.board.map((c) => c.atk));
+    if (best < 2) return false;
+    return strongest(foe.board.filter((c) => dmg(best, c) >= c.hp), value) || strongest(foe.board, (c) => c.atk);
+  },
+  heartrip: (me, foe) => strongest(foe.board.filter((c) => dmg(c.atk, c) >= c.hp), value) || strongest(foe.board.filter((c) => c.atk >= 4), (c) => c.atk),
+  chainbolt: (me, foe) => foe.board.length >= 2,
+  goldbar: (me, foe) => (me.treasure > 0 ? strongest(foe.board, value) : strongest(foe.board.filter((c) => dmg(3, c) >= c.hp), value)),
+  logbook: (me) => me.hand.length <= 7,
+  fullsail: (me) => me.board.length >= 3,
   bolt: (me, foe) => TACTIC_AI.cannon(me, foe),
   takt: (me, foe) => TACTIC_AI.cannon(me, foe),
   windread: (me) => me.hand.length <= 6,
@@ -89,6 +106,8 @@ const TACTIC_AI = {
     return strongest(foe.board.filter((c) => dmg(2, c) >= c.hp), value);
   },
 };
+
+const COMBO = new Set(['navigator', 'clipper']);
 
 // 점수가 가장 높은 선원의 uid. 없으면 false.
 function strongest(list, score) {
@@ -154,9 +173,11 @@ function choosePlay(s) {
   const pi = s.current;
   const me = s.players[pi];
   const foe = foeView(s.players[1 - pi]);
+  // 순풍 카드를 먼저 내 할인을 쌓고, 낸 카드 수만큼 강해지는 연쇄 카드는 마지막에 낸다. 나머지는 비싼 것부터.
+  const rank = (d, id) => ((d.keywords || []).includes('tailwind') ? 0 : COMBO.has(id) ? 2 : 1);
   const order = me.hand
     .map((card, i) => ({ i, d: CARDS[card.defId], id: card.defId }))
-    .sort((a, b) => b.d.cost - a.d.cost);
+    .sort((a, b) => rank(a.d, a.id) - rank(b.d, b.id) || b.d.cost - a.d.cost);
   for (const { i, d, id } of order) {
     if (id === 'coin') continue;
     if (canPlay(s, pi, i)) {

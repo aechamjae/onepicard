@@ -18,11 +18,14 @@ export const KEYWORDS = {
   stealth: { name: '안개', desc: '먼저 공격하기 전까지는 공격이나 대상 지정 카드로 고를 수 없다.' },
   grow: { name: '성장', desc: '내 턴이 끝날 때마다 공격력 +1, 체력 +1 (최대 2번).' },
   slash: { name: '일섬', desc: '적 선원을 공격할 때 반격 피해(가시 포함)를 받지 않는다.' },
-  tailwind: { name: '순풍', desc: '이 카드를 내면 이번 턴에 다음으로 내는 카드의 비용이 1 줄어든다.' },
+  tailwind: { name: '순풍', desc: '이 카드를 내면 이번 턴에 다음으로 내는 카드의 비용이 1 줄어든다. 순풍 카드를 이어서 내면 할인이 쌓인다(최대 -2).' },
   submerge: { name: '잠항', desc: '낸 뒤 내 다음 턴이 올 때까지 바닷속에 숨어, 공격이나 대상 지정 카드로 고를 수 없다.' },
   resonance: { name: '공명', desc: '내가 전술 카드를 쓸 때마다 공격력 +1 (최대 2번).' },
   trade: { name: '거래', desc: '낼 때 보물이 있으면 1개를 자동으로 써서 카드에 적힌 추가 효과를 낸다.' },
 };
+
+// 카드 효과 안에서 키워드를 확인할 때 쓴다(효과로 얻은 키워드 포함).
+const hasKw = (c, k) => (CARDS[c.defId].keywords || []).includes(k) || !!c.gained?.includes(k);
 
 export const CARDS = {
   // ── 공용 ──
@@ -258,7 +261,7 @@ export const CARDS = {
     text: '불꽃 주방을 지휘하는 화염 주방장. 등장: 모든 적 선원에게 불을 붙인다.',
     onPlay: (g) => g.burnAllFoes(),
   },
-  twinflame: { name: '불쇼 웍잡이', type: 'crew', cost: 4, atk: 2, hp: 3, art: '🥘', keywords: ['double', 'scorch'], text: '' },
+  twinflame: { name: '불쇼 웍잡이', type: 'crew', cost: 4, atk: 2, hp: 4, art: '🥘', keywords: ['double', 'scorch'], text: '' },
   feast: {
     name: '해적 만찬', type: 'tactic', cost: 3, art: '🍖',
     text: '아군 선원 모두 체력 +1. 내 배의 선체를 3 회복한다.',
@@ -387,16 +390,16 @@ export const CARDS = {
     text: '등장: 카드 1장을 뽑는다.',
     onPlay: (g) => g.draw(1),
   },
-  sailmender: { name: '돛 수선공', type: 'crew', cost: 2, atk: 2, hp: 4, art: '🪡', keywords: ['tailwind'], text: '' },
+  sailmender: { name: '돛 수선공', type: 'crew', cost: 2, atk: 2, hp: 3, art: '🪡', keywords: ['tailwind'], text: '' },
   compass: {
     name: '나침반 점술가', type: 'crew', cost: 3, atk: 2, hp: 3, art: '🌠', keywords: ['tailwind'],
     text: '등장: 카드 1장을 뽑는다.',
     onPlay: (g) => g.draw(1),
   },
   lighthouse: { name: '등대지기', type: 'crew', cost: 4, atk: 2, hp: 6, art: '🔦', keywords: ['guard'], text: '' },
-  shortcut: { name: '지름길 항해사', type: 'crew', cost: 4, atk: 3, hp: 4, art: '🛶', keywords: ['sneak', 'tailwind'], text: '' },
+  shortcut: { name: '지름길 항해사', type: 'crew', cost: 4, atk: 3, hp: 3, art: '🛶', keywords: ['sneak', 'tailwind'], text: '' },
   guildmaster: {
-    name: '나미', type: 'crew', cost: 6, atk: 4, hp: 6, art: '🎓',
+    name: '나미', type: 'crew', cost: 6, atk: 4, hp: 6, art: '🎓', keywords: ['tailwind'],
     text: '항해사 길드를 이끄는 길드 마스터. 등장: 카드 2장을 뽑는다.',
     onPlay: (g) => g.draw(2),
   },
@@ -585,6 +588,158 @@ export const CARDS = {
     text: '모든 적 선원에게 2 피해.',
     effect: (g) => g.damageAllFoes(2),
   },
+  // ── 공용 (신규) ──
+  gull: {
+    name: '갈매기 전령', type: 'crew', cost: 1, atk: 1, hp: 1, art: '🐦',
+    text: '등장: 무작위 적 선원에게 1 피해.',
+    onPlay: (g) => { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 1); },
+  },
+  veteran: { name: '노련한 갑판수', type: 'crew', cost: 3, atk: 3, hp: 4, art: '🧑‍✈️', text: '' },
+  supply: {
+    name: '보급 꾸러미', type: 'tactic', cost: 2, art: '📦',
+    text: '내 배의 선체를 3 회복하고 카드 1장을 뽑는다.',
+    effect: (g) => { g.healShip(3); g.draw(1); },
+  },
+
+  // ── 고무팔 해적단 (신규) ──
+  kangaroo: { name: '고무다리 도약꾼', type: 'crew', cost: 2, atk: 2, hp: 2, art: '🦘', arm: true, keywords: ['charge', 'elastic'], text: '' },
+  bigball: {
+    name: '대왕 고무공', type: 'tactic', cost: 4, art: '🏐', target: 'foeCrew',
+    text: '적 선원 하나에게 3 피해. 튕겨 나간 공이 그 양옆 적 선원에게도 1 피해.',
+    effect: (g, t) => {
+      const i = g.foe.board.findIndex((c) => c.uid === t);
+      const sides = [g.foe.board[i - 1], g.foe.board[i + 1]].filter(Boolean).map((c) => c.uid);
+      g.damageCrew(t, 3);
+      sides.forEach((uid) => g.damageCrew(uid, 1));
+    },
+  },
+
+  // ── 붉은 돛 해적단 (신규) ──
+  goldtooth: { name: '금니 해적', type: 'crew', cost: 3, atk: 3, hp: 4, art: '🦷', keywords: ['plunder'], text: '' },
+  plank: {
+    name: '판자 걷기', type: 'tactic', cost: 3, art: '🪵', target: 'foeCrew',
+    text: '공격력 3 이하인 적 선원 하나를 바다에 빠뜨린다(쓰러뜨린다). 공격력이 더 높으면 2 피해.',
+    effect: (g, t) => { const c = g.foe.board.find((c) => c.uid === t); if (c && c.atk <= 3) g.slay(t); else g.damageCrew(t, 2); },
+  },
+
+  // ── 심해 함대 (신규) ──
+  cachalot: {
+    name: '향유고래 순양함', type: 'crew', cost: 6, atk: 3, hp: 7, art: '🐳', keywords: ['guard'],
+    text: '등장: 내 배의 선체를 3 회복한다.',
+    onPlay: (g) => g.healShip(3),
+  },
+  pressure: {
+    name: '수압 압착', type: 'tactic', cost: 2, art: '💧', target: 'foeCrew',
+    text: '적 선원 하나에게 남은 체력의 절반(올림)만큼 피해.',
+    effect: (g, t) => { const c = g.foe.board.find((c) => c.uid === t); if (c) g.damageCrew(t, Math.ceil(c.hp / 2)); },
+  },
+
+  // ── 유령선단 (신규) ──
+  ghostrats: {
+    name: '유령 쥐떼', type: 'crew', cost: 2, atk: 1, hp: 1, art: '🐀', keywords: ['ghost'],
+    text: '유언: 떠도는 혼(1/1 망령) 1명을 불러낸다.',
+    onDeath: (g) => g.summon('spirit', 1),
+  },
+  deadmarch: {
+    name: '망자의 행진', type: 'tactic', cost: 4, art: '🪦',
+    text: '떠도는 혼(1/1 망령) 1명을 불러내고, 아군 선원 모두 공격력 +1.',
+    effect: (g) => { g.summon('spirit', 1); g.buffAll(1, 0); },
+  },
+
+  // ── 불꽃 요리단 (신규) ──
+  skewer: {
+    name: '숯불 꼬치꾼', type: 'crew', cost: 2, atk: 2, hp: 3, art: '🍡',
+    text: '등장: 불붙은 적 선원 모두에게 1 피해.',
+    onPlay: (g) => g.foe.board.filter((c) => c.burning).map((c) => c.uid).forEach((uid) => g.damageCrew(uid, 1)),
+  },
+  volcano: {
+    name: '화산 소스', type: 'tactic', cost: 2, art: '🌋',
+    text: '불붙은 적 선원 모두에게 3 피해.',
+    effect: (g) => g.foe.board.filter((c) => c.burning).map((c) => c.uid).forEach((uid) => g.damageCrew(uid, 3)),
+  },
+
+  // ── 정글 원숭이단 (신규) ──
+  coconut: {
+    name: '코코넛 투척꾼', type: 'crew', cost: 3, atk: 2, hp: 3, art: '🥥',
+    text: '등장: 무작위 적 선원에게 1 피해.',
+    onPlay: (g) => { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 1); },
+  },
+  orangutan: {
+    name: '오랑우탄 장로', type: 'crew', cost: 5, atk: 3, hp: 5, art: '🦧',
+    text: '등장: 꼬마 원숭이(1/1 돌격) 1마리를 부르고, 다른 아군 선원 모두 체력 +1.',
+    onPlay: (g, self) => { g.summon('monkey', 1); g.buffAll(0, 1); g.buff(self.uid, 0, -1); },
+  },
+
+  // ── 태엽 기계단 (신규) ──
+  steamspider: { name: '증기 거미', type: 'crew', cost: 4, atk: 3, hp: 3, art: '🕷️', keywords: ['grow', 'sneak'], text: '' },
+  rewind: {
+    name: '태엽 재감기', type: 'tactic', cost: 2, art: '🔄',
+    text: '아군 성장 선원 모두 공격력 +1, 체력 +1. 카드 1장을 뽑는다.',
+    effect: (g) => { g.me.board.filter((c) => hasKw(c, 'grow')).forEach((c) => g.buff(c.uid, 1, 1)); g.draw(1); },
+  },
+
+  // ── 떠돌이 검객단 (신규) ──
+  assassin: { name: '칼바람 자객', type: 'crew', cost: 2, atk: 2, hp: 2, art: '🎌', keywords: ['slash', 'stealth'], text: '' },
+  crescent: {
+    name: '초승달 베기', type: 'tactic', cost: 2, art: '🌙', target: 'foeCrew',
+    text: '적 선원 하나에게 아군 선원 중 가장 높은 공격력만큼 피해.',
+    effect: (g, t) => g.damageCrew(t, Math.max(0, ...g.me.board.map((c) => c.atk))),
+  },
+
+  // ── 잠수함 외과단 (신규) ──
+  anatomist: {
+    name: '해부학 교수', type: 'crew', cost: 3, atk: 2, hp: 4, art: '🦴', keywords: ['submerge'],
+    text: '등장: 카드 1장을 뽑는다.',
+    onPlay: (g) => g.draw(1),
+  },
+  heartrip: {
+    name: '심장 적출', type: 'tactic', cost: 3, art: '💔', target: 'foeCrew',
+    text: '적 선원 하나에게 그 선원의 공격력만큼 피해.',
+    effect: (g, t) => { const c = g.foe.board.find((c) => c.uid === t); if (c) g.damageCrew(t, c.atk); },
+  },
+
+  // ── 폭풍 주술단 (신규) ──
+  thunderhawk: { name: '천둥 매', type: 'crew', cost: 3, atk: 2, hp: 3, art: '🦅', keywords: ['charge', 'resonance'], text: '' },
+  chainbolt: {
+    name: '연쇄 번개', type: 'tactic', cost: 2, art: '🔗',
+    text: '무작위 적 선원에게 1 피해를 세 번.',
+    effect: (g) => { for (let i = 0; i < 3; i++) { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 1); } },
+  },
+
+  // ── 황금 상인조합 (신규) ──
+  changer: {
+    name: '환전상', type: 'crew', cost: 2, atk: 2, hp: 4, art: '💱', keywords: ['trade'],
+    text: '거래: 이번 턴에 바람 +2.',
+    onPlay: (g) => { if (g.trade()) g.gainWind(2); },
+  },
+  goldbar: {
+    name: '금괴 투척', type: 'tactic', cost: 3, art: '🥇', target: 'foeCrew', keywords: ['trade'],
+    text: '적 선원 하나에게 3 피해. 거래: 대신 5 피해.',
+    effect: (g, t) => g.damageCrew(t, g.trade() ? 5 : 3),
+  },
+
+  // ── 항해사 길드 (신규) ──
+  courier: { name: '갑판 연락병', type: 'crew', cost: 1, atk: 1, hp: 2, art: '📨', keywords: ['tailwind', 'charge'], text: '' },
+  navigator: {
+    name: '항로 계산사', type: 'crew', cost: 3, atk: 1, hp: 3, art: '🧮',
+    text: '등장: 이번 턴에 먼저 낸 카드 1장마다 공격력 +1.',
+    onPlay: (g, self) => g.buff(self.uid, g.played, 0),
+  },
+  clipper: {
+    name: '쾌속 범선', type: 'crew', cost: 5, atk: 3, hp: 4, art: '🛳️',
+    text: '등장: 이번 턴에 먼저 낸 카드 1장마다 무작위 적 선원에게 1 피해.',
+    onPlay: (g) => { for (let i = 0; i < g.played; i++) { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 1); } },
+  },
+  logbook: {
+    name: '항해 일지', type: 'tactic', cost: 0, art: '📔', keywords: ['tailwind'],
+    text: '카드 1장을 뽑는다.',
+    effect: (g) => g.draw(1),
+  },
+  fullsail: {
+    name: '전속 항진', type: 'tactic', cost: 5, art: '🏁',
+    text: '아군 선원 모두 공격력 +1, 이번 턴에 바로 공격할 수 있다.',
+    effect: (g) => { g.buffAll(1, 0); g.me.board.forEach((c) => g.ready(c.uid)); },
+  },
 };
 
 // skill: 선장 스킬. 한 턴에 한 번, 바람을 써서 쓴다.
@@ -598,7 +753,7 @@ export const FACTIONS = {
       text: '적 선원 하나에게 1 피해. 무작위 아군 선원 탄력 +1.',
       effect: (g, t) => { g.damageCrew(t, 1); const a = g.randomAllyCrew(); if (a) g.setTension(a.uid, Math.min(3, (a.tension || 0) + 1)); },
     },
-    deck: { rookie: 2, bigbounce: 1, bubble: 2, boxer: 3, whip: 2, balloon: 2, spring: 2, catapult: 2, pinball: 1, rubberwall: 1, doublepunch: 1, ringmaster: 1, octoarm: 1, slingshot: 1, grab: 2 },
+    deck: { rookie: 2, bigbounce: 1, bubble: 2, boxer: 3, whip: 2, balloon: 2, spring: 2, catapult: 2, pinball: 1, rubberwall: 1, doublepunch: 1, ringmaster: 1, octoarm: 1, slingshot: 1, grab: 2, kangaroo: 2, bigball: 2, gull: 1, supply: 1 },
   },
   red: {
     name: '붉은 돛 해적단',
@@ -609,7 +764,7 @@ export const FACTIONS = {
       text: '적 배에 2 피해를 주고 보물 1개를 얻는다.',
       effect: (g) => { g.damageFoeShip(2); g.gainTreasure(1); },
     },
-    deck: { deckhand: 1, bat: 1, cutlass: 3, powder: 2, duelist: 2, gunner: 2, shadowthief: 2, raider: 3, redbeard: 2, raid: 2, cannon: 1, rum: 1, grog: 1, bounty: 1 },
+    deck: { deckhand: 1, bat: 1, cutlass: 3, powder: 2, duelist: 2, gunner: 2, shadowthief: 2, raider: 3, redbeard: 2, raid: 2, cannon: 1, rum: 1, grog: 1, bounty: 1, goldtooth: 2, plank: 2, veteran: 1, gull: 1 },
   },
   deep: {
     name: '심해 함대',
@@ -620,7 +775,7 @@ export const FACTIONS = {
       text: '아군 선원 하나에게 체력 +2.',
       effect: (g, t) => g.buff(t, 0, 2),
     },
-    deck: { lookout: 2, jelly: 2, sentinel: 2, urchin: 2, harpoon: 2, pearl: 1, tide: 2, puffer: 1, turtle: 2, abyss: 1, anchor: 2, volley: 1, tsunami: 1, cannon: 1, repair: 1, map: 1 },
+    deck: { lookout: 2, jelly: 2, sentinel: 2, urchin: 2, harpoon: 2, pearl: 1, tide: 2, puffer: 1, turtle: 2, abyss: 1, anchor: 2, volley: 1, tsunami: 1, cannon: 1, repair: 1, map: 1, cachalot: 1, pressure: 2, veteran: 2, gull: 1 },
   },
   ghost: {
     name: '유령선단',
@@ -631,7 +786,7 @@ export const FACTIONS = {
       text: '떠도는 혼(1/1 망령)을 1명 불러낸다.',
       effect: (g) => g.summon('spirit', 1),
     },
-    deck: { wisp: 3, bones: 3, haunt: 3, lantern: 2, shroud: 2, banshee: 2, vampire: 1, phantom: 2, curse: 2, seance: 1, barrel: 1, chest: 1, fogscout: 1 },
+    deck: { wisp: 3, bones: 3, haunt: 3, lantern: 2, shroud: 2, banshee: 2, vampire: 1, phantom: 2, curse: 2, seance: 1, barrel: 1, chest: 1, fogscout: 1, ghostrats: 2, deadmarch: 2, supply: 1, gull: 1 },
   },
   flame: {
     name: '불꽃 요리단',
@@ -642,7 +797,7 @@ export const FACTIONS = {
       text: '적 선원 하나에게 불을 붙인다.',
       effect: (g, t) => g.burn(t),
     },
-    deck: { ember: 3, spicy: 3, cook: 2, flambe: 3, grill: 2, twinflame: 2, inferno: 2, feast: 1, firebomb: 3, hotpot: 1, parrot: 1, broadside: 1 },
+    deck: { ember: 3, spicy: 3, cook: 2, flambe: 3, grill: 2, twinflame: 2, inferno: 2, feast: 1, firebomb: 3, hotpot: 1, parrot: 1, broadside: 1, skewer: 2, volcano: 2, veteran: 1, supply: 1 },
   },
   monkey: {
     name: '정글 원숭이단',
@@ -653,7 +808,7 @@ export const FACTIONS = {
       text: '꼬마 원숭이(1/1 돌격) 1마리를 부른다.',
       effect: (g) => g.summon('monkey', 1),
     },
-    deck: { chimp: 3, banana: 3, fogmonkey: 2, vine: 2, tamer: 2, gorilla: 2, twins: 1, kingkong: 1, troop: 2, bananapeel: 2, drum: 2, flag: 1, kraken: 1 },
+    deck: { chimp: 3, banana: 3, fogmonkey: 2, vine: 2, tamer: 2, gorilla: 2, twins: 1, kingkong: 1, troop: 2, bananapeel: 2, drum: 2, flag: 1, kraken: 1, coconut: 2, orangutan: 2, gull: 1, supply: 1 },
   },
   clock: {
     name: '태엽 기계단',
@@ -664,7 +819,7 @@ export const FACTIONS = {
       text: '아군 선원 하나에게 공격력 +1.',
       effect: (g, t) => g.buff(t, 1, 0),
     },
-    deck: { cog: 3, shielddrone: 2, windup: 2, piston: 3, turret: 2, tinker: 2, golem: 2, oil: 2, overclock: 2, blueprint: 1, amulet: 1, carpenter: 1, maelstrom: 1 },
+    deck: { cog: 3, shielddrone: 2, windup: 2, piston: 3, turret: 2, tinker: 2, golem: 2, oil: 2, overclock: 2, blueprint: 1, amulet: 1, carpenter: 1, maelstrom: 1, steamspider: 2, rewind: 2, veteran: 1, supply: 1 },
   },
   swords: {
     name: '떠돌이 검객단',
@@ -675,18 +830,18 @@ export const FACTIONS = {
       text: '아군 선원 하나에게 일섬을 준다.',
       effect: (g, t) => g.grant(t, 'slash'),
     },
-    deck: { prentice: 3, bamboo: 3, iai: 2, shieldsman: 2, sensei: 2, gale: 2, nitoryu: 1, swordsaint: 1, slashcut: 2, meditate: 2, bladestorm: 1, cannon: 1, rum: 1, lookout: 1 },
+    deck: { prentice: 3, bamboo: 3, iai: 2, shieldsman: 2, sensei: 2, gale: 2, nitoryu: 1, swordsaint: 1, slashcut: 2, meditate: 2, bladestorm: 1, cannon: 1, rum: 1, lookout: 1, assassin: 2, crescent: 2, veteran: 1, gull: 1 },
   },
   guild: {
     name: '항해사 길드',
     emblem: '🧭',
-    desc: '유틸형. 순풍으로 비용을 깎고 카드를 많이 뽑아, 필요한 카드를 필요한 때 쓴다.',
+    desc: '연쇄형. 순풍 카드로 비용을 깎으며 한 턴에 여러 장을 몰아 내고, 낸 카드 수만큼 강해지는 카드로 마무리한다.',
     skill: {
       name: '해도 읽기', art: '🔍', cost: 2,
       text: '카드 1장을 뽑는다.',
       effect: (g) => g.draw(1),
     },
-    deck: { novice: 2, surveyor: 2, sailmender: 2, compass: 2, lighthouse: 2, shortcut: 2, guildmaster: 1, admiral: 1, unfurl: 2, headwind: 2, anchor: 1, cannon: 2, map: 1, rum: 1, repair: 1 },
+    deck: { novice: 2, courier: 2, surveyor: 1, sailmender: 2, compass: 2, navigator: 2, lighthouse: 2, shortcut: 2, clipper: 2, guildmaster: 1, admiral: 1, logbook: 1, unfurl: 2, headwind: 2, fullsail: 1, cannon: 2, supply: 1, veteran: 1, map: 1 },
   },
   surgeon: {
     name: '잠수함 외과단',
@@ -697,7 +852,7 @@ export const FACTIONS = {
       text: '적 선원 하나에게 1 피해. 무작위 아군 선원 체력 +1.',
       effect: (g, t) => { g.damageCrew(t, 1); const a = g.randomAllyCrew(); if (a) g.buff(a.uid, 0, 1); },
     },
-    deck: { intern: 3, engineer: 2, headnurse: 2, walrus: 2, sedative: 2, incisor: 2, torpedo: 2, chiefsurgeon: 1, incision: 2, transplant: 2, surgery: 1, takt: 1, lookout: 1, repair: 1 },
+    deck: { intern: 3, engineer: 2, headnurse: 2, walrus: 2, sedative: 2, incisor: 2, torpedo: 2, chiefsurgeon: 1, incision: 2, transplant: 2, surgery: 1, takt: 1, lookout: 1, repair: 1, anatomist: 2, heartrip: 2, veteran: 1, gull: 1 },
   },
   storm: {
     name: '폭풍 주술단',
@@ -708,17 +863,17 @@ export const FACTIONS = {
       text: '번개 조각(0비용: 무작위 적 선원에게 1 피해) 1장을 손에 넣는다.',
       effect: (g) => g.addToHand('spark', 1),
     },
-    deck: { breeze: 3, cloud: 2, wavepriest: 2, drummer: 2, stormcaller: 2, twister: 1, stormlord: 1, bolt: 2, windread: 2, static: 2, downpour: 1, cannon: 1, barrel: 2, map: 1 },
+    deck: { breeze: 3, cloud: 2, wavepriest: 2, drummer: 2, stormcaller: 2, twister: 1, stormlord: 1, bolt: 2, windread: 2, static: 2, downpour: 1, cannon: 1, barrel: 2, map: 1, thunderhawk: 2, chainbolt: 2, veteran: 1, supply: 1 },
   },
   merchant: {
     name: '황금 상인조합',
     emblem: '💰',
     desc: '거래형. 보물을 모으는 대신 써 버려서 선원을 강화하고 적을 매수한다.',
     skill: {
-      name: '뇌물', art: '💴', cost: 2, treasureCost: 1, target: 'foeCrew',
+      name: '뇌물', art: '💴', cost: 1, treasureCost: 1, target: 'foeCrew',
       text: '보물 1개를 써서 적 선원 하나를 다음 턴에 공격하지 못하게 한다.',
       effect: (g, t) => g.freeze(t),
     },
-    deck: { pennykid: 3, bodyguard: 2, shady: 2, mercenary: 2, usurer: 1, armsdealer: 2, vaultkeeper: 1, goldcaptain: 1, goldrain: 2, buyout: 1, insurance: 1, chest: 1, carpenter: 2, parrot: 1, lookout: 1, cannon: 1 },
+    deck: { pennykid: 3, bodyguard: 2, shady: 2, mercenary: 2, usurer: 1, armsdealer: 2, vaultkeeper: 1, goldcaptain: 1, goldrain: 2, buyout: 1, insurance: 1, chest: 1, carpenter: 2, parrot: 1, lookout: 1, cannon: 1, changer: 2, goldbar: 2, gull: 1, veteran: 1 },
   },
 };

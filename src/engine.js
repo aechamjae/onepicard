@@ -11,6 +11,7 @@ export const RULES = {
   burnDamage: 2,
   growLimit: 2,
   resonanceLimit: 2,
+  discountLimit: 2,
 };
 
 let uidSeq = 1;
@@ -35,7 +36,7 @@ function makePlayer(name, factionId, isAI, rng, hull) {
   return {
     name, factionId, isAI,
     hull, maxHull: hull, treasure: 0,
-    maxWind: 0, wind: 0, fatigue: 0, skillUsed: false, discount: 0,
+    maxWind: 0, wind: 0, fatigue: 0, skillUsed: false, discount: 0, played: 0,
     deck: buildDeck(factionId, rng), hand: [], board: [],
   };
 }
@@ -89,6 +90,7 @@ function startTurn(s) {
   p.wind = p.maxWind;
   p.skillUsed = false;
   p.discount = 0;
+  p.played = 0; // 이번 턴에 낸 카드 수(연쇄)
   for (const c of p.board) {
     c.canAttack = !c.frozen;
     c.frozen = false;
@@ -215,6 +217,8 @@ function effectApi(s, pi) {
       foe.hull -= n;
       log(s, `💥 ${foe.name}의 배에 ${n} 피해.`);
     },
+    // 이번 턴에 이 카드보다 먼저 낸 카드 수
+    get played() { return me.played; },
     // 거래: 보물이 있으면 1개를 써서 true. 없으면 false.
     trade: () => {
       if (me.treasure < 1) return false;
@@ -417,7 +421,9 @@ export function applyAction(s, action) {
     const d = CARDS[card.defId];
     if (d.target && !validTarget(s, pi, d.target, action.target)) return '대상을 골라야 한다.';
     me.wind -= costOf(me, card.defId);
-    me.discount = 0;
+    // 순풍 카드는 쌓인 순풍을 그대로 이어받고, 다른 카드는 다 써 버린다.
+    const tailwind = (d.keywords || []).includes('tailwind');
+    if (!tailwind) me.discount = 0;
     me.hand.splice(action.handIndex, 1);
     const g = effectApi(s, pi);
     if (d.type === 'crew') {
@@ -432,10 +438,11 @@ export function applyAction(s, action) {
       for (const c of charged) { c.atk++; c.charged = (c.charged || 0) + 1; }
       if (charged.length) log(s, `🌩 공명! 선원 ${charged.length}명의 공격력 +1.`);
     }
-    if ((d.keywords || []).includes('tailwind')) {
-      me.discount = 1;
-      log(s, `🍃 순풍이 분다! 다음 카드 비용 -1.`);
+    if (tailwind) {
+      me.discount = Math.min(RULES.discountLimit, me.discount + 1);
+      log(s, `🍃 순풍이 분다! 다음 카드 비용 -${me.discount}.`);
     }
+    me.played++;
     checkWinner(s);
     return null;
   }
