@@ -354,6 +354,12 @@ function effectApi(s, pi) {
       const f = findCrew(s, uid);
       if (f) f.crew.shield = true;
     },
+    extinguish: (uid) => {
+      const f = findCrew(s, uid);
+      if (!f || !f.crew.burning) return;
+      f.crew.burning = false;
+      log(s, `💧 「${CARDS[f.crew.defId].name}」의 불이 꺼졌다.`);
+    },
     freeze: (uid) => {
       const f = findCrew(s, uid);
       if (f) f.crew.frozen = true;

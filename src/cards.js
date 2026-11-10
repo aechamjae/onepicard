@@ -827,8 +827,8 @@ export const FACTIONS = {
     desc: '선원 싸움형. 일섬으로 반격 없이 적 선원을 하나씩 베어 갑판을 정리한다.',
     skill: {
       name: '칼 갈기', art: '🪨', cost: 2, target: 'allyCrew',
-      text: '아군 선원 하나에게 일섬을 준다.',
-      effect: (g, t) => g.grant(t, 'slash'),
+      text: '아군 선원 하나에게 일섬을 주고, 붙은 불을 끈다.',
+      effect: (g, t) => { g.grant(t, 'slash'); g.extinguish(t); },
     },
     deck: { prentice: 3, bamboo: 3, iai: 2, shieldsman: 2, sensei: 2, gale: 2, nitoryu: 1, swordsaint: 1, slashcut: 2, meditate: 2, bladestorm: 1, cannon: 1, rum: 1, lookout: 1, assassin: 2, crescent: 2, veteran: 1, gull: 1 },
   },
