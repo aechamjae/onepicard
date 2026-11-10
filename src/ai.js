@@ -140,10 +140,14 @@ function chooseSkill(s) {
   if (canUseSkill(s, pi)) return null;
   const sk = FACTIONS[me.factionId].skill;
   const foe = foeView(s.players[1 - pi]);
-  let decision = SKILL_AI[me.factionId] ? SKILL_AI[me.factionId](me, foe) : true;
-  if (sk.target && decision === true) decision = strongest(sk.target === 'foeCrew' ? foe.board : me.board, value);
-  if (decision === false) return null;
-  return sk.target ? { type: 'skill', target: decision } : { type: 'skill' };
+  // 쓸 상황인지는 진영별 규칙으로 거르고, 대상은 미리 써 보고 고른다.
+  if (SKILL_AI[me.factionId] && SKILL_AI[me.factionId](me, foe) === false) return null;
+  if (sk.target) {
+    const targets = (sk.target === 'foeCrew' ? foe.board : me.board).map((c) => c.uid);
+    // 선장 스킬은 카드를 쓰지 않으니, 조금이라도 이득이면 쓴다.
+    return searchTarget(s, (target) => ({ type: 'skill', target }), targets, 0.01);
+  }
+  return { type: 'skill' };
 }
 
 // 지금 할 수 있는 행동을 모두 모아 그중 하나를 무작위로 고른다(실수).
@@ -189,12 +193,15 @@ function choosePlay(s) {
       continue;
     }
     if (d.type === 'crew') return { type: 'play', handIndex: i };
-    let decision = TACTIC_AI[id] ? TACTIC_AI[id](me, foe) : true;
-    if (decision === false) continue;
-    // 판단 규칙이 없는 대상 지정 카드는 가장 센 대상을 고른다.
-    if (d.target && decision === true) decision = strongest(d.target === 'foeCrew' ? foe.board : me.board, value);
-    if (d.target && decision === false) continue;
-    return d.target ? { type: 'play', handIndex: i, target: decision } : { type: 'play', handIndex: i };
+    // 쓸 상황인지는 카드별 규칙으로 거르고, 대상은 미리 써 보고 고른다.
+    if (TACTIC_AI[id] && TACTIC_AI[id](me, foe) === false) continue;
+    if (d.target) {
+      const targets = (d.target === 'foeCrew' ? foe.board : me.board).map((c) => c.uid);
+      const pick = searchTarget(s, (target) => ({ type: 'play', handIndex: i, target }), targets, 0.3 + costOf(me, id) * COST_MARGIN);
+      if (pick) return pick;
+      continue;
+    }
+    return { type: 'play', handIndex: i };
   }
   return null;
 }
@@ -270,7 +277,7 @@ function cloneState(s) {
 
 // 상대 턴 시작에 살아 있을 선원들만으로, 배만 때리면 몇 턴에 이기는지. 수호 선원의 체력은 배를 지키는 몫으로 친다.
 function clock(attacker, victim) {
-  const crews = attacker.board.filter((c) => c.atk > 0 && !doomed(c));
+  const crews = attacker.board.filter((c) => c.atk > 0 && !doomed(c) && !c.frozen);
   if (!crews.length) return 99;
   const guardHp = victim.board.filter((c) => hasKeyword(c, 'guard') && !doomed(c)).reduce((n, c) => n + c.hp, 0);
   const power = crews.reduce((n, c) => n + c.atk + (c.tension || 0), 0);
@@ -290,6 +297,7 @@ function crewWorth(c) {
   if (d.onDeath) w += 2;
   if (d.onTurnEnd) w += 3;
   if (hasKeyword(c, 'grow') && c.grown < RULES.growLimit) w += 2;
+  if (c.burning) w -= 2.5; // 불이 꺼지지 않아 매 턴 체력이 깎인다
   return w;
 }
 
@@ -304,7 +312,28 @@ function evaluate(s, pi) {
   return margin * 6 + (margin > 0 ? 10 : 0)
     + strength(me) - strength(foe)
     + (me.hull - foe.hull) * 0.5
-    + (me.treasure - foe.treasure) * 0.8;
+    + (me.treasure - foe.treasure) * 0.8
+    + (Math.min(me.hand.length, RULES.handLimit) - Math.min(foe.hand.length, RULES.handLimit)) * HAND_VALUE;
+}
+
+const HAND_VALUE = 0.8;
+const COST_MARGIN = 0.6; // 손패 한 장의 값. 카드를 써서 이보다 이득이어야 낸다.
+
+// 대상을 고르는 카드·스킬: 대상마다 판을 복제해 실제로 써 보고, 남은 공격까지 친 결과로 고른다.
+// 비싼 카드일수록 더 큰 이득이 있어야 쓴다(판 평가는 이번 턴 끝만 보니 아껴 둔 카드의 값을 모른다).
+// 안 쓰는 쪽보다 그만큼 나은 대상이 없으면 null(아껴 둔다).
+function searchTarget(s, makeAction, targets, margin) {
+  const pi = s.current;
+  let best = null;
+  let bestScore = rollout(cloneState(s), pi) + margin;
+  for (const target of targets) {
+    const action = makeAction(target);
+    const t = cloneState(s);
+    if (applyAction(t, action)) continue;
+    const score = rollout(t, pi);
+    if (score > bestScore) { bestScore = score; best = action; }
+  }
+  return best;
 }
 
 function rollout(s, pi) {
