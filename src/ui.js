@@ -16,6 +16,7 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 let state = null;
 let selected = null; // {kind:'hand', index} | {kind:'attacker', uid}
 let busy = false; // 연출 중이거나 AI 차례
+let session = 0; // 판마다 바뀐다. 홈으로 나가면 진행 중이던 연출과 AI 턴을 멈추는 데 쓴다.
 let difficulty = loadDifficulty();
 let mode = loadMode(); // 'ai' | 'duo'(친구와 한 폰에서 번갈아)
 let duoPick = null; // 친구 모드에서 1P가 고른 진영
@@ -423,6 +424,7 @@ async function showAftermath(before) {
 
 // 한 행동을 연출과 함께 실행한다. 성공하면 true.
 async function perform(action) {
+  const game = session;
   const pi = state.current;
   const before = snapshot();
   if (action.type === 'attack') {
@@ -439,6 +441,7 @@ async function perform(action) {
       await showCast(card, pi);
     }
   }
+  if (game !== session) return false; // 연출 도중 홈으로 나갔다
   const err = applyAction(state, action);
   if (err) {
     toast(err);
@@ -446,6 +449,7 @@ async function perform(action) {
     return false;
   }
   await showAftermath(before);
+  if (game !== session) return false;
   const entered = new Set();
   state.players.forEach((p) => p.board.forEach((c) => { if (!before.crews.has(c.uid)) entered.add(c.uid); }));
   render(entered);
@@ -544,15 +548,19 @@ function takeOver() {
 }
 
 async function runAI() {
+  const game = session;
   if (state.winner !== null) { busy = false; return; }
   render();
   await showBanner('🤖 AI의 차례', 900);
   for (let steps = 0; state.current === FOE && state.winner === null; steps++) {
     await sleep(AI_DELAY);
+    if (game !== session) return; // 홈으로 나갔다
     const action = steps > 40 ? { type: 'end' } : aiNextAction(state, DIFFICULTIES[difficulty].ai);
     const ok = await perform(action);
+    if (game !== session) return;
     if (!ok) await perform({ type: 'end' }); // 안전장치
   }
+  if (game !== session) return;
   busy = false;
   render();
   if (state.winner === null) showBanner('⚓ 내 차례!', 900);
@@ -712,7 +720,19 @@ function showStart() {
 }
 
 // rival: 친구 모드에서 2P가 고른 진영. 없으면 AI가 다른 진영 중 하나를 무작위로 고른다.
+// 하던 판을 버리고 시작 화면으로 간다.
+function quitToHome() {
+  session++;
+  busy = false;
+  selected = null;
+  $('quit').hidden = true;
+  $('inspect').hidden = true;
+  $('log-ov').hidden = true;
+  showStart();
+}
+
 async function startGame(factionId, rival = null) {
+  session++;
   const others = Object.keys(FACTIONS).filter((f) => f !== factionId);
   const aiFaction = rival ?? others[Math.floor(Math.random() * others.length)];
   state = createGame(isDuo()
@@ -754,7 +774,8 @@ function showGameOver() {
   $('gameover-text').textContent = winner.treasure >= RULES.treasureToWin
     ? `${label(state.winner)}이(가) 보물 ${RULES.treasureToWin}개를 모두 털었습니다.`
     : `${label(1 - state.winner)}의 배가 침몰했습니다.`;
-  setTimeout(() => { $('gameover').hidden = false; }, 700);
+  const game = session;
+  setTimeout(() => { if (game === session) $('gameover').hidden = false; }, 700);
 }
 
 // ── 연결 ──
@@ -763,6 +784,10 @@ $('end-btn').onclick = endTurn;
 $('skill-btn').onclick = onSkill;
 $('restart-btn').onclick = showStart;
 $('handoff-btn').onclick = takeOver;
+$('home-btn').onclick = () => { $('quit').hidden = false; };
+$('quit-yes').onclick = quitToHome;
+$('quit-no').onclick = () => { $('quit').hidden = true; };
+$('quit').onclick = (e) => { if (e.target.id === 'quit') $('quit').hidden = true; };
 $('rules-btn').onclick = () => { $('rules').hidden = false; };
 $('rules-btn2').onclick = () => { $('rules').hidden = false; };
 $('log-btn').onclick = () => { $('log-ov').hidden = false; $('log').scrollTop = $('log').scrollHeight; };

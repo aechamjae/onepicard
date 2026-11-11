@@ -130,6 +130,7 @@ main[hidden] { display: none; }
 }
 #hint { flex: 1; margin: 0; font-size: .9rem; color: var(--ink-dim); }
 .mini-btns { display: flex; gap: 6px; }
+.quit-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 #rules-btn2 { display: none; }
 #end-btn { flex: none; white-space: nowrap; }
 
