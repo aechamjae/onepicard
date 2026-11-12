@@ -257,6 +257,8 @@ main[hidden] { display: none; }
 .f-surgeon { --fa: #e2e8f0; --fb: #2d3a4a; --fc: #ffd84d; --art-bg: radial-gradient(circle at 50% 35%, #ffffff, #b9c7d6); }
 .f-storm { --fa: #6f63d9; --fb: #1b1640; --fc: #fff27a; --art-bg: radial-gradient(circle at 50% 30%, #e9e6ff, #6d64b8); }
 .f-merchant { --fa: #e0b03a; --fb: #5a3d0a; --fc: #fff0b3; --art-bg: radial-gradient(circle at 50% 35%, #fff8d6, #e2b54a); }
+.f-frost { --fa: #7cc8ee; --fb: #173a5a; --fc: #e6f7ff; --art-bg: radial-gradient(circle at 50% 30%, #ffffff, #a9dcf5 60%, #6aaed6); }
+.f-dice { --fa: #d9334f; --fb: #1f4a2c; --fc: #ffe27a; --art-bg: radial-gradient(circle at 50% 40%, #fbf4dc, #3f8a55); }
 .card.tactic { --fa: #f6e7c2; --fb: #d8b874; --name: #3b2410; --art-bg: radial-gradient(circle, #fffaf0, #e8d3a2); }
 .card.tactic .name { text-shadow: none; }
 .card.tactic .text { background: #3b241018; color: #3b2410; }

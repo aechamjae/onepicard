@@ -362,7 +362,28 @@ function effectApi(s, pi) {
     },
     freeze: (uid) => {
       const f = findCrew(s, uid);
-      if (f) f.crew.frozen = true;
+      if (!f) return;
+      f.crew.frozen = true;
+      log(s, `❄ 「${CARDS[f.crew.defId].name}」이(가) 얼어붙었다.`);
+    },
+    freezeAllFoes: () => {
+      for (const c of foe.board) c.frozen = true;
+      if (foe.board.length) log(s, '❄ 적 선원 모두가 얼어붙었다.');
+    },
+    // 동전 던지기. 클로버 점쟁이가 있으면 뒷면일 때 한 번 더 던진다.
+    flip: () => {
+      let heads = s.rng() < 0.5;
+      if (!heads && me.board.some((c) => CARDS[c.defId].reroll)) {
+        log(s, '🍀 뒷면… 점쟁이가 다시 던진다!');
+        heads = s.rng() < 0.5;
+      }
+      log(s, heads ? '🪙 앞면! 도박 성공.' : '🪙 뒷면… 도박 실패.');
+      return heads;
+    },
+    dice: () => {
+      const n = 1 + Math.floor(s.rng() * 6);
+      log(s, `🎲 주사위 눈 ${n}!`);
+      return n;
     },
     randomFoeCrew: () => (foe.board.length ? foe.board[Math.floor(s.rng() * foe.board.length)] : null),
   };
@@ -505,6 +526,15 @@ export function applyAction(s, action) {
       if (dealt && hasKeyword(attacker, 'scorch') && defender.hp > 0) {
         defender.burning = true;
         log(s, `🔥 「${CARDS[defender.defId].name}」에 불이 붙었다.`);
+      }
+      // 냉기: 서로 피해를 주고받은 뒤 살아남은 상대를 얼린다.
+      if (dealt && hasKeyword(attacker, 'chill') && defender.hp > 0) {
+        defender.frozen = true;
+        log(s, `❄ 「${CARDS[defender.defId].name}」이(가) 얼어붙었다.`);
+      }
+      if (back && hasKeyword(defender, 'chill') && attacker.hp > 0) {
+        attacker.frozen = true;
+        log(s, `❄ 「${aName}」이(가) 얼어붙었다.`);
       }
       if (hasKeyword(attacker, 'reach')) {
         for (const side of [foe.board[idx - 1], foe.board[idx + 1]]) {

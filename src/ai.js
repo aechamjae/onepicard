@@ -97,6 +97,12 @@ const TACTIC_AI = {
   windread: (me) => me.hand.length <= 6,
   static: (me) => TACTIC_AI.rum(me),
   downpour: (me, foe) => TACTIC_AI.bladestorm(me, foe),
+  icicle: (me, foe) => strongest(foe.board.filter((c) => dmg(c.frozen ? 3 : 1, c) >= c.hp), value) || strongest(foe.board.filter((c) => c.frozen), value),
+  shatter: (me, foe) => foe.board.filter((c) => c.frozen).length >= 2 || foe.board.some((c) => c.frozen && dmg(3, c) >= c.hp && value(c) >= 5),
+  blizzard: (me, foe) => foe.board.length >= 3 || foe.board.filter((c) => c.atk >= 3).length >= 2,
+  allin: (me, foe) => strongest(foe.board, value),
+  dicebomb: (me, foe) => foe.board.length > 0 || foe.hull <= 6,
+  luckyday: (me) => me.hand.length <= 6,
   insurance: (me) => me.hull <= RULES.startHull - 4,
   buyout: (me, foe) => {
     if (me.treasure > 0 && me.board.length < RULES.boardLimit) {
@@ -128,6 +134,8 @@ const SKILL_AI = {
   guild: (me) => me.hand.length <= 6 && me.deck.length > 0,
   surgeon: (me, foe) => strongest(foe.board.filter((c) => dmg(1, c) >= c.hp), value) || strongest(foe.board, (c) => c.atk),
   storm: (me) => me.hand.length <= 6,
+  frost: (me, foe) => strongest(foe.board.filter((c) => c.frozen ? dmg(2, c) >= c.hp : c.atk >= 2), (c) => (c.frozen ? 10 : 0) + c.atk),
+  dice: () => true,
   merchant: (me, foe) => strongest(foe.board.filter((c) => c.atk >= 3 && !c.frozen), (c) => c.atk),
 };
 

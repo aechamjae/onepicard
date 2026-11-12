@@ -124,7 +124,7 @@ function cardEl(card, factionId, { inHand = false, showText = inHand, owner = nu
 
 function statusIcons(card) {
   const icons = [];
-  if (card.frozen) icons.push('<span title="다음 턴 공격 불가">⚓</span>');
+  if (card.frozen) icons.push('<span title="얼어붙음: 다음 턴 공격 불가">❄</span>');
   if (card.shield) icons.push('<span title="보호막">🛡</span>');
   if (card.stealth) icons.push('<span title="안개 속에 숨음">🌫</span>');
   if (card.burning) icons.push('<span title="불붙음: 턴 시작마다 피해">🔥</span>');
@@ -585,7 +585,7 @@ function inspect(card, pi) {
   box.append(cardEl(card, state.players[pi].factionId, { showText: true }));
   const kws = [...(d.keywords || []), ...(card.gained || [])].map((k) => `<li><b>${KEYWORDS[k].name}</b> ${KEYWORDS[k].desc}</li>`);
   if (card.tension) kws.push(`<li><b>탄력 ${card.tension}</b> 다음 공격 때 공격력 +${card.tension}</li>`);
-  if (card.frozen) kws.push('<li><b>⚓ 묶임</b> 다음 턴에 공격할 수 없다.</li>');
+  if (card.frozen) kws.push('<li><b>❄ 얼어붙음</b> 다음 턴에 공격할 수 없다. (닻 내리기·바나나 껍질·뇌물에 묶인 선원도 얼어붙은 것으로 친다.)</li>');
   if (card.burning) kws.push(`<li><b>🔥 불붙음</b> 주인의 턴이 시작될 때마다 ${RULES.burnDamage} 피해.</li>`);
   if (card.revived) kws.push('<li><b>👻 되살아남</b> 이미 한 번 되살아났다.</li>');
   if (card.submerged) kws.push('<li><b>🌊 잠항 중</b> 내 다음 턴이 올 때까지 공격하거나 대상으로 고를 수 없다.</li>');
@@ -735,7 +735,7 @@ function showStart() {
   dice.className = 'faction f-random';
   dice.innerHTML = `
     <span class="emblem">🎲</span>
-    <span><div class="fname">무작위</div><div class="fdesc">12개 해적단 중 하나를 무작위로 골라 줍니다.</div></span>`;
+    <span><div class="fname">무작위</div><div class="fdesc">${Object.keys(FACTIONS).length}개 해적단 중 하나를 무작위로 골라 줍니다.</div></span>`;
   dice.onclick = () => pickFaction('random');
   list.append(dice);
   for (const [id, f] of Object.entries(FACTIONS)) {

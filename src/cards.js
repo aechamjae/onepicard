@@ -22,6 +22,8 @@ export const KEYWORDS = {
   submerge: { name: '잠항', desc: '낸 뒤 내 다음 턴이 올 때까지 바닷속에 숨어, 공격이나 대상 지정 카드로 고를 수 없다.' },
   resonance: { name: '공명', desc: '내가 전술 카드를 쓸 때마다 공격력 +1 (최대 2번).' },
   trade: { name: '거래', desc: '낼 때 보물이 있으면 1개를 자동으로 써서 카드에 적힌 추가 효과를 낸다.' },
+  chill: { name: '냉기', desc: '이 선원과 싸워 피해를 입고 살아남은 적 선원은 얼어붙어 다음 턴에 공격할 수 없다.' },
+  gamble: { name: '도박', desc: '낼 때 동전을 던져 앞면(1/2)이 나오면 카드에 적힌 추가 효과를 낸다.' },
 };
 
 // 카드 효과 안에서 키워드를 확인할 때 쓴다(효과로 얻은 키워드 포함).
@@ -740,6 +742,100 @@ export const CARDS = {
     text: '아군 선원 모두 공격력 +1, 이번 턴에 바로 공격할 수 있다.',
     effect: (g) => { g.buffAll(1, 0); g.me.board.forEach((c) => g.ready(c.uid)); },
   },
+
+  // ── 서리 포경단 ── (얼어붙은 적 = 다음 턴 공격 불가 상태인 선원)
+  frostpup: { name: '빙판 견습생', type: 'crew', cost: 1, atk: 1, hp: 3, art: '🐧', keywords: ['chill'], text: '' },
+  icepick: { name: '얼음송곳 작살꾼', type: 'crew', cost: 2, atk: 2, hp: 3, art: '⛏️', keywords: ['chill'], text: '' },
+  snowguard: { name: '눈벽 파수꾼', type: 'crew', cost: 3, atk: 1, hp: 5, art: '⛄', keywords: ['guard', 'chill'], text: '' },
+  frostmage: {
+    name: '서리 무당', type: 'crew', cost: 3, atk: 2, hp: 3, art: '🥶',
+    text: '등장: 공격력이 가장 높은 적 선원 하나를 얼린다.',
+    onPlay: (g) => {
+      const list = g.foe.board.filter((c) => !c.stealth && !c.submerged).sort((a, b) => b.atk - a.atk);
+      if (list.length) g.freeze(list[0].uid);
+    },
+  },
+  polar: { name: '흰곰 갑판장', type: 'crew', cost: 4, atk: 4, hp: 5, art: '🐻‍❄️', keywords: ['chill'], text: '' },
+  iceram: { name: '빙산 충각선', type: 'crew', cost: 5, atk: 5, hp: 5, art: '🏔️', keywords: ['charge', 'chill'], text: '' },
+  frostqueen: {
+    name: '시르바', type: 'crew', cost: 7, atk: 5, hp: 6, art: '👸', keywords: ['chill'],
+    text: '얼음 바다를 다스리는 빙하 여제. 등장: 모든 적 선원을 얼린다.',
+    onPlay: (g) => g.freezeAllFoes(),
+  },
+  icicle: {
+    name: '고드름 투척', type: 'tactic', cost: 1, art: '🧊', target: 'foeCrew',
+    text: '적 선원 하나에게 1 피해. 얼어붙은 선원이면 대신 3 피해.',
+    effect: (g, t) => { const c = g.foe.board.find((c) => c.uid === t); if (c) g.damageCrew(t, c.frozen ? 3 : 1); },
+  },
+  shatter: {
+    name: '얼음 깨기', type: 'tactic', cost: 2, art: '🔨',
+    text: '얼어붙은 적 선원 모두에게 3 피해.',
+    effect: (g) => g.foe.board.filter((c) => c.frozen).map((c) => c.uid).forEach((uid) => g.damageCrew(uid, 3)),
+  },
+  blizzard: {
+    name: '눈보라', type: 'tactic', cost: 4, art: '🌨️',
+    text: '모든 적 선원에게 1 피해를 주고 얼린다.',
+    effect: (g) => { g.damageAllFoes(1); g.freezeAllFoes(); },
+  },
+
+  // ── 행운 도박단 ──
+  luckykid: {
+    name: '요요 꼬마', type: 'crew', cost: 1, atk: 1, hp: 2, art: '🪀', keywords: ['gamble'],
+    text: '도박: 카드 1장을 뽑는다.',
+    onPlay: (g) => { if (g.flip()) g.draw(1); },
+  },
+  cardsharp: {
+    name: '화투 사기꾼', type: 'crew', cost: 2, atk: 2, hp: 3, art: '🎴', keywords: ['gamble'],
+    text: '도박: 공격력 +2, 체력 +1.',
+    onPlay: (g, self) => { if (g.flip()) g.buff(self.uid, 2, 1); },
+  },
+  fortune: {
+    name: '클로버 점쟁이', type: 'crew', cost: 2, atk: 2, hp: 3, art: '🍀', reroll: true,
+    text: '내 동전이 뒷면이 나오면 한 번 더 던진다.',
+  },
+  roulette: {
+    name: '룰렛 포수', type: 'crew', cost: 3, atk: 3, hp: 3, art: '🎡', keywords: ['gamble'],
+    text: '도박: 적 배에 3 피해.',
+    onPlay: (g) => { if (g.flip()) g.damageFoeShip(3); },
+  },
+  bouncer: {
+    name: '카지노 문지기', type: 'crew', cost: 3, atk: 2, hp: 5, art: '🦺', keywords: ['guard', 'gamble'],
+    text: '도박: 보호막을 얻는다.',
+    onPlay: (g, self) => { if (g.flip()) g.shield(self.uid); },
+  },
+  highroller: {
+    name: '큰손 도박꾼', type: 'crew', cost: 4, atk: 4, hp: 5, art: '🤵', keywords: ['gamble'],
+    text: '도박: 보물 2개를 얻는다.',
+    onPlay: (g) => { if (g.flip()) g.gainTreasure(2); },
+  },
+  jackpot: {
+    name: '로완', type: 'crew', cost: 7, atk: 5, hp: 6, art: '🎖️', keywords: ['gamble'],
+    text: '잭팟을 노리는 도박단 선장. 등장: 무작위 적 선원에게 3 피해. 도박: 대신 모든 적 선원에게 3 피해.',
+    onPlay: (g) => {
+      if (g.flip()) { g.damageAllFoes(3); return; }
+      const t = g.randomFoeCrew();
+      if (t) g.damageCrew(t.uid, 3);
+    },
+  },
+  allin: {
+    name: '올인', type: 'tactic', cost: 3, art: '♠️', target: 'foeCrew', keywords: ['gamble'],
+    text: '적 선원 하나에게 2 피해. 도박: 대신 6 피해.',
+    effect: (g, t) => g.damageCrew(t, g.flip() ? 6 : 2),
+  },
+  dicebomb: {
+    name: '주사위 폭탄', type: 'tactic', cost: 2, art: '♦️',
+    text: '주사위를 굴려 나온 눈(1~6)만큼 무작위 적 선원에게 피해. 적 선원이 없으면 적 배에 피해.',
+    effect: (g) => {
+      const n = g.dice();
+      const t = g.randomFoeCrew();
+      if (t) g.damageCrew(t.uid, n); else g.damageFoeShip(n);
+    },
+  },
+  luckyday: {
+    name: '운수 좋은 날', type: 'tactic', cost: 2, art: '🌈', keywords: ['gamble'],
+    text: '카드 1장을 뽑는다. 도박: 1장 더 뽑고 보물 1개를 얻는다.',
+    effect: (g) => { g.draw(1); if (g.flip()) { g.draw(1); g.gainTreasure(1); } },
+  },
 };
 
 // skill: 선장 스킬. 한 턴에 한 번, 바람을 써서 쓴다.
@@ -875,5 +971,26 @@ export const FACTIONS = {
       effect: (g, t) => g.freeze(t),
     },
     deck: { pennykid: 3, bodyguard: 2, shady: 2, mercenary: 2, usurer: 1, armsdealer: 2, vaultkeeper: 1, goldcaptain: 1, goldrain: 2, buyout: 1, insurance: 1, chest: 1, carpenter: 2, parrot: 1, lookout: 1, cannon: 1, changer: 2, goldbar: 2, gull: 1, veteran: 1 },
+  },  frost: {
+    name: '서리 포경단',
+    emblem: '❄️',
+    desc: '빙결형. 냉기로 적 선원을 얼려 공격을 막고, 얼어붙은 적을 깨부순다.',
+    skill: {
+      name: '서리 입김', art: '💠', cost: 2, target: 'foeCrew',
+      text: '적 선원 하나를 얼린다. 이미 얼어붙어 있으면 대신 2 피해.',
+      effect: (g, t) => { const c = g.foe.board.find((c) => c.uid === t); if (c?.frozen) g.damageCrew(t, 2); else g.freeze(t); },
+    },
+    deck: { frostpup: 3, icepick: 3, snowguard: 2, frostmage: 2, polar: 2, iceram: 2, frostqueen: 1, icicle: 2, shatter: 2, blizzard: 1, anchor: 1, lookout: 1, cannon: 2, carpenter: 2, veteran: 2, gull: 1, supply: 1 },
+  },
+  dice: {
+    name: '행운 도박단',
+    emblem: '🎰',
+    desc: '도박형. 동전을 던져 앞면이 나오면 큰 이득을 보고, 점쟁이로 운을 끌어올린다.',
+    skill: {
+      name: '동전 던지기', art: '🎲', cost: 2,
+      text: '동전을 던진다. 앞면이면 보물 1개, 뒷면이면 카드 1장.',
+      effect: (g) => { if (g.flip()) g.gainTreasure(1); else g.draw(1); },
+    },
+    deck: { luckykid: 3, cardsharp: 3, fortune: 2, roulette: 2, bouncer: 2, highroller: 2, jackpot: 1, allin: 2, dicebomb: 2, luckyday: 2, parrot: 1, cannon: 1, puffer: 1, twins: 1, chest: 1, veteran: 2, gull: 1, supply: 1 },
   },
 };
