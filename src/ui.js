@@ -19,13 +19,24 @@ let busy = false; // 연출 중이거나 AI 차례
 let session = 0; // 판마다 바뀐다. 홈으로 나가면 진행 중이던 연출과 AI 턴을 멈추는 데 쓴다.
 let difficulty = loadDifficulty();
 let mode = loadMode(); // 'ai' | 'duo'(친구와 한 폰에서 번갈아)
-let duoPick = null; // 친구 모드에서 1P가 고른 진영
+let rivalMode = loadRivalMode(); // AI 대전에서 상대 해적단: 'random' | 'choose'
+let firstPick = null; // 두 번 고르는 흐름(친구 모드, AI 상대 직접 고르기)에서 먼저 고른 해적단
 
 function loadMode() {
   try { if (localStorage.getItem('mode') === 'duo') return 'duo'; } catch {}
   return 'ai';
 }
+function loadRivalMode() {
+  try { if (localStorage.getItem('rival') === 'choose') return 'choose'; } catch {}
+  return 'random';
+}
 const isDuo = () => mode === 'duo';
+// 해적단을 두 번 고르는가: 친구 모드(1P, 2P) 또는 AI 대전에서 상대를 직접 고를 때(나, 상대).
+const twoPicks = () => isDuo() || rivalMode === 'choose';
+const randomFaction = (except = null) => {
+  const ids = Object.keys(FACTIONS).filter((f) => f !== except);
+  return ids[Math.floor(Math.random() * ids.length)];
+};
 // 화면에 보일 이름: AI 대전은 나/AI, 친구 모드는 1P/2P.
 const label = (pi) => (isDuo() ? state.players[pi].name : pi === ME ? '당신' : 'AI');
 
@@ -670,30 +681,49 @@ function renderMode() {
     b.textContent = text;
     b.onclick = () => {
       mode = id;
-      duoPick = null;
+      firstPick = null;
       try { localStorage.setItem('mode', id); } catch {}
       showStart();
     };
     box.append(b);
   }
+  const rivals = $('rival-list');
+  rivals.innerHTML = '';
+  for (const [id, text] of [['random', '🎲 무작위'], ['choose', '🎯 직접 고르기']]) {
+    const b = document.createElement('button');
+    b.className = `diff${id === rivalMode ? ' on' : ''}`;
+    b.setAttribute('role', 'radio');
+    b.setAttribute('aria-checked', String(id === rivalMode));
+    b.textContent = text;
+    b.onclick = () => {
+      rivalMode = id;
+      firstPick = null;
+      try { localStorage.setItem('rival', id); } catch {}
+      showStart();
+    };
+    rivals.append(b);
+  }
   $('diff-wrap').hidden = isDuo();
   $('diff-desc').hidden = isDuo();
+  $('rival-wrap').hidden = isDuo();
   const title = $('pick-title');
-  title.hidden = !isDuo();
-  if (isDuo()) {
-    title.innerHTML = duoPick
-      ? `<span>1P: ${FACTIONS[duoPick].emblem} ${FACTIONS[duoPick].name} · 이제 <b>2P</b>가 고르세요</span><button id="repick" class="ghost">1P 다시 고르기</button>`
-      : '<span><b>1P</b>가 먼저 진영을 고르세요</span>';
-    if (duoPick) $('repick').onclick = () => { duoPick = null; showStart(); };
-  }
+  title.hidden = !twoPicks();
+  if (!twoPicks()) return;
+  const [first, second, again] = isDuo() ? ['<b>1P</b>', '<b>2P</b>', '1P 다시 고르기'] : ['내', '<b>상대</b>', '내 해적단 다시 고르기'];
+  title.innerHTML = firstPick
+    ? `<span>${isDuo() ? '1P' : '나'}: ${FACTIONS[firstPick].emblem} ${FACTIONS[firstPick].name} · 이제 ${second} 해적단을 고르세요</span><button id="repick" class="ghost">${again}</button>`
+    : `<span>${first}${isDuo() ? '가 먼저' : ''} 해적단을 고르세요</span>`;
+  if (firstPick) $('repick').onclick = () => { firstPick = null; showStart(); };
 }
 
+// id가 'random'이면 무작위로 정한다. AI 상대를 무작위로 고를 때는 내 해적단과 겹치지 않게 한다.
 function pickFaction(id) {
-  if (!isDuo()) { startGame(id); return; }
-  if (!duoPick) { duoPick = id; showStart(); return; }
-  const first = duoPick;
-  duoPick = null;
-  startGame(first, id);
+  if (!twoPicks()) { startGame(id === 'random' ? randomFaction() : id); return; }
+  if (!firstPick) { firstPick = id === 'random' ? randomFaction() : id; showStart(); return; }
+  const first = firstPick;
+  const second = id === 'random' ? randomFaction(isDuo() ? null : first) : id;
+  firstPick = null;
+  startGame(first, second);
 }
 
 function showStart() {
@@ -701,6 +731,13 @@ function showStart() {
   renderMode();
   const list = $('faction-list');
   list.innerHTML = '';
+  const dice = document.createElement('button');
+  dice.className = 'faction f-random';
+  dice.innerHTML = `
+    <span class="emblem">🎲</span>
+    <span><div class="fname">무작위</div><div class="fdesc">12개 해적단 중 하나를 무작위로 골라 줍니다.</div></span>`;
+  dice.onclick = () => pickFaction('random');
+  list.append(dice);
   for (const [id, f] of Object.entries(FACTIONS)) {
     const b = document.createElement('button');
     b.className = `faction f-${id}`;
@@ -708,7 +745,7 @@ function showStart() {
       ${id === 'stretch' ? '<span class="badge">추천 · 고무팔</span>' : ''}
       <span class="emblem">${f.emblem}</span>
       <span><div class="fname">${f.name}</div><div class="fdesc">${f.desc}</div></span>`;
-    if (id === duoPick) b.classList.add('picked');
+    if (id === firstPick) b.classList.add('picked');
     b.onclick = () => pickFaction(id);
     list.append(b);
   }
@@ -719,7 +756,6 @@ function showStart() {
   document.body.classList.remove('playing');
 }
 
-// rival: 친구 모드에서 2P가 고른 진영. 없으면 AI가 다른 진영 중 하나를 무작위로 고른다.
 // 하던 판을 버리고 시작 화면으로 간다.
 function quitToHome() {
   session++;
@@ -731,6 +767,7 @@ function quitToHome() {
   showStart();
 }
 
+// rival: 친구 모드의 2P나 직접 고른 AI 상대. 없으면 AI가 다른 해적단 중 하나를 무작위로 고른다.
 async function startGame(factionId, rival = null) {
   session++;
   const others = Object.keys(FACTIONS).filter((f) => f !== factionId);
