@@ -283,7 +283,7 @@ export const CARDS = {
     effect: (g) => { g.damageAllFoes(1); g.burnAllFoes(); },
   },
 
-  // ── 정글 원숭이단 ──
+  // ── 정글 원숭이 무리 ──
   chimp: { name: '장난꾸러기 원숭이', type: 'crew', cost: 1, atk: 1, hp: 2, art: '🙉', keywords: ['charge'], text: '' },
   monkey: { name: '꼬마 원숭이', type: 'crew', cost: 1, atk: 1, hp: 1, art: '🐵', keywords: ['charge'], token: true, text: '' },
   banana: {
@@ -663,7 +663,7 @@ export const CARDS = {
     effect: (g) => g.foe.board.filter((c) => c.burning).map((c) => c.uid).forEach((uid) => g.damageCrew(uid, 4)),
   },
 
-  // ── 정글 원숭이단 (신규) ──
+  // ── 정글 원숭이 무리 (신규) ──
   coconut: {
     name: '코코넛 투척꾼', type: 'crew', cost: 3, atk: 2, hp: 3, art: '🥥',
     text: '등장: 무작위 적 선원에게 1 피해.',
@@ -901,7 +901,7 @@ export const CARDS = {
     effect: (g, t) => { g.damageCrew(t, 1); g.freeze(t); },
   },
 
-  // ── 버섯 포자단 ──
+  // ── 버섯 포자 군집 ──
   spore: {
     name: '포자', type: 'crew', cost: 0, atk: 0, hp: 1, art: '🦠', token: true, noAttack: true, keywords: ['thorns'],
     text: '공격할 수 없다. 주인 턴이 끝날 때 그 배에 1 피해, 2번 주면 시든다. 갑판이 가득 차면 선원을 낼 때 밟혀 터지며 1 피해.',
@@ -965,7 +965,7 @@ export const CARDS = {
     onPlay: (g) => { const t = g.randomFoeCrew(); if (t) g.freeze(t.uid); },
   },
 
-  // ── 버섯 포자단 (추가) ──
+  // ── 버섯 포자 군집 (추가) ──
   mosssnail: { name: '이끼 달팽이', type: 'crew', cost: 2, atk: 2, hp: 3, art: '🐌', keywords: ['spore'], text: '' },
 };
 
@@ -1030,7 +1030,7 @@ export const FACTIONS = {
     deck: { ember: 2, spicy: 3, cook: 2, flambe: 3, grill: 2, twinflame: 2, inferno: 2, feast: 1, firebomb: 3, hotpot: 1, skewer: 2, volcano: 2, parrot: 1, broadside: 1, veteran: 1, supply: 1, gull: 1 },
   },
   monkey: {
-    name: '정글 원숭이단',
+    name: '정글 원숭이 무리',
     emblem: '🐒',
     desc: '물량형. 원숭이 떼를 불러 갑판을 채우고 한꺼번에 강해진다.',
     skill: {
@@ -1151,7 +1151,7 @@ export const FACTIONS = {
     deck: { baitfish: 3, diver: 3, krill: 2, squid: 2, surfer: 3, lobster: 2, sharkboat: 2, megalodon: 1, chum: 2, lure: 3, sharknet: 2, veteran: 1, cannon: 1, rum: 1, supply: 1, carpenter: 1 },
   },
   mush: {
-    name: '버섯 포자단',
+    name: '버섯 포자 군집',
     emblem: '🍄',
     desc: '잠식형. 단단한 균사 선원으로 버티며 적 갑판에 포자를 심고, 포자가 적 배를 갉아먹는다.',
     skill: {
