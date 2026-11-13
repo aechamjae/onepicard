@@ -1,5 +1,5 @@
 // 화면 그리기, 연출, 입력 처리. 규칙 판단은 모두 engine.js에 맡긴다.
-import { CARDS, FACTIONS, KEYWORDS } from './cards.js';
+import { CARDS, FACTIONS, KEYWORDS, COMMON } from './cards.js';
 import { RULES, createGame, applyAction, canPlay, canUseSkill, costOf, legalAttackTargets, hasKeyword, targetable } from './engine.js';
 import { aiNextAction } from './ai.js';
 import { DIFFICULTIES } from './difficulty.js';
@@ -653,6 +653,13 @@ function toast(msg) {
 
 // ── 카드 도감 ──
 
+// 덱 장수를 고유·공용으로 나눠 적는다. 예: 덱 30장(고유 25 · 공용 5)
+function deckSplit(deck) {
+  let own = 0, common = 0;
+  for (const [id, n] of Object.entries(deck)) (COMMON.has(id) ? (common += n) : (own += n));
+  return `덱 ${own + common}장(고유 ${own} · 공용 ${common})`;
+}
+
 let dexTab = null;
 
 function openDex() {
@@ -668,17 +675,17 @@ function openDex() {
     b.onclick = () => { dexTab = g; openDex(); };
     tabs.append(b);
   }
-  // 공용 = 여러 덱에 들어가거나 어느 덱에도 안 들어가는 카드. 진영 = 그 진영 덱에만 들어가는 카드와 그 진영이 부르는 토큰.
+  // 공용 = 여러 해적단이 함께 쓰는 카드(COMMON). 진영 = 그 진영 고유 카드와 그 진영이 부르는 토큰.
   const owners = {};
   for (const [f, { deck }] of Object.entries(FACTIONS)) for (const id of Object.keys(deck)) (owners[id] ??= []).push(f);
-  const home = (id) => (owners[id]?.length === 1 ? owners[id][0] : 'neutral');
+  const home = (id) => (COMMON.has(id) || owners[id]?.length !== 1 ? 'neutral' : owners[id][0]);
   const tokenHome = { spirit: 'ghost', monkey: 'monkey', spark: 'storm', spore: 'mush', bunny: 'zoo', blueberry: 'fruit' };
   const ids = Object.keys(CARDS).filter((id) => id !== 'coin' && (tokenHome[id] ?? home(id)) === dexTab)
     .sort((a, b) => CARDS[a].cost - CARDS[b].cost);
   const skill = FACTIONS[dexTab]?.skill;
   $('dex-desc').innerHTML = dexTab === 'neutral'
     ? '여러 해적단이 함께 쓰는 카드입니다.'
-    : `${FACTIONS[dexTab].desc} 덱 ${Object.values(FACTIONS[dexTab].deck).reduce((a, b) => a + b, 0)}장.<span class="dex-skill">✨ 선장 스킬 ${skill.art} <b>${skill.name}</b> (바람 ${skill.cost}${skill.treasureCost ? ` · 보물 ${skill.treasureCost}` : ''}) — ${skill.text}</span>`;
+    : `${FACTIONS[dexTab].desc} ${deckSplit(FACTIONS[dexTab].deck)}.<span class="dex-skill">✨ 선장 스킬 ${skill.art} <b>${skill.name}</b> (바람 ${skill.cost}${skill.treasureCost ? ` · 보물 ${skill.treasureCost}` : ''}) — ${skill.text}</span>`;
   const box = $('dex-cards');
   box.innerHTML = '';
   for (const id of ids) {
