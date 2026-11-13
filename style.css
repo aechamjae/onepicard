@@ -390,8 +390,11 @@ main[hidden] { display: none; }
 /* 카드 도감 */
 .dex-panel { max-width: 980px; text-align: left; }
 .dex-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.dex-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 10px 0 6px; }
-.dex-tab { flex: none; font-size: .85rem; padding: 6px 12px; background: #ffffff14; color: var(--ink); box-shadow: inset 0 0 0 1px #ffffff30; }
+.dex-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; padding: 10px 0 6px; }
+.dex-tab { min-width: 0; font-size: .85rem; padding: 6px 8px; background: #ffffff14; color: var(--ink); box-shadow: inset 0 0 0 1px #ffffff30; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dex-section { grid-column: 1 / -1; justify-self: stretch; margin: 10px 0 -6px; padding-bottom: 6px; border-bottom: 1px solid #ffffff26; font-family: var(--display); font-size: 1rem; color: var(--gold); text-align: left; }
+@media (max-width: 760px) { .dex-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .dex-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .dex-tab.on { background: var(--gold); color: #3a2200; box-shadow: 0 2px 0 #7a4f00; }
 .dex-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 22px 12px; padding: 12px 8px 4px; justify-items: center; }
 .dex-item { display: grid; justify-items: center; gap: 14px; }

@@ -654,9 +654,12 @@ function toast(msg) {
 // ── 카드 도감 ──
 
 // 덱 장수를 고유·공용으로 나눠 적는다. 예: 덱 30장(고유 25 · 공용 5)
-function deckSplit(deck) {
+// part가 'own'·'common'이면 그 장수만 돌려준다.
+function deckSplit(deck, part) {
   let own = 0, common = 0;
   for (const [id, n] of Object.entries(deck)) (COMMON.has(id) ? (common += n) : (own += n));
+  if (part === 'own') return own;
+  if (part === 'common') return common;
   return `덱 ${own + common}장(고유 ${own} · 공용 ${common})`;
 }
 
@@ -672,6 +675,7 @@ function openDex() {
     b.className = `dex-tab${g === dexTab ? ' on' : ''}`;
     b.setAttribute('role', 'tab');
     b.textContent = g === 'neutral' ? '🃏 공용' : `${FACTIONS[g].emblem} ${FACTIONS[g].name}`;
+    b.title = b.textContent;
     b.onclick = () => { dexTab = g; openDex(); };
     tabs.append(b);
   }
@@ -688,15 +692,26 @@ function openDex() {
     : `${FACTIONS[dexTab].desc} ${deckSplit(FACTIONS[dexTab].deck)}.<span class="dex-skill">✨ 선장 스킬 ${skill.art} <b>${skill.name}</b> (바람 ${skill.cost}${skill.treasureCost ? ` · 보물 ${skill.treasureCost}` : ''}) — ${skill.text}</span>`;
   const box = $('dex-cards');
   box.innerHTML = '';
-  for (const id of ids) {
-    const d = CARDS[id];
+  const addCard = (id, label) => {
     const wrap = document.createElement('div');
     wrap.className = 'dex-item';
     wrap.append(cardEl({ uid: id, defId: id }, dexTab === 'neutral' ? (owners[id]?.[0] ?? 'stretch') : dexTab, { inHand: true }));
-    const n = dexTab !== 'neutral' ? FACTIONS[dexTab].deck[id] : null;
-    const label = d.token ? '불려 나오는 카드' : n ? `덱에 ${n}장` : (owners[id] ?? []).map((f) => FACTIONS[f].emblem).join(' ');
     wrap.insertAdjacentHTML('beforeend', `<span class="dex-count">${label}</span>`);
     box.append(wrap);
+  };
+  const section = (title) => box.insertAdjacentHTML('beforeend', `<h3 class="dex-section">${title}</h3>`);
+  if (dexTab !== 'neutral') section(`⚓ 고유 카드 (${deckSplit(FACTIONS[dexTab].deck, 'own')}장)`);
+  for (const id of ids) {
+    const d = CARDS[id];
+    const n = dexTab !== 'neutral' ? FACTIONS[dexTab].deck[id] : null;
+    addCard(id, d.token ? '불려 나오는 카드' : n ? `덱에 ${n}장` : (owners[id] ?? []).map((f) => FACTIONS[f].emblem).join(' ') || '어느 덱에도 없음');
+  }
+  // 해적단 탭: 이 덱에 함께 넣은 공용 카드도 보여 준다.
+  if (dexTab !== 'neutral') {
+    const deck = FACTIONS[dexTab].deck;
+    const commons = Object.keys(deck).filter((id) => COMMON.has(id)).sort((a, b) => CARDS[a].cost - CARDS[b].cost);
+    section(`🃏 함께 넣은 공용 카드 (${deckSplit(deck, 'common')}장)`);
+    for (const id of commons) addCard(id, `덱에 ${deck[id]}장`);
   }
   $('dex').hidden = false;
 }
