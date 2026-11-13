@@ -412,6 +412,11 @@ main[hidden] { display: none; }
 #inspect .card .face { font-size: 3.2rem; }
 #inspect .kw-list { margin: 0; padding: 12px 16px; border-radius: 12px; background: #0008; font-size: .88rem; line-height: 1.5; list-style: none; text-align: left; }
 #inspect .kw-list b { color: var(--rubber); }
+#inspect .kw-list i { color: var(--ink-dim); font-style: normal; font-size: .8rem; }
+#inspect .orig { width: 100%; box-sizing: border-box; padding: 8px 14px; border-radius: 12px; background: #0008; font-size: .86rem; line-height: 1.6; text-align: left; }
+#inspect .orig b { color: var(--gold); margin-right: 6px; }
+.dex-item.spent .card { filter: grayscale(.85) brightness(.6); }
+.dex-item.spent .dex-count { opacity: .6; }
 
 /* ── 애니메이션 ── */
 @keyframes pulse { 50% { opacity: .78; } }

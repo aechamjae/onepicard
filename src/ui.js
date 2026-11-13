@@ -577,13 +577,18 @@ async function runAI() {
   if (state.winner === null) showBanner('⚓ 내 차례!', 900);
 }
 
-function inspect(card, pi) {
+// 카드를 크게 보여 준다. 판 위 선원이면 원래 수치와 달라진 점도 함께 보여 준다.
+function inspect(card, pi, factionId = state.players[pi].factionId) {
   if (!card) return;
   const d = CARDS[card.defId];
   const box = document.createElement('div');
   box.className = 'inspect-box';
-  box.append(cardEl(card, state.players[pi].factionId, { showText: true }));
-  const kws = [...(d.keywords || []), ...(card.gained || [])].map((k) => `<li><b>${KEYWORDS[k].name}</b> ${KEYWORDS[k].desc}</li>`);
+  box.append(cardEl(card, factionId, { showText: true, inHand: !('hp' in card) }));
+  box.insertAdjacentHTML('beforeend', origHtml(card));
+  const kws = [
+    ...(d.keywords || []).map((k) => `<li><b>${KEYWORDS[k].name}</b> ${KEYWORDS[k].desc}</li>`),
+    ...(card.gained || []).filter((k) => !(d.keywords || []).includes(k)).map((k) => `<li><b>${KEYWORDS[k].name}</b> <i>(효과로 얻음)</i> ${KEYWORDS[k].desc}</li>`),
+  ];
   if (card.tension) kws.push(`<li><b>탄력 ${card.tension}</b> 다음 공격 때 공격력 +${card.tension}</li>`);
   if (card.frozen) kws.push('<li><b>❄ 얼어붙음</b> 다음 턴에 공격할 수 없다. (닻 내리기·바나나 껍질·뇌물에 묶인 선원도 얼어붙은 것으로 친다.)</li>');
   if (card.burning) kws.push(`<li><b>🔥 불붙음</b> 주인의 턴이 시작될 때마다 ${RULES.burnDamage} 피해.</li>`);
@@ -595,6 +600,46 @@ function inspect(card, pi) {
   ov.innerHTML = '';
   ov.append(box);
   ov.hidden = false;
+}
+
+// 원래 카드 수치. 판 위에서 달라졌으면 지금 수치와 나란히 보여 준다.
+function origHtml(card) {
+  const d = CARDS[card.defId];
+  const base = d.type === 'crew' ? `비용 ${d.cost} · 공격력 ${d.atk} · 체력 ${d.hp}` : `비용 ${d.cost} · 전술 카드`;
+  const rows = [`<div><b>원래 카드</b> ${base}</div>`];
+  if (d.type === 'crew' && 'hp' in card) {
+    const changes = [];
+    if (card.atk !== d.atk) changes.push(`공격력 ${d.atk} → ${card.atk}`);
+    if (card.maxHp !== d.hp) changes.push(`최대 체력 ${d.hp} → ${card.maxHp}`);
+    if (card.hp < card.maxHp) changes.push(`피해 ${card.maxHp - card.hp} 입음`);
+    if (changes.length) rows.push(`<div><b>지금</b> ${changes.join(' · ')}</div>`);
+  }
+  return `<div class="orig">${rows.join('')}</div>`;
+}
+
+// 내 덱: 덱에 넣은 카드마다 원래 모습과, 덱에 몇 장 남았는지 보여 준다. 누르면 키워드 설명까지 크게 본다.
+function openDeck() {
+  const p = state.players[ME];
+  const f = FACTIONS[p.factionId];
+  const sk = f.skill;
+  $('deck-desc').innerHTML = `${f.emblem} <b>${f.name}</b> — ${f.desc} 남은 덱 ${p.deck.length}장 · 손패 ${p.hand.length}장.`
+    + `<span class="dex-skill">✨ 선장 스킬 ${sk.art} <b>${sk.name}</b> (바람 ${sk.cost}${sk.treasureCost ? ` · 보물 ${sk.treasureCost}` : ''}) — ${sk.text}</span>`;
+  const box = $('deck-cards');
+  box.innerHTML = '';
+  const ids = Object.keys(f.deck).sort((a, b) => CARDS[a].cost - CARDS[b].cost || CARDS[a].name.localeCompare(CARDS[b].name));
+  for (const id of ids) {
+    const left = p.deck.filter((c) => c.defId === id).length;
+    const inHand = p.hand.filter((c) => c.defId === id).length;
+    const wrap = document.createElement('div');
+    wrap.className = `dex-item${left ? '' : ' spent'}`;
+    const el = cardEl({ uid: id, defId: id }, p.factionId, { inHand: true });
+    el.onclick = () => inspect({ uid: id, defId: id }, ME, p.factionId);
+    el.style.cursor = 'pointer';
+    wrap.append(el);
+    wrap.insertAdjacentHTML('beforeend', `<span class="dex-count">덱에 ${left} / ${f.deck[id]}장${inHand ? ` · 손패 ${inHand}` : ''}</span>`);
+    box.append(wrap);
+  }
+  $('deck-ov').hidden = false;
 }
 
 let toastTimer;
@@ -764,6 +809,7 @@ function quitToHome() {
   $('quit').hidden = true;
   $('inspect').hidden = true;
   $('log-ov').hidden = true;
+  $('deck-ov').hidden = true;
   showStart();
 }
 
@@ -828,6 +874,9 @@ $('quit').onclick = (e) => { if (e.target.id === 'quit') $('quit').hidden = true
 $('rules-btn').onclick = () => { $('rules').hidden = false; };
 $('rules-btn2').onclick = () => { $('rules').hidden = false; };
 $('log-btn').onclick = () => { $('log-ov').hidden = false; $('log').scrollTop = $('log').scrollHeight; };
+$('deck-btn').onclick = openDeck;
+$('deck-close').onclick = () => { $('deck-ov').hidden = true; };
+$('deck-ov').onclick = (e) => { if (e.target.id === 'deck-ov') $('deck-ov').hidden = true; };
 $('log-close').onclick = () => { $('log-ov').hidden = true; };
 $('log-ov').onclick = (e) => { if (e.target.id === 'log-ov') $('log-ov').hidden = true; };
 $('portrait-btn').onclick = () => document.body.classList.add('allow-portrait');
@@ -839,7 +888,8 @@ $('dex-close').onclick = () => { $('dex').hidden = true; };
 $('kw-rules').innerHTML = Object.values(KEYWORDS).map((k) => `<li><b>${k.name}</b> ${k.desc}</li>`).join('');
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
-  $('inspect').hidden = true;
+  if (!$('inspect').hidden) { $('inspect').hidden = true; return; }
+  $('deck-ov').hidden = true;
   if (selected) { selected = null; render(); }
 });
 

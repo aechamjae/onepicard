@@ -34,6 +34,7 @@
         <button id="skill-btn" class="skill-btn"></button>
         <button id="end-btn">⚓ 턴 종료</button>
         <div class="mini-btns">
+          <button id="deck-btn" class="ghost">🃏 내 덱</button>
           <button id="log-btn" class="ghost">📜 일지</button>
           <button id="rules-btn2" class="ghost">규칙</button>
           <button id="home-btn" class="ghost">🏠 홈</button>
@@ -163,6 +164,17 @@
       <div id="dex-tabs" class="dex-tabs" role="tablist"></div>
       <p id="dex-desc" class="sub"></p>
       <div id="dex-cards" class="dex-cards"></div>
+    </div>
+  </div>
+
+  <div id="deck-ov" class="overlay" hidden>
+    <div class="panel dex-panel">
+      <div class="dex-head">
+        <h2 class="title">🃏 내 덱</h2>
+        <button id="deck-close" class="ghost">닫기</button>
+      </div>
+      <p id="deck-desc" class="sub"></p>
+      <div id="deck-cards" class="dex-cards"></div>
     </div>
   </div>
 
