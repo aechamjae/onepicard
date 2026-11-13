@@ -157,8 +157,13 @@ const SKILL_AI = {
   merchant: (me, foe) => strongest(foe.board.filter((c) => c.atk >= 3 && !c.frozen), (c) => c.atk),
 };
 
-// AI가 보는 상대: 안개 속 선원은 고를 수 없으니 뺀다.
-const foeView = (foe) => ({ ...foe, board: targetable(foe.board) });
+// 포자는 내가 상대 갑판에 심은 것이다. 일부러 때려 없앨 이유가 없으니 공격·대상 후보에서 뺀다.
+const isSpore = (c) => !!CARDS[c.defId].noAttack;
+// 공격 대상 후보: 상대 갑판의 포자는 뺀다.
+const attackTargets = (s, pi, a) => legalAttackTargets(s, pi, a).filter((t) => t === 'ship' || !s.players[1 - pi].board.find((c) => c.uid === t && isSpore(c)));
+
+// AI가 보는 상대: 안개 속 선원은 고를 수 없으니 빼고, 포자도 뺀다.
+const foeView = (foe) => ({ ...foe, board: targetable(foe.board).filter((c) => !isSpore(c)) });
 
 function chooseSkill(s) {
   const pi = s.current;
@@ -182,19 +187,23 @@ function randomAction(s) {
   const me = s.players[pi];
   const foe = s.players[1 - pi];
   const pick = (list) => list[Math.floor(s.rng() * list.length)];
-  const targetFor = (kind) => pick((kind === 'foeCrew' ? targetable(foe.board) : me.board).map((c) => c.uid));
+  const targetFor = (kind) => pick((kind === 'foeCrew' ? foeView(foe).board : me.board).map((c) => c.uid));
   const options = [{ type: 'end' }];
   me.hand.forEach((card, i) => {
     if (canPlay(s, pi, i)) return;
     const d = CARDS[card.defId];
-    options.push(d.target ? { type: 'play', handIndex: i, target: targetFor(d.target) } : { type: 'play', handIndex: i });
+    const t = d.target ? targetFor(d.target) : null;
+    if (d.target && t === undefined) return;
+    options.push(d.target ? { type: 'play', handIndex: i, target: t } : { type: 'play', handIndex: i });
   });
   if (!canUseSkill(s, pi)) {
     const sk = FACTIONS[me.factionId].skill;
-    options.push(sk.target ? { type: 'skill', target: targetFor(sk.target) } : { type: 'skill' });
+    const t = sk.target ? targetFor(sk.target) : null;
+    if (!sk.target || t !== undefined) options.push(sk.target ? { type: 'skill', target: t } : { type: 'skill' });
   }
   for (const a of me.board.filter((c) => c.canAttack)) {
-    options.push({ type: 'attack', attacker: a.uid, target: pick(legalAttackTargets(s, pi, a)) });
+    const ts = attackTargets(s, pi, a);
+    if (ts.length) options.push({ type: 'attack', attacker: a.uid, target: pick(ts) });
   }
   return pick(options);
 }
@@ -252,7 +261,7 @@ function chooseAttack(s) {
   const attackers = me.board.filter((c) => c.canAttack).sort((a, b) => b.atk - a.atk);
   for (const a of attackers) {
     const power = a.atk + (a.tension || 0);
-    const legal = legalAttackTargets(s, pi, a);
+    const legal = attackTargets(s, pi, a);
     const canHitShip = legal.includes('ship');
     const loot = 1 + (hasKeyword(a, 'plunder') ? 1 : 0);
     if (canHitShip && (foe.hull - power <= 0 || me.treasure + loot >= RULES.treasureToWin)) {
@@ -378,7 +387,7 @@ function searchAttack(s) {
   let best = null;
   let bestScore = rollout(cloneState(s), pi); // 규칙대로만 쳤을 때가 기준
   for (const a of me.board.filter((c) => c.canAttack)) {
-    for (const target of legalAttackTargets(s, pi, a)) {
+    for (const target of attackTargets(s, pi, a)) {
       const action = { type: 'attack', attacker: a.uid, target };
       const t = cloneState(s);
       if (applyAction(t, action)) continue;
