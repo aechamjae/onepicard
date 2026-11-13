@@ -13,7 +13,6 @@ export const RULES = {
   resonanceLimit: 2,
   discountLimit: 2,
   ripenLimit: 2,
-  bankLimit: 2,
   sporeLimit: 3, // 한 갑판에 심을 수 있는 포자 수
   sporeLife: 2, // 포자가 피해를 주는 횟수. 그 뒤 시든다
 };
@@ -40,7 +39,7 @@ function makePlayer(name, factionId, isAI, rng, hull) {
   return {
     name, factionId, isAI,
     hull, maxHull: hull, treasure: 0,
-    maxWind: 0, wind: 0, bank: 0, fatigue: 0, skillUsed: false, discount: 0, played: 0,
+    maxWind: 0, wind: 0, fatigue: 0, skillUsed: false, discount: 0, played: 0,
     deck: buildDeck(factionId, rng), hand: [], board: [],
   };
 }
@@ -91,9 +90,7 @@ function startTurn(s) {
   s.turn++;
   const p = s.players[s.current];
   p.maxWind = Math.min(RULES.maxWind, p.maxWind + 1);
-  p.wind = p.maxWind + (p.bank || 0); // 광합성으로 모아 둔 바람
-  if (p.bank) log(s, `🌻 모아 둔 햇빛으로 바람 +${p.bank}.`);
-  p.bank = 0;
+  p.wind = p.maxWind;
   p.skillUsed = false;
   // 숙성: 손패의 숙성 카드가 익어 비용이 줄어든다(새로 뽑는 카드는 이번 턴에 익지 않는다).
   p.hand = p.hand.map((c) => ((CARDS[c.defId].keywords || []).includes('ripen') && (c.ripe || 0) < RULES.ripenLimit ? { ...c, ripe: (c.ripe || 0) + 1 } : c));
@@ -332,11 +329,6 @@ function effectApi(s, pi) {
       if (picked.length) log(s, `🍎 손패의 숙성 카드 ${picked.length}장이 익었다.`);
       return picked.length;
     },
-    bankWind: (n) => {
-      const before = me.bank || 0;
-      me.bank = Math.min(RULES.bankLimit, before + n);
-      if (me.bank > before) log(s, `🌻 다음 턴 바람 +${me.bank} (모아 둔 햇빛).`);
-    },
     // 포식: 다른 아군 선원 중 가장 약한 하나를 잡아먹고 그 공격력·체력을 얻는다.
     devour: (selfUid) => {
       const self = me.board.find((c) => c.uid === selfUid);
@@ -425,21 +417,6 @@ function effectApi(s, pi) {
     freezeAllFoes: () => {
       for (const c of foe.board) c.frozen = true;
       if (foe.board.length) log(s, '❄ 적 선원 모두가 얼어붙었다.');
-    },
-    // 동전 던지기. 클로버 점쟁이가 있으면 뒷면일 때 한 번 더 던진다.
-    flip: () => {
-      let heads = s.rng() < 0.5;
-      if (!heads && me.board.some((c) => CARDS[c.defId].reroll)) {
-        log(s, '🍀 뒷면… 점쟁이가 다시 던진다!');
-        heads = s.rng() < 0.5;
-      }
-      log(s, heads ? '🪙 앞면! 도박 성공.' : '🪙 뒷면… 도박 실패.');
-      return heads;
-    },
-    dice: () => {
-      const n = 1 + Math.floor(s.rng() * 6);
-      log(s, `🎲 주사위 눈 ${n}!`);
-      return n;
     },
     randomFoeCrew: () => (foe.board.length ? foe.board[Math.floor(s.rng() * foe.board.length)] : null),
   };
@@ -639,9 +616,6 @@ export function applyAction(s, action) {
       const d = CARDS[c.defId];
       if (d.onTurnEnd) d.onTurnEnd(g, c);
     }
-    // 광합성: 광합성 선원 1명마다 남은 바람 1을 다음 턴으로 넘긴다.
-    const leaves = me.board.filter((c) => hasKeyword(c, 'photo')).length;
-    if (leaves && me.wind > 0) g.bankWind(Math.min(leaves, me.wind));
     checkWinner(s);
     if (s.winner !== null) return null;
     s.current = 1 - pi;

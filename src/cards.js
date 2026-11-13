@@ -25,10 +25,8 @@ export const KEYWORDS = {
   chill: { name: '냉기', desc: '이 선원과 싸워 피해를 입고 살아남은 적 선원은 얼어붙어 다음 턴에 공격할 수 없다.' },
   ripen: { name: '숙성', desc: '손패에 든 채로 내 턴을 맞을 때마다 비용이 1 줄어든다(최대 -2).' },
   devour: { name: '포식', desc: '낼 때 다른 아군 선원 중 가장 약한 하나를 잡아먹고 그 공격력·체력을 얻는다.' },
-  photo: { name: '광합성', desc: '내 턴이 끝날 때 광합성 선원 1명마다 남은 바람 1을 다음 턴으로 넘긴다(모두 합쳐 최대 2).' },
   blood: { name: '피 냄새', desc: '체력이 깎인 적 선원을 공격하면 공격력 +2.' },
   spore: { name: '포자', desc: '쓰러지면 적 갑판에 포자(0/1, 공격 불가)를 심는다. 포자는 주인의 턴이 끝날 때 그 배에 1 피해를 주고, 2번 주면 시든다. 한 갑판에 3개까지. 갑판이 가득 차도 선원을 낼 수 있고, 그때 포자 하나를 밟아 없애며 그 선원이 1 피해를 받는다.' },
-  gamble: { name: '도박', desc: '낼 때 동전을 던져 앞면(1/2)이 나오면 카드에 적힌 추가 효과를 낸다.' },
 };
 
 // 카드 효과 안에서 키워드를 확인할 때 쓴다(효과로 얻은 키워드 포함).
@@ -783,65 +781,6 @@ export const CARDS = {
     effect: (g) => { g.damageAllFoes(1); g.freezeAllFoes(); },
   },
 
-  // ── 타짜 ──
-  luckykid: {
-    name: '요요 꼬마', type: 'crew', cost: 1, atk: 1, hp: 2, art: '🪀', keywords: ['gamble'],
-    text: '도박: 카드 1장을 뽑는다.',
-    onPlay: (g) => { if (g.flip()) g.draw(1); },
-  },
-  cardsharp: {
-    name: '화투 사기꾼', type: 'crew', cost: 2, atk: 2, hp: 3, art: '🎴', keywords: ['gamble'],
-    text: '도박: 공격력 +2, 체력 +1.',
-    onPlay: (g, self) => { if (g.flip()) g.buff(self.uid, 2, 1); },
-  },
-  fortune: {
-    name: '클로버 점쟁이', type: 'crew', cost: 2, atk: 2, hp: 3, art: '🍀', reroll: true,
-    text: '내 동전이 뒷면이 나오면 한 번 더 던진다.',
-  },
-  roulette: {
-    name: '룰렛 포수', type: 'crew', cost: 3, atk: 3, hp: 3, art: '🎡', keywords: ['gamble'],
-    text: '도박: 적 배에 3 피해.',
-    onPlay: (g) => { if (g.flip()) g.damageFoeShip(3); },
-  },
-  bouncer: {
-    name: '카지노 문지기', type: 'crew', cost: 3, atk: 2, hp: 5, art: '🦺', keywords: ['guard', 'gamble'],
-    text: '도박: 보호막을 얻는다.',
-    onPlay: (g, self) => { if (g.flip()) g.shield(self.uid); },
-  },
-  highroller: {
-    name: '큰손 도박꾼', type: 'crew', cost: 4, atk: 4, hp: 5, art: '🤵', keywords: ['gamble'],
-    text: '도박: 보물 2개를 얻는다.',
-    onPlay: (g) => { if (g.flip()) g.gainTreasure(2); },
-  },
-  jackpot: {
-    name: '로완', type: 'crew', cost: 7, atk: 5, hp: 6, art: '🎖️', keywords: ['gamble'],
-    text: '잭팟을 노리는 도박단 선장. 등장: 무작위 적 선원에게 3 피해. 도박: 대신 모든 적 선원에게 3 피해.',
-    onPlay: (g) => {
-      if (g.flip()) { g.damageAllFoes(3); return; }
-      const t = g.randomFoeCrew();
-      if (t) g.damageCrew(t.uid, 3);
-    },
-  },
-  allin: {
-    name: '올인', type: 'tactic', cost: 3, art: '♠️', target: 'foeCrew', keywords: ['gamble'],
-    text: '적 선원 하나에게 2 피해. 도박: 대신 6 피해.',
-    effect: (g, t) => g.damageCrew(t, g.flip() ? 6 : 2),
-  },
-  dicebomb: {
-    name: '주사위 폭탄', type: 'tactic', cost: 2, art: '♦️',
-    text: '주사위를 굴려 나온 눈(1~6)만큼 무작위 적 선원에게 피해. 적 선원이 없으면 적 배에 피해.',
-    effect: (g) => {
-      const n = g.dice();
-      const t = g.randomFoeCrew();
-      if (t) g.damageCrew(t.uid, n); else g.damageFoeShip(n);
-    },
-  },
-  luckyday: {
-    name: '운수 좋은 날', type: 'tactic', cost: 2, art: '🌈', keywords: ['gamble'],
-    text: '카드 1장을 뽑는다. 도박: 1장 더 뽑고 보물 1개를 얻는다.',
-    effect: (g) => { g.draw(1); if (g.flip()) { g.draw(1); g.gainTreasure(1); } },
-  },
-
   // ── 한국과수협회 ──
   greenapple: {
     name: '풋사과 견습생', type: 'crew', cost: 1, atk: 1, hp: 2, art: '🍏',
@@ -928,48 +867,6 @@ export const CARDS = {
     name: '신선한 풀', type: 'tactic', cost: 2, art: '🥬',
     text: '아군 선원 모두 체력 +1. 카드 1장을 뽑는다.',
     effect: (g) => { g.buffAll(0, 1); g.draw(1); },
-  },
-
-  // ── 해바라기 협회 ──
-  daisy: { name: '데이지 소녀', type: 'crew', cost: 1, atk: 1, hp: 3, art: '🌼', keywords: ['photo'], text: '' },
-  tulip: { name: '튤립 기사', type: 'crew', cost: 2, atk: 2, hp: 4, art: '🌷', keywords: ['photo'], text: '' },
-  snail: { name: '정원 달팽이', type: 'crew', cost: 2, atk: 1, hp: 4, art: '🐌', keywords: ['guard'], text: '' },
-  cactus: { name: '선인장 가시병', type: 'crew', cost: 3, atk: 3, hp: 4, art: '🌵', keywords: ['thorns', 'photo'], text: '' },
-  lotus: {
-    name: '연꽃 치유사', type: 'crew', cost: 3, atk: 2, hp: 3, art: '🪷', keywords: ['photo'],
-    text: '등장: 내 배의 선체를 3 회복한다.',
-    onPlay: (g) => g.healShip(3),
-  },
-  bouquet: {
-    name: '꽃다발 전령', type: 'crew', cost: 3, atk: 2, hp: 2, art: '💐',
-    text: '등장: 카드 1장을 뽑는다.',
-    onPlay: (g) => g.draw(1),
-  },
-  rose: { name: '장미 검사', type: 'crew', cost: 4, atk: 4, hp: 4, art: '🌹', keywords: ['photo', 'thorns'], text: '' },
-  palm: { name: '야자수 파수꾼', type: 'crew', cost: 5, atk: 3, hp: 7, art: '🌴', keywords: ['guard', 'photo'], text: '' },
-  helia: {
-    name: '헬리아', type: 'crew', cost: 7, atk: 5, hp: 6, art: '🌅', keywords: ['photo'],
-    text: '해바라기 협회의 태양 회장. 등장: 이번 턴 바람 +3.',
-    onPlay: (g) => g.gainWind(3),
-  },
-  bloom: {
-    name: '만개', type: 'tactic', cost: 0, art: '🌸',
-    text: '남은 바람을 모두 쓴다. 1마다 무작위 적 선원에게 1 피해(적 선원이 없으면 적 배에).',
-    effect: (g) => {
-      const n = g.me.wind;
-      g.gainWind(-n);
-      for (let i = 0; i < n; i++) { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 1); else g.damageFoeShip(1); }
-    },
-  },
-  watering: {
-    name: '물뿌리개', type: 'tactic', cost: 1, art: '🪣', target: 'allyCrew',
-    text: '아군 선원 하나에게 체력 +2. 카드 1장을 뽑는다.',
-    effect: (g, t) => { g.buff(t, 0, 2); g.draw(1); },
-  },
-  clearsky: {
-    name: '맑은 하늘', type: 'tactic', cost: 2, art: '🌤️',
-    text: '카드 1장을 뽑는다. 다음 턴 바람 +1.',
-    effect: (g) => { g.draw(1); g.bankWind(1); },
   },
 
   // ── 상어 사냥단 ──
@@ -1186,17 +1083,6 @@ export const FACTIONS = {
     },
     deck: { frostpup: 3, icepick: 3, snowguard: 2, frostmage: 2, polar: 2, iceram: 2, frostqueen: 1, icicle: 2, shatter: 2, blizzard: 1, anchor: 1, lookout: 1, cannon: 2, carpenter: 2, veteran: 2, gull: 1, supply: 1 },
   },
-  dice: {
-    name: '타짜',
-    emblem: '🎰',
-    desc: '도박형. 동전을 던져 앞면이 나오면 큰 이득을 보고, 점쟁이로 운을 끌어올린다.',
-    skill: {
-      name: '동전 던지기', art: '🎲', cost: 2,
-      text: '동전을 던진다. 앞면이면 보물 1개, 뒷면이면 카드 1장.',
-      effect: (g) => { if (g.flip()) g.gainTreasure(1); else g.draw(1); },
-    },
-    deck: { luckykid: 3, cardsharp: 3, fortune: 2, roulette: 2, bouncer: 2, highroller: 2, jackpot: 1, allin: 2, dicebomb: 2, luckyday: 2, parrot: 1, cannon: 1, puffer: 1, twins: 1, chest: 1, veteran: 2, gull: 1, supply: 1 },
-  },
   fruit: {
     name: '한국과수협회',
     emblem: '🍎',
@@ -1218,17 +1104,6 @@ export const FACTIONS = {
       effect: (g) => g.summon('bunny', 1),
     },
     deck: { rabbit: 3, zebra: 2, goat: 2, panda: 2, giraffe: 2, leopard: 2, hippo: 2, rhino: 2, elephant: 1, tiger: 2, lionking: 1, safaribus: 2, freshgrass: 2, veteran: 1, gull: 1, cannon: 1, supply: 1, lookout: 1 },
-  },
-  sun: {
-    name: '해바라기 협회',
-    emblem: '🌻',
-    desc: '저축형. 광합성으로 남은 바람을 다음 턴에 넘겨 모으고, 한 턴에 몰아 쓴다.',
-    skill: {
-      name: '햇볕 쬐기', art: '☀️', cost: 1,
-      text: '다음 턴 바람 +1. 무작위 아군 선원 체력 +1.',
-      effect: (g) => { g.bankWind(1); const a = g.randomAllyCrew(); if (a) g.buff(a.uid, 0, 1); },
-    },
-    deck: { daisy: 3, tulip: 3, snail: 2, cactus: 2, lotus: 2, bouquet: 2, rose: 2, palm: 2, helia: 1, bloom: 2, watering: 2, clearsky: 1, veteran: 1, cannon: 2, gull: 1, supply: 1, lookout: 1 },
   },
   shark: {
     name: '상어 사냥단',

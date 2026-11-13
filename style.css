@@ -258,10 +258,8 @@ main[hidden] { display: none; }
 .f-storm { --fa: #6f63d9; --fb: #1b1640; --fc: #fff27a; --art-bg: radial-gradient(circle at 50% 30%, #e9e6ff, #6d64b8); }
 .f-merchant { --fa: #e0b03a; --fb: #5a3d0a; --fc: #fff0b3; --art-bg: radial-gradient(circle at 50% 35%, #fff8d6, #e2b54a); }
 .f-frost { --fa: #7cc8ee; --fb: #173a5a; --fc: #e6f7ff; --art-bg: radial-gradient(circle at 50% 30%, #ffffff, #a9dcf5 60%, #6aaed6); }
-.f-dice { --fa: #d9334f; --fb: #1f4a2c; --fc: #ffe27a; --art-bg: radial-gradient(circle at 50% 40%, #fbf4dc, #3f8a55); }
 .f-fruit { --fa: #e5483b; --fb: #4f7a1f; --fc: #ffe9a8; --art-bg: radial-gradient(circle at 50% 35%, #fff6e0, #f2a15a 60%, #8cc152); }
 .f-zoo { --fa: #e8a33d; --fb: #4a3418; --fc: #fff1c9; --art-bg: radial-gradient(circle at 50% 40%, #fff7dd, #d9b66f 60%, #8fae5c); }
-.f-sun { --fa: #f5c518; --fb: #3d6b1e; --fc: #fff8c4; --art-bg: radial-gradient(circle at 50% 30%, #fffbe0, #ffd84a 55%, #9bc95a); }
 .f-shark { --fa: #4a7fa8; --fb: #10233a; --fc: #ff8a8a; --art-bg: radial-gradient(circle at 50% 35%, #dff1ff, #5b8fb8 60%, #8b1e2b); }
 .f-mush { --fa: #a0623f; --fb: #2e2418; --fc: #e9d8b5; --art-bg: radial-gradient(circle at 50% 35%, #f6ecd8, #b98a5c 60%, #5e7a3a); }
 .card.tactic { --fa: #f6e7c2; --fb: #d8b874; --name: #3b2410; --art-bg: radial-gradient(circle, #fffaf0, #e8d3a2); }
