@@ -14,7 +14,8 @@ export const RULES = {
   discountLimit: 2,
   ripenLimit: 2,
   bankLimit: 2,
-  sporeDamage: 1,
+  sporeLimit: 3, // 한 갑판에 심을 수 있는 포자 수
+  sporeLife: 2, // 포자가 피해를 주는 횟수. 그 뒤 시든다
 };
 
 let uidSeq = 1;
@@ -159,11 +160,14 @@ function removeDead(s) {
   });
 }
 
+const isSpore = (c) => !!CARDS[c.defId].noAttack;
+
 // 포자: 상대 갑판 빈자리에 공격할 수 없는 포자를 심는다.
 function plantSpores(s, pi, n) {
   const p = s.players[pi];
   let planted = 0;
-  for (; planted < n && p.board.length < RULES.boardLimit; planted++) p.board.push(makeCrew(uidSeq++, 'spore'));
+  const room = () => p.board.length < RULES.boardLimit && p.board.filter(isSpore).length < RULES.sporeLimit;
+  for (; planted < n && room(); planted++) p.board.push({ ...makeCrew(uidSeq++, 'spore'), life: RULES.sporeLife });
   if (planted) log(s, `🦠 ${p.name}의 갑판에 포자 ${planted}개가 피어났다.`);
 }
 
@@ -311,6 +315,13 @@ function effectApi(s, pi) {
       removeDead(s);
     },
     isAlive: (uid) => !!findCrew(s, uid),
+    // 포자가 시들어 사라진다(유언·망령 없이).
+    wither: (uid) => {
+      const f = findCrew(s, uid);
+      if (!f) return;
+      s.players[f.owner].board = s.players[f.owner].board.filter((c) => c !== f.crew);
+      log(s, `🍂 포자가 시들어 사라졌다.`);
+    },
     plantSpores: (n) => plantSpores(s, 1 - pi, n),
     // 숙성: 손패의 숙성 카드를 익힌다. all이 아니면 가장 비싼 카드 하나만.
     ripenHand: (all = true) => {
@@ -474,7 +485,7 @@ export function canPlay(s, pi, handIndex) {
   if (!card) return '그 카드가 없다.';
   const d = CARDS[card.defId];
   if (costOf(p, card) > p.wind) return '바람이 부족하다.';
-  if (d.type === 'crew' && p.board.length >= RULES.boardLimit) return `선원은 ${RULES.boardLimit}명까지만 둘 수 있다.`;
+  if (d.type === 'crew' && p.board.length >= RULES.boardLimit && !p.board.some(isSpore)) return `선원은 ${RULES.boardLimit}명까지만 둘 수 있다.`;
   return d.target ? targetError(s, pi, d.target) : null;
 }
 
@@ -499,9 +510,21 @@ export function applyAction(s, action) {
     me.hand.splice(action.handIndex, 1);
     const g = effectApi(s, pi);
     if (d.type === 'crew') {
+      // 갑판이 가득 차 있으면 포자 하나를 밟아 없애고 자리를 만든다.
+      const crushed = me.board.length >= RULES.boardLimit;
+      if (crushed) {
+        const spore = me.board.find(isSpore);
+        me.board = me.board.filter((c) => c !== spore);
+        log(s, `🦶 ${me.name}이(가) 포자를 밟아 없앴다.`);
+      }
       const crew = makeCrew(card.uid, card.defId);
       me.board.push(crew);
       log(s, `${me.name}: 「${d.name}」 승선.`);
+      if (crushed) {
+        hurt(crew, 1); // 밟은 포자가 터져 1 피해
+        log(s, `🦠 터진 포자에 「${d.name}」이(가) 1 피해.`);
+        removeDead(s);
+      }
       if (d.onPlay) d.onPlay(g, crew);
     } else {
       log(s, `${me.name}: 「${d.name}」 사용.`);
@@ -614,7 +637,7 @@ export function applyAction(s, action) {
     }
     for (const c of [...me.board]) {
       const d = CARDS[c.defId];
-      if (d.onTurnEnd) d.onTurnEnd(g);
+      if (d.onTurnEnd) d.onTurnEnd(g, c);
     }
     // 광합성: 광합성 선원 1명마다 남은 바람 1을 다음 턴으로 넘긴다.
     const leaves = me.board.filter((c) => hasKeyword(c, 'photo')).length;

@@ -27,7 +27,7 @@ export const KEYWORDS = {
   devour: { name: '포식', desc: '낼 때 다른 아군 선원 중 가장 약한 하나를 잡아먹고 그 공격력·체력을 얻는다.' },
   photo: { name: '광합성', desc: '내 턴이 끝날 때 광합성 선원 1명마다 남은 바람 1을 다음 턴으로 넘긴다(모두 합쳐 최대 2).' },
   blood: { name: '피 냄새', desc: '체력이 깎인 적 선원을 공격하면 공격력 +2.' },
-  spore: { name: '포자', desc: '쓰러지면 적 갑판 빈자리에 포자(0/1, 공격 불가)를 심는다. 포자는 주인의 턴이 끝날 때마다 그 배에 1 피해.' },
+  spore: { name: '포자', desc: '쓰러지면 적 갑판에 포자(0/1, 공격 불가)를 심는다. 포자는 주인의 턴이 끝날 때 그 배에 1 피해를 주고, 2번 주면 시든다. 한 갑판에 3개까지. 갑판이 가득 차도 선원을 낼 수 있고, 그때 포자 하나를 밟아 없애며 그 선원이 1 피해를 받는다.' },
   gamble: { name: '도박', desc: '낼 때 동전을 던져 앞면(1/2)이 나오면 카드에 적힌 추가 효과를 낸다.' },
 };
 
@@ -135,7 +135,7 @@ export const CARDS = {
     effect: (g, t) => { g.damageCrew(t, 4); if (!g.isAlive(t)) g.gainTreasure(1); },
   },
   shadowthief: { name: '그림자 도둑', type: 'crew', cost: 3, atk: 3, hp: 2, art: '🥷', keywords: ['stealth', 'plunder'], text: '' },
-  redbeard: { name: '쪼찌', type: 'crew', cost: 5, atk: 5, hp: 5, art: '🧔', keywords: ['charge', 'plunder', 'sneak'], text: '붉은 수염을 휘날리는 해적 제독.' },
+  redbeard: { name: '쪼찌', type: 'crew', cost: 5, atk: 5, hp: 6, art: '🧔', keywords: ['charge', 'plunder', 'sneak'], text: '붉은 수염을 휘날리는 해적 제독.' },
 
   // ── 심해 함대 ──
   sentinel: { name: '집게발 파수꾼', type: 'crew', cost: 2, atk: 2, hp: 4, art: '🦀', keywords: ['guard'], text: '' },
@@ -185,7 +185,7 @@ export const CARDS = {
   balloon: { name: '풍선배 방패수', type: 'crew', cost: 3, atk: 1, hp: 4, art: '🎈', keywords: ['guard', 'elastic'], text: '' },
   spring: { name: '용수철 포수', type: 'crew', cost: 4, atk: 3, hp: 4, art: '😆', arm: true, keywords: ['tension', 'elastic'], text: '' },
   catapult: { name: '새총팔 투척수', type: 'crew', cost: 4, atk: 3, hp: 2, art: '😝', arm: true, keywords: ['reach', 'elastic'], text: '' },
-  ringmaster: { name: '도리', type: 'crew', cost: 6, atk: 4, hp: 5, art: '🤠', arm: true, keywords: ['reach', 'tension'], text: '거인처럼 긴 팔을 가진 곡예단장.' },
+  ringmaster: { name: '도리', type: 'crew', cost: 6, atk: 4, hp: 6, art: '🤠', arm: true, keywords: ['reach', 'tension'], text: '거인처럼 긴 팔을 가진 곡예단장.' },
   slingshot: {
     name: '고무줄 새총', type: 'tactic', cost: 2, art: '🪃', target: 'allyCrew',
     text: '아군 선원 하나의 팔을 끝까지 당긴다: 탄력 3, 이번 턴에 바로 공격할 수 있다.',
@@ -209,7 +209,7 @@ export const CARDS = {
   },
   bubble: { name: '고무 거품 기사', type: 'crew', cost: 2, atk: 1, hp: 2, art: '🫧', keywords: ['shield', 'elastic'], text: '' },
   doublepunch: { name: '바제스', type: 'crew', cost: 5, atk: 3, hp: 4, art: '🥊', arm: true, keywords: ['double', 'elastic'], text: '고무주먹 두 개로 링을 휩쓴 챔피언.' },
-  octoarm: { name: '루피', type: 'crew', cost: 7, atk: 5, hp: 6, art: '😎', arm: true, keywords: ['reach', 'elastic', 'tension'], text: '여덟 개의 팔을 휘두르는 곡예왕.' },
+  octoarm: { name: '루피', type: 'crew', cost: 7, atk: 5, hp: 7, art: '😎', arm: true, keywords: ['reach', 'elastic', 'tension'], text: '여덟 개의 팔을 휘두르는 곡예왕.' },
 
   // ── 유령선단 ──
   wisp: { name: '도깨비불', type: 'crew', cost: 1, atk: 1, hp: 1, art: '🕯️', keywords: ['ghost'], text: '' },
@@ -232,7 +232,7 @@ export const CARDS = {
     text: '유령선을 이끄는 선장. 등장: 무작위 적 선원에게 2 피해.',
     onPlay: (g) => { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 2); },
   },
-  vampire: { name: '스튜시', type: 'crew', cost: 5, atk: 4, hp: 4, art: '🧛', keywords: ['lifesteal', 'ghost'], text: '피를 탐하는 흡혈 귀족.' },
+  vampire: { name: '스튜시', type: 'crew', cost: 5, atk: 4, hp: 3, art: '🧛', keywords: ['lifesteal', 'ghost'], text: '피를 탐하는 흡혈 귀족.' },
   spirit: { name: '떠도는 혼', type: 'crew', cost: 1, atk: 1, hp: 1, art: '👤', keywords: ['ghost'], token: true, text: '' },
   curse: {
     name: '저주의 인형', type: 'tactic', cost: 2, art: '🪆', target: 'foeCrew',
@@ -367,7 +367,7 @@ export const CARDS = {
   gale: { name: '킬러', type: 'crew', cost: 5, atk: 3, hp: 2, art: '💨', keywords: ['charge', 'slash'], text: '질풍처럼 베고 지나가는 검호.' },
   nitoryu: { name: '오뎅', type: 'crew', cost: 5, atk: 2, hp: 3, art: '🍢', keywords: ['double', 'slash'], text: '두 자루 칼을 쓰는 이도류 낭인.' },
   swordsaint: {
-    name: '류마', type: 'crew', cost: 7, atk: 5, hp: 6, art: '🏯', keywords: ['slash'],
+    name: '류마', type: 'crew', cost: 7, atk: 5, hp: 5, art: '🏯', keywords: ['slash'],
     text: '전설로 불리는 검성. 등장: 체력이 가장 낮은 적 선원 하나를 단칼에 벤다.',
     onPlay: (g) => {
       const list = g.foe.board.filter((c) => !c.stealth).sort((a, b) => a.hp - b.hp);
@@ -1006,32 +1006,32 @@ export const CARDS = {
 
   // ── 버섯 포자단 ──
   spore: {
-    name: '포자', type: 'crew', cost: 0, atk: 0, hp: 1, art: '🦠', token: true, noAttack: true,
-    text: '공격할 수 없다. 이 포자가 있는 배의 주인 턴이 끝날 때 그 배에 1 피해.',
-    onTurnEnd: (g) => g.damageMyShip(1),
+    name: '포자', type: 'crew', cost: 0, atk: 0, hp: 1, art: '🦠', token: true, noAttack: true, keywords: ['thorns'],
+    text: '공격할 수 없다. 주인 턴이 끝날 때 그 배에 1 피해, 2번 주면 시든다. 갑판이 가득 차면 선원을 낼 때 밟혀 터지며 1 피해.',
+    onTurnEnd: (g, self) => { g.damageMyShip(1); if (--self.life <= 0) g.wither(self.uid); },
   },
-  sprout: { name: '균사 새싹', type: 'crew', cost: 1, atk: 1, hp: 1, art: '🌱', keywords: ['spore'], text: '' },
-  leafling: { name: '낙엽 은신자', type: 'crew', cost: 2, atk: 2, hp: 1, art: '🍂', keywords: ['stealth', 'spore'], text: '' },
-  larva: { name: '버섯 애벌레', type: 'crew', cost: 2, atk: 2, hp: 2, art: '🐛', keywords: ['spore'], text: '' },
-  potguard: { name: '화분 수호병', type: 'crew', cost: 3, atk: 1, hp: 4, art: '🪴', keywords: ['guard', 'spore'], text: '' },
+  sprout: { name: '균사 새싹', type: 'crew', cost: 1, atk: 2, hp: 2, art: '🌱', keywords: ['spore'], text: '' },
+  leafling: { name: '낙엽 은신자', type: 'crew', cost: 2, atk: 3, hp: 2, art: '🍂', keywords: ['stealth', 'spore'], text: '' },
+  larva: { name: '버섯 애벌레', type: 'crew', cost: 2, atk: 3, hp: 3, art: '🐛', keywords: ['spore'], text: '' },
+  potguard: { name: '화분 수호병', type: 'crew', cost: 3, atk: 2, hp: 5, art: '🪴', keywords: ['guard', 'spore'], text: '' },
   culturist: {
-    name: '포자 배양사', type: 'crew', cost: 4, atk: 2, hp: 4, art: '🧫',
-    text: '등장: 적 갑판에 포자 1개를 심는다.',
-    onPlay: (g) => g.plantSpores(1),
+    name: '포자 배양사', type: 'crew', cost: 4, atk: 3, hp: 5, art: '🧫',
+    text: '등장: 적 갑판에 포자 2개를 심는다.',
+    onPlay: (g) => g.plantSpores(2),
   },
-  troll: { name: '이끼 트롤', type: 'crew', cost: 5, atk: 4, hp: 6, art: '🧌', text: '' },
+  troll: { name: '이끼 트롤', type: 'crew', cost: 5, atk: 5, hp: 7, art: '🧌', text: '' },
   mykos: {
-    name: '미코스', type: 'crew', cost: 7, atk: 4, hp: 7, art: '🌲',
+    name: '미코스', type: 'crew', cost: 7, atk: 6, hp: 8, art: '🌲',
     text: '숲 전체에 뿌리를 뻗은 균사 거목. 등장: 적 갑판에 포자 3개를 심는다.',
     onPlay: (g) => g.plantSpores(3),
   },
   wither: {
     name: '시들게 하기', type: 'tactic', cost: 2, art: '🥀', target: 'foeCrew',
-    text: '적 선원 하나에게 2 피해. 그 선원이 쓰러지면 적 갑판에 포자 1개를 심는다.',
-    effect: (g, t) => { g.damageCrew(t, 2); if (!g.isAlive(t)) g.plantSpores(1); },
+    text: '적 선원 하나에게 3 피해. 그 선원이 쓰러지면 적 갑판에 포자 1개를 심는다.',
+    effect: (g, t) => { g.damageCrew(t, 3); if (!g.isAlive(t)) g.plantSpores(1); },
   },
   sporecloud: {
-    name: '포자 구름', type: 'tactic', cost: 3, art: '🌁',
+    name: '포자 구름', type: 'tactic', cost: 2, art: '🌁',
     text: '적 갑판에 포자 2개를 심는다. 카드 1장을 뽑는다.',
     effect: (g) => { g.plantSpores(2); g.draw(1); },
   },
@@ -1244,9 +1244,9 @@ export const FACTIONS = {
   mush: {
     name: '버섯 포자단',
     emblem: '🍄',
-    desc: '잠식형. 쓰러질 때마다 적 갑판에 포자를 심어 자리를 막고, 포자가 적 배를 천천히 갉아먹는다.',
+    desc: '잠식형. 단단한 균사 선원으로 버티며 적 갑판에 포자를 심고, 포자가 적 배를 갉아먹는다.',
     skill: {
-      name: '번식', art: '🧬', cost: 3,
+      name: '번식', art: '🧬', cost: 2,
       text: '적 갑판에 포자 1개를 심는다.',
       effect: (g) => g.plantSpores(1),
     },

@@ -113,7 +113,7 @@ const TACTIC_AI = {
   chum: (me, foe) => foe.board.length >= 2,
   lure: (me, foe) => strongest(foe.board, value),
   sharknet: (me, foe) => strongest(foe.board.filter((c) => c.atk >= 3), (c) => c.atk),
-  wither: (me, foe) => strongest(foe.board.filter((c) => dmg(2, c) >= c.hp), value) || strongest(foe.board, value),
+  wither: (me, foe) => strongest(foe.board.filter((c) => dmg(3, c) >= c.hp), value) || strongest(foe.board, value),
   sporecloud: (me, foe) => foe.board.length <= RULES.boardLimit - 2,
   mushsoup: (me) => me.hull <= RULES.startHull - 4,
   insurance: (me) => me.hull <= RULES.startHull - 4,
