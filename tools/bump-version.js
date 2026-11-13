@@ -7,4 +7,6 @@ const v = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12); // 예: 2
 const html = readFileSync(file, 'utf8');
 const next = html.replace(/\?v=[\w.-]+/g, `?v=${v}`);
 writeFileSync(file, next);
+// 게임이 켜질 때 이 파일을 캐시 없이 읽어, 자기 버전과 다르면 새로 연다(index.html이 캐시된 경우 대비).
+writeFileSync(new URL('../version.json', import.meta.url), JSON.stringify({ v }) + '\n');
 console.log(`버전 ${v} (${(html.match(/\?v=/g) || []).length}곳)`);

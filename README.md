@@ -15,7 +15,7 @@ python3 -m http.server 8000
 
 GitHub Pages: 저장소 **Settings → Pages → Branch: `main` / `(root)`** 로 켜면 바로 공개 주소가 생깁니다.
 
-배포 전에는 `node tools/bump-version.js`를 실행해 `index.html`의 `?v=` 값을 바꿔 주세요. 그래야 브라우저와 홈 화면 앱이 캐시해 둔 예전 파일 대신 새 파일을 받습니다.
+배포 전에는 `node tools/bump-version.js`를 실행해 `index.html`의 `?v=` 값과 `version.json`을 바꿔 주세요. 게임이 켜질 때 `version.json`을 캐시 없이 읽어 버전이 다르면 스스로 새로 열기 때문에, 홈 화면 앱도 예전 화면에 머물지 않습니다.
 
 ## AI 대전에서 상대 고르기
 

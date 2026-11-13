@@ -16,7 +16,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="onepica">
   <meta name="application-name" content="onepica">
-  <link rel="stylesheet" href="style.css?v=202611131226">
+  <link rel="stylesheet" href="style.css?v=202611131229">
 </head>
 <body>
   <div class="sea" aria-hidden="true"></div>
@@ -182,17 +182,33 @@
   <div id="banner" aria-live="polite"></div>
   <div id="toast" role="status"></div>
 
+  <!-- 홈 화면 앱이나 캐시가 예전 index.html을 쓰고 있으면, 최신 버전 번호(version.json)를 캐시 없이 받아 와 새 주소로 다시 연다. -->
+  <script>
+    (function () {
+      var BUILD = '?v=202611131229'.slice(3);
+      fetch('version.json?t=' + Date.now(), { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) {
+          if (!j || !j.v || j.v === BUILD) return;
+          var url = new URL(location.href);
+          if (url.searchParams.get('v') === j.v) return; // 이미 새 주소로 왔는데도 다르면 무한 새로고침을 막는다
+          url.searchParams.set('v', j.v);
+          location.replace(url.toString());
+        })
+        .catch(function () {});
+    })();
+  </script>
   <!-- 배포할 때마다 v 값을 바꿔 브라우저가 예전 파일을 쓰지 않게 한다: node tools/bump-version.js -->
   <script type="importmap">
     {
       "imports": {
-        "./src/cards.js": "./src/cards.js?v=202611131226",
-        "./src/engine.js": "./src/engine.js?v=202611131226",
-        "./src/ai.js": "./src/ai.js?v=202611131226",
-        "./src/difficulty.js": "./src/difficulty.js?v=202611131226"
+        "./src/cards.js": "./src/cards.js?v=202611131229",
+        "./src/engine.js": "./src/engine.js?v=202611131229",
+        "./src/ai.js": "./src/ai.js?v=202611131229",
+        "./src/difficulty.js": "./src/difficulty.js?v=202611131229"
       }
     }
   </script>
-  <script type="module" src="src/ui.js?v=202611131226"></script>
+  <script type="module" src="src/ui.js?v=202611131229"></script>
 </body>
 </html>
