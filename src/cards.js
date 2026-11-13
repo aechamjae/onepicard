@@ -103,7 +103,7 @@ export const CARDS = {
     text: '아군 선원 하나에게 보호막을 씌운다. 카드 1장을 뽑는다.',
     effect: (g, t) => { g.shield(t); g.draw(1); },
   },
-  kraken: { name: '킹스톤', type: 'crew', cost: 8, atk: 7, hp: 8, art: '🗿', keywords: ['guard'], text: '원숭이들이 받드는 정글의 거대 석상.' },
+  kraken: { name: '놊', type: 'crew', cost: 8, atk: 7, hp: 8, art: '🗿', keywords: ['guard'], text: '원숭이들이 받드는 정글의 거대 석상.' },
 
   // ── 붉은 돛 해적단 ──
   cutlass: { name: '칼잡이 돌격대', type: 'crew', cost: 2, atk: 2, hp: 3, art: '🪓', keywords: ['charge'], text: '' },
