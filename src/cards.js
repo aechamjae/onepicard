@@ -103,7 +103,7 @@ export const CARDS = {
     text: '아군 선원 하나에게 보호막을 씌운다. 카드 1장을 뽑는다.',
     effect: (g, t) => { g.shield(t); g.draw(1); },
   },
-  kraken: { name: '문돌이', type: 'crew', cost: 8, atk: 7, hp: 8, art: '🦑', keywords: ['guard'], text: '길들여진 대왕문어.' },
+  kraken: { name: '미르', type: 'crew', cost: 8, atk: 7, hp: 8, art: '🐉', keywords: ['guard'], text: '폭풍 바다를 휘감는 길들여진 해룡.' },
 
   // ── 붉은 돛 해적단 ──
   cutlass: { name: '칼잡이 돌격대', type: 'crew', cost: 2, atk: 2, hp: 3, art: '🪓', keywords: ['charge'], text: '' },
@@ -135,7 +135,7 @@ export const CARDS = {
     effect: (g, t) => { g.damageCrew(t, 4); if (!g.isAlive(t)) g.gainTreasure(1); },
   },
   shadowthief: { name: '그림자 도둑', type: 'crew', cost: 3, atk: 3, hp: 2, art: '🥷', keywords: ['stealth', 'plunder'], text: '' },
-  redbeard: { name: '갸크스', type: 'crew', cost: 5, atk: 5, hp: 5, art: '🧔', keywords: ['charge', 'plunder', 'sneak'], text: '붉은 수염을 휘날리는 해적 제독.' },
+  redbeard: { name: '쪼찌', type: 'crew', cost: 5, atk: 5, hp: 5, art: '🧔', keywords: ['charge', 'plunder', 'sneak'], text: '붉은 수염을 휘날리는 해적 제독.' },
 
   // ── 심해 함대 ──
   sentinel: { name: '집게발 파수꾼', type: 'crew', cost: 2, atk: 2, hp: 4, art: '🦀', keywords: ['guard'], text: '' },
@@ -173,8 +173,8 @@ export const CARDS = {
   },
   urchin: { name: '성게 수호병', type: 'crew', cost: 3, atk: 1, hp: 5, art: '🦔', keywords: ['guard', 'thorns'], text: '' },
   abyss: {
-    name: '크라켄', type: 'crew', cost: 7, atk: 6, hp: 8, art: '🐋',
-    text: '심연에서 올라온 함장. 내 턴이 끝날 때 보물 1개를 얻는다.',
+    name: '고래밥', type: 'crew', cost: 7, atk: 6, hp: 8, art: '🐋',
+    text: '심연에서 올라온 거대 고래 함장. 내 턴이 끝날 때 보물 1개를 얻는다.',
     onTurnEnd: (g) => g.gainTreasure(1),
   },
 
@@ -411,7 +411,7 @@ export const CARDS = {
     onPlay: (g) => g.draw(2),
   },
   admiral: {
-    name: '에넬', type: 'crew', cost: 7, atk: 5, hp: 5, art: '⛵',
+    name: '에넬', type: 'crew', cost: 7, atk: 5, hp: 5, art: '⛈️',
     text: '대항해를 이끄는 제독. 등장: 공격력이 가장 높은 적 선원 하나를 상대 손패로 되돌린다.',
     onPlay: (g) => {
       const list = g.foe.board.filter((c) => !c.stealth).sort((a, b) => b.atk - a.atk);
@@ -502,7 +502,7 @@ export const CARDS = {
     text: '등장: 내 배의 선체를 3 회복한다.',
     onPlay: (g) => g.healShip(3),
   },
-  walrus: { name: '바다코끼리 조타수', type: 'crew', cost: 3, atk: 3, hp: 5, art: '🦭', keywords: ['guard'], text: '' },
+  walrus: { name: '베포', type: 'crew', cost: 3, atk: 3, hp: 5, art: '🐻‍❄️', keywords: ['guard'], text: '잠수함을 모는 북극곰 조타수.' },
   sedative: {
     name: '마취침 명사수', type: 'crew', cost: 3, atk: 2, hp: 3, art: '🎯',
     text: '등장: 공격력이 가장 높은 적 선원 하나는 다음 턴에 공격할 수 없다.',
@@ -566,8 +566,8 @@ export const CARDS = {
     onPlay: (g) => g.draw(1),
   },
   twister: {
-    name: '제우스', type: 'crew', cost: 5, atk: 4, hp: 4, art: '🌪️',
-    text: '회오리를 부르는 마녀. 등장: 모든 적 선원에게 1 피해.',
+    name: '프로메테우스', type: 'crew', cost: 5, atk: 4, hp: 4, art: '🌞',
+    text: '하늘의 불을 훔친 태양의 거인. 등장: 모든 적 선원에게 1 피해.',
     onPlay: (g) => g.damageAllFoes(1),
   },
   stormlord: {
@@ -591,7 +591,7 @@ export const CARDS = {
     effect: (g, t) => g.buff(t, 2, 0),
   },
   downpour: {
-    name: '폭풍우', type: 'tactic', cost: 5, art: '⛈️',
+    name: '폭풍우', type: 'tactic', cost: 5, art: '🌧️',
     text: '모든 적 선원에게 2 피해.',
     effect: (g) => g.damageAllFoes(2),
   },
@@ -760,7 +760,7 @@ export const CARDS = {
       if (list.length) g.freeze(list[0].uid);
     },
   },
-  polar: { name: '흰곰 갑판장', type: 'crew', cost: 4, atk: 4, hp: 5, art: '🐻‍❄️', keywords: ['chill'], text: '' },
+  polar: { name: '털매머드 갑판장', type: 'crew', cost: 4, atk: 4, hp: 5, art: '🦣', keywords: ['chill'], text: '' },
   iceram: { name: '빙산 충각선', type: 'crew', cost: 5, atk: 5, hp: 5, art: '🏔️', keywords: ['charge', 'chill'], text: '' },
   frostqueen: {
     name: '시르바', type: 'crew', cost: 7, atk: 5, hp: 6, art: '👸', keywords: ['chill'],
@@ -948,7 +948,7 @@ export const CARDS = {
   rose: { name: '장미 검사', type: 'crew', cost: 4, atk: 4, hp: 4, art: '🌹', keywords: ['photo', 'thorns'], text: '' },
   palm: { name: '야자수 파수꾼', type: 'crew', cost: 5, atk: 3, hp: 7, art: '🌴', keywords: ['guard', 'photo'], text: '' },
   helia: {
-    name: '헬리아', type: 'crew', cost: 7, atk: 5, hp: 6, art: '🌞', keywords: ['photo'],
+    name: '헬리아', type: 'crew', cost: 7, atk: 5, hp: 6, art: '🌅', keywords: ['photo'],
     text: '해바라기 협회의 태양 회장. 등장: 이번 턴 바람 +3.',
     onPlay: (g) => g.gainWind(3),
   },
