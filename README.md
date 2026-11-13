@@ -81,6 +81,7 @@ src/engine.js           규칙 엔진 (화면과 독립)
 src/ai.js               AI 상대
 tools/simulate.js       AI끼리 대전시켜 밸런스 확인
 tools/rush.js           배만 때리는 봇을 어려움 AI와 붙여 보물 러시가 너무 센지 확인
+tools/matchups.js       모든 해적단 쌍을 붙여 평균 승률과 쏠린 상성 확인
 ```
 
-밸런스 확인: `node tools/simulate.js 1000` · 러시 확인: `node tools/rush.js`
+밸런스 확인: `node tools/simulate.js 1000` · 러시 확인: `node tools/rush.js` · 전체 상성 확인: `node tools/matchups.js 400` (평균 승률 48~52%, 상성 80% 미만이 목표)
