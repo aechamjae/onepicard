@@ -748,7 +748,7 @@ export const CARDS = {
     effect: (g) => { g.buffAll(1, 0); g.me.board.forEach((c) => g.ready(c.uid)); },
   },
 
-  // ── 서리 포경단 ── (얼어붙은 적 = 다음 턴 공격 불가 상태인 선원)
+  // ── 아이스 에이지 ── (얼어붙은 적 = 다음 턴 공격 불가 상태인 선원)
   frostpup: { name: '빙판 견습생', type: 'crew', cost: 1, atk: 1, hp: 3, art: '🐧', keywords: ['chill'], text: '' },
   icepick: { name: '얼음송곳 작살꾼', type: 'crew', cost: 2, atk: 2, hp: 3, art: '⛏️', keywords: ['chill'], text: '' },
   snowguard: { name: '눈벽 파수꾼', type: 'crew', cost: 3, atk: 1, hp: 5, art: '⛄', keywords: ['guard', 'chill'], text: '' },
@@ -783,7 +783,7 @@ export const CARDS = {
     effect: (g) => { g.damageAllFoes(1); g.freezeAllFoes(); },
   },
 
-  // ── 행운 도박단 ──
+  // ── 타짜 ──
   luckykid: {
     name: '요요 꼬마', type: 'crew', cost: 1, atk: 1, hp: 2, art: '🪀', keywords: ['gamble'],
     text: '도박: 카드 1장을 뽑는다.',
@@ -1176,7 +1176,7 @@ export const FACTIONS = {
     },
     deck: { pennykid: 3, bodyguard: 2, shady: 2, mercenary: 2, usurer: 1, armsdealer: 2, vaultkeeper: 1, goldcaptain: 1, goldrain: 2, buyout: 1, insurance: 1, chest: 1, carpenter: 2, parrot: 1, lookout: 1, cannon: 1, changer: 2, goldbar: 2, gull: 1, veteran: 1 },
   },  frost: {
-    name: '서리 포경단',
+    name: '아이스 에이지',
     emblem: '❄️',
     desc: '빙결형. 냉기로 적 선원을 얼려 공격을 막고, 얼어붙은 적을 깨부순다.',
     skill: {
@@ -1187,7 +1187,7 @@ export const FACTIONS = {
     deck: { frostpup: 3, icepick: 3, snowguard: 2, frostmage: 2, polar: 2, iceram: 2, frostqueen: 1, icicle: 2, shatter: 2, blizzard: 1, anchor: 1, lookout: 1, cannon: 2, carpenter: 2, veteran: 2, gull: 1, supply: 1 },
   },
   dice: {
-    name: '행운 도박단',
+    name: '타짜',
     emblem: '🎰',
     desc: '도박형. 동전을 던져 앞면이 나오면 큰 이득을 보고, 점쟁이로 운을 끌어올린다.',
     skill: {
