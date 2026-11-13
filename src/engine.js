@@ -12,6 +12,9 @@ export const RULES = {
   growLimit: 2,
   resonanceLimit: 2,
   discountLimit: 2,
+  ripenLimit: 2,
+  bankLimit: 2,
+  sporeDamage: 1,
 };
 
 let uidSeq = 1;
@@ -36,7 +39,7 @@ function makePlayer(name, factionId, isAI, rng, hull) {
   return {
     name, factionId, isAI,
     hull, maxHull: hull, treasure: 0,
-    maxWind: 0, wind: 0, fatigue: 0, skillUsed: false, discount: 0, played: 0,
+    maxWind: 0, wind: 0, bank: 0, fatigue: 0, skillUsed: false, discount: 0, played: 0,
     deck: buildDeck(factionId, rng), hand: [], board: [],
   };
 }
@@ -87,12 +90,16 @@ function startTurn(s) {
   s.turn++;
   const p = s.players[s.current];
   p.maxWind = Math.min(RULES.maxWind, p.maxWind + 1);
-  p.wind = p.maxWind;
+  p.wind = p.maxWind + (p.bank || 0); // 광합성으로 모아 둔 바람
+  if (p.bank) log(s, `🌻 모아 둔 햇빛으로 바람 +${p.bank}.`);
+  p.bank = 0;
   p.skillUsed = false;
+  // 숙성: 손패의 숙성 카드가 익어 비용이 줄어든다(새로 뽑는 카드는 이번 턴에 익지 않는다).
+  p.hand = p.hand.map((c) => ((CARDS[c.defId].keywords || []).includes('ripen') && (c.ripe || 0) < RULES.ripenLimit ? { ...c, ripe: (c.ripe || 0) + 1 } : c));
   p.discount = 0;
   p.played = 0; // 이번 턴에 낸 카드 수(연쇄)
   for (const c of p.board) {
-    c.canAttack = !c.frozen;
+    c.canAttack = !c.frozen && !CARDS[c.defId].noAttack;
     c.frozen = false;
     c.submerged = false;
     c.attacked = false;
@@ -147,8 +154,17 @@ function removeDead(s) {
       log(s, `☠ ${p.name}의 「${CARDS[c.defId].name}」이(가) 쓰러졌다.`);
       const d = CARDS[c.defId];
       if (d.onDeath) d.onDeath(effectApi(s, pi));
+      if (hasKeyword(c, 'spore')) plantSpores(s, 1 - pi, 1);
     }
   });
+}
+
+// 포자: 상대 갑판 빈자리에 공격할 수 없는 포자를 심는다.
+function plantSpores(s, pi, n) {
+  const p = s.players[pi];
+  let planted = 0;
+  for (; planted < n && p.board.length < RULES.boardLimit; planted++) p.board.push(makeCrew(uidSeq++, 'spore'));
+  if (planted) log(s, `🦠 ${p.name}의 갑판에 포자 ${planted}개가 피어났다.`);
 }
 
 function makeCrew(uid, defId) {
@@ -177,8 +193,11 @@ export function hasKeyword(crew, kw) {
 }
 
 // 순풍으로 깎인 실제 비용.
-export function costOf(p, defId) {
-  return Math.max(0, CARDS[defId].cost - (p.discount || 0));
+// card는 손패 카드 객체(숙성 반영) 또는 defId.
+export function costOf(p, card) {
+  const defId = typeof card === 'string' ? card : card.defId;
+  const ripe = typeof card === 'string' ? 0 : card.ripe || 0;
+  return Math.max(0, CARDS[defId].cost - (p.discount || 0) - ripe);
 }
 
 // 선원에게 피해를 준다. 탄성이 있으면 1 줄어든다. 실제로 들어간 피해를 돌려준다.
@@ -292,6 +311,32 @@ function effectApi(s, pi) {
       removeDead(s);
     },
     isAlive: (uid) => !!findCrew(s, uid),
+    plantSpores: (n) => plantSpores(s, 1 - pi, n),
+    // 숙성: 손패의 숙성 카드를 익힌다. all이 아니면 가장 비싼 카드 하나만.
+    ripenHand: (all = true) => {
+      const list = me.hand.filter((c) => (CARDS[c.defId].keywords || []).includes('ripen') && (c.ripe || 0) < RULES.ripenLimit)
+        .sort((a, b) => CARDS[b.defId].cost - CARDS[a.defId].cost);
+      const picked = all ? list : list.slice(0, 1);
+      me.hand = me.hand.map((c) => (picked.includes(c) ? { ...c, ripe: (c.ripe || 0) + 1 } : c));
+      if (picked.length) log(s, `🍎 손패의 숙성 카드 ${picked.length}장이 익었다.`);
+      return picked.length;
+    },
+    bankWind: (n) => {
+      const before = me.bank || 0;
+      me.bank = Math.min(RULES.bankLimit, before + n);
+      if (me.bank > before) log(s, `🌻 다음 턴 바람 +${me.bank} (모아 둔 햇빛).`);
+    },
+    // 포식: 다른 아군 선원 중 가장 약한 하나를 잡아먹고 그 공격력·체력을 얻는다.
+    devour: (selfUid) => {
+      const self = me.board.find((c) => c.uid === selfUid);
+      const prey = me.board.filter((c) => c.uid !== selfUid).sort((a, b) => a.atk + a.hp - (b.atk + b.hp))[0];
+      if (!self || !prey) return;
+      me.board = me.board.filter((c) => c !== prey);
+      self.atk += prey.atk;
+      self.hp += prey.hp;
+      self.maxHp += prey.hp;
+      log(s, `🍖 「${CARDS[self.defId].name}」이(가) 「${CARDS[prey.defId].name}」을(를) 잡아먹고 ${self.atk}/${self.hp}이 되었다.`);
+    },
     buff: (uid, atk, hp) => {
       const f = findCrew(s, uid);
       if (!f) return;
@@ -335,7 +380,7 @@ function effectApi(s, pi) {
     },
     ready: (uid) => {
       const f = findCrew(s, uid);
-      if (f) f.crew.canAttack = true;
+      if (f && !CARDS[f.crew.defId].noAttack) f.crew.canAttack = true;
     },
     bounce: (uid) => {
       const f = findCrew(s, uid);
@@ -428,7 +473,7 @@ export function canPlay(s, pi, handIndex) {
   const card = p.hand[handIndex];
   if (!card) return '그 카드가 없다.';
   const d = CARDS[card.defId];
-  if (costOf(p, card.defId) > p.wind) return '바람이 부족하다.';
+  if (costOf(p, card) > p.wind) return '바람이 부족하다.';
   if (d.type === 'crew' && p.board.length >= RULES.boardLimit) return `선원은 ${RULES.boardLimit}명까지만 둘 수 있다.`;
   return d.target ? targetError(s, pi, d.target) : null;
 }
@@ -447,7 +492,7 @@ export function applyAction(s, action) {
     const card = me.hand[action.handIndex];
     const d = CARDS[card.defId];
     if (d.target && !validTarget(s, pi, d.target, action.target)) return '대상을 골라야 한다.';
-    me.wind -= costOf(me, card.defId);
+    me.wind -= costOf(me, card);
     // 순풍 카드는 쌓인 순풍을 그대로 이어받고, 다른 카드는 다 써 버린다.
     const tailwind = (d.keywords || []).includes('tailwind');
     if (!tailwind) me.discount = 0;
@@ -491,7 +536,7 @@ export function applyAction(s, action) {
   if (action.type === 'attack') {
     const attacker = me.board.find((c) => c.uid === action.attacker);
     if (!attacker) return '공격할 선원이 없다.';
-    if (!attacker.canAttack) return '이 선원은 지금 공격할 수 없다.';
+    if (!attacker.canAttack || CARDS[attacker.defId].noAttack) return '이 선원은 지금 공격할 수 없다.';
     if (!legalAttackTargets(s, pi, attacker).includes(action.target)) {
       return foe.board.some((c) => hasKeyword(c, 'guard')) ? '수호 선원부터 공격해야 한다.' : '공격할 수 없는 대상이다.';
     }
@@ -501,7 +546,7 @@ export function applyAction(s, action) {
       attacker.stealth = false;
       log(s, `🌫 「${CARDS[attacker.defId].name}」이(가) 안개 속에서 튀어나왔다!`);
     }
-    const power = attacker.atk + (attacker.tension || 0);
+    let power = attacker.atk + (attacker.tension || 0);
     if (attacker.tension) log(s, `🌀 당겨 둔 고무팔이 튕겨 나간다! (공격력 +${attacker.tension})`);
     attacker.tension = 0;
     const aName = CARDS[attacker.defId].name;
@@ -514,6 +559,10 @@ export function applyAction(s, action) {
     } else {
       const defender = foe.board.find((c) => c.uid === action.target);
       const idx = foe.board.indexOf(defender);
+      if (hasKeyword(attacker, 'blood') && defender.hp < defender.maxHp) {
+        power += 2;
+        log(s, `🩸 피 냄새를 맡았다! (공격력 +2)`);
+      }
       const dealt = hurt(defender, power);
       const slash = hasKeyword(attacker, 'slash');
       const thorns = hasKeyword(defender, 'thorns') && !slash ? 1 : 0;
@@ -567,6 +616,9 @@ export function applyAction(s, action) {
       const d = CARDS[c.defId];
       if (d.onTurnEnd) d.onTurnEnd(g);
     }
+    // 광합성: 광합성 선원 1명마다 남은 바람 1을 다음 턴으로 넘긴다.
+    const leaves = me.board.filter((c) => hasKeyword(c, 'photo')).length;
+    if (leaves && me.wind > 0) g.bankWind(Math.min(leaves, me.wind));
     checkWinner(s);
     if (s.winner !== null) return null;
     s.current = 1 - pi;

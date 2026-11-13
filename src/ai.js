@@ -103,6 +103,19 @@ const TACTIC_AI = {
   allin: (me, foe) => strongest(foe.board, value),
   dicebomb: (me, foe) => foe.board.length > 0 || foe.hull <= 6,
   luckyday: (me) => me.hand.length <= 6,
+  watermelon: (me, foe) => strongest(foe.board, value),
+  compost: (me) => me.hand.some((c) => (CARDS[c.defId].keywords || []).includes('ripen') && (c.ripe || 0) < RULES.ripenLimit) || me.hand.length <= 4,
+  safaribus: (me) => me.board.length <= RULES.boardLimit - 2,
+  freshgrass: (me) => me.board.length >= 2,
+  bloom: (me, foe) => me.wind >= 2 && (foe.board.length > 0 || foe.hull <= me.wind),
+  watering: (me) => strongest(me.board, (c) => c.atk + (hasKeyword(c, 'guard') ? 3 : 0)),
+  clearsky: (me) => me.hand.length <= 6,
+  chum: (me, foe) => foe.board.length >= 2,
+  lure: (me, foe) => strongest(foe.board, value),
+  sharknet: (me, foe) => strongest(foe.board.filter((c) => c.atk >= 3), (c) => c.atk),
+  wither: (me, foe) => strongest(foe.board.filter((c) => dmg(2, c) >= c.hp), value) || strongest(foe.board, value),
+  sporecloud: (me, foe) => foe.board.length <= RULES.boardLimit - 2,
+  mushsoup: (me) => me.hull <= RULES.startHull - 4,
   insurance: (me) => me.hull <= RULES.startHull - 4,
   buyout: (me, foe) => {
     if (me.treasure > 0 && me.board.length < RULES.boardLimit) {
@@ -136,6 +149,11 @@ const SKILL_AI = {
   storm: (me) => me.hand.length <= 6,
   frost: (me, foe) => strongest(foe.board.filter((c) => c.frozen ? dmg(2, c) >= c.hp : c.atk >= 2), (c) => (c.frozen ? 10 : 0) + c.atk),
   dice: () => true,
+  fruit: () => true,
+  zoo: (me) => me.board.length < RULES.boardLimit,
+  sun: () => true,
+  shark: (me, foe) => strongest(foe.board.filter((c) => dmg(c.hp < c.maxHp ? 2 : 1, c) >= c.hp), value) || strongest(foe.board, (c) => (c.hp < c.maxHp ? 10 : 0) + c.atk),
+  mush: (me, foe) => foe.board.length < RULES.boardLimit,
   merchant: (me, foe) => strongest(foe.board.filter((c) => c.atk >= 3 && !c.frozen), (c) => c.atk),
 };
 
@@ -188,14 +206,14 @@ function choosePlay(s) {
   // 순풍 카드를 먼저 내 할인을 쌓고, 낸 카드 수만큼 강해지는 연쇄 카드는 마지막에 낸다. 나머지는 비싼 것부터.
   const rank = (d, id) => ((d.keywords || []).includes('tailwind') ? 0 : COMBO.has(id) ? 2 : 1);
   const order = me.hand
-    .map((card, i) => ({ i, d: CARDS[card.defId], id: card.defId }))
-    .sort((a, b) => rank(a.d, a.id) - rank(b.d, b.id) || b.d.cost - a.d.cost);
-  for (const { i, d, id } of order) {
+    .map((card, i) => ({ i, card, d: CARDS[card.defId], id: card.defId }))
+    .sort((a, b) => rank(a.d, a.id) - rank(b.d, b.id) || costOf(me, b.card) - costOf(me, a.card));
+  for (const { i, card, d, id } of order) {
     if (id === 'coin') continue;
     if (canPlay(s, pi, i)) {
       // 동전 1개로 낼 수 있게 되는 선원이 있으면 동전을 먼저 쓴다.
       const coinIdx = me.hand.findIndex((c) => c.defId === 'coin');
-      if (coinIdx >= 0 && d.type === 'crew' && costOf(me, id) === me.wind + 1 && me.board.length < RULES.boardLimit) {
+      if (coinIdx >= 0 && d.type === 'crew' && costOf(me, card) === me.wind + 1 && me.board.length < RULES.boardLimit) {
         return { type: 'play', handIndex: coinIdx };
       }
       continue;
@@ -205,7 +223,7 @@ function choosePlay(s) {
     if (TACTIC_AI[id] && TACTIC_AI[id](me, foe) === false) continue;
     if (d.target) {
       const targets = (d.target === 'foeCrew' ? foe.board : me.board).map((c) => c.uid);
-      const pick = searchTarget(s, (target) => ({ type: 'play', handIndex: i, target }), targets, 0.3 + costOf(me, id) * COST_MARGIN);
+      const pick = searchTarget(s, (target) => ({ type: 'play', handIndex: i, target }), targets, 0.3 + costOf(me, card) * COST_MARGIN);
       if (pick) return pick;
       continue;
     }
@@ -249,7 +267,8 @@ function chooseAttack(s) {
       if (doomed(d)) continue;
       const slash = hasKeyword(a, 'slash');
       const back = slash ? 0 : d.atk + (hasKeyword(d, 'thorns') ? 1 : 0);
-      const kills = dmg(power, d) >= d.hp;
+      const bite = hasKeyword(a, 'blood') && d.hp < d.maxHp ? 2 : 0;
+      const kills = dmg(power + bite, d) >= d.hp;
       const survives = a.hp - dmg(back, a) > (a.burning ? RULES.burnDamage : 0);
       let score = 0;
       if (kills && doomed(a)) score = 5 + value(d); // 어차피 타 죽을 선원은 마지막으로 하나 데려간다
@@ -299,6 +318,7 @@ function clock(attacker, victim) {
 // 선원 하나의 값어치. 망령(한 번 더 일어남), 보호막, 유언처럼 숫자에 안 보이는 값도 더한다.
 function crewWorth(c) {
   const d = CARDS[c.defId];
+  if (d.noAttack) return -2.5; // 적 포자: 자리를 막고 매 턴 배를 갉아먹는다
   let w = c.atk * 1.2 + c.hp * 0.8;
   if (hasKeyword(c, 'ghost') && !c.revived) w += c.atk * 1.2 + 0.8;
   if (c.shield) w += c.atk;

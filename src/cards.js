@@ -23,6 +23,11 @@ export const KEYWORDS = {
   resonance: { name: '공명', desc: '내가 전술 카드를 쓸 때마다 공격력 +1 (최대 2번).' },
   trade: { name: '거래', desc: '낼 때 보물이 있으면 1개를 자동으로 써서 카드에 적힌 추가 효과를 낸다.' },
   chill: { name: '냉기', desc: '이 선원과 싸워 피해를 입고 살아남은 적 선원은 얼어붙어 다음 턴에 공격할 수 없다.' },
+  ripen: { name: '숙성', desc: '손패에 든 채로 내 턴을 맞을 때마다 비용이 1 줄어든다(최대 -2).' },
+  devour: { name: '포식', desc: '낼 때 다른 아군 선원 중 가장 약한 하나를 잡아먹고 그 공격력·체력을 얻는다.' },
+  photo: { name: '광합성', desc: '내 턴이 끝날 때 광합성 선원 1명마다 남은 바람 1을 다음 턴으로 넘긴다(모두 합쳐 최대 2).' },
+  blood: { name: '피 냄새', desc: '체력이 깎인 적 선원을 공격하면 공격력 +2.' },
+  spore: { name: '포자', desc: '쓰러지면 적 갑판 빈자리에 포자(0/1, 공격 불가)를 심는다. 포자는 주인의 턴이 끝날 때마다 그 배에 1 피해.' },
   gamble: { name: '도박', desc: '낼 때 동전을 던져 앞면(1/2)이 나오면 카드에 적힌 추가 효과를 낸다.' },
 };
 
@@ -836,6 +841,205 @@ export const CARDS = {
     text: '카드 1장을 뽑는다. 도박: 1장 더 뽑고 보물 1개를 얻는다.',
     effect: (g) => { g.draw(1); if (g.flip()) { g.draw(1); g.gainTreasure(1); } },
   },
+
+  // ── 한국과수협회 ──
+  greenapple: {
+    name: '풋사과 견습생', type: 'crew', cost: 1, atk: 1, hp: 2, art: '🍏',
+    text: '등장: 손패에서 가장 비싼 숙성 카드 하나를 한 번 더 익힌다.',
+    onPlay: (g) => g.ripenHand(false),
+  },
+  cherry: {
+    name: '체리 쌍둥이', type: 'crew', cost: 2, atk: 2, hp: 3, art: '🍒',
+    text: '유언: 블루베리 꼬마(1/1) 1명을 부른다.',
+    onDeath: (g) => g.summon('blueberry', 1),
+  },
+  blueberry: { name: '블루베리 꼬마', type: 'crew', cost: 1, atk: 1, hp: 1, art: '🫐', token: true, text: '' },
+  pear: { name: '배나무 파수꾼', type: 'crew', cost: 5, atk: 2, hp: 6, art: '🍐', keywords: ['guard', 'ripen'], text: '' },
+  peach: {
+    name: '복숭아 치유사', type: 'crew', cost: 5, atk: 3, hp: 4, art: '🍑', keywords: ['ripen'],
+    text: '등장: 내 배의 선체를 4 회복한다.',
+    onPlay: (g) => g.healShip(4),
+  },
+  mango: {
+    name: '망고 투석기', type: 'crew', cost: 6, atk: 4, hp: 4, art: '🥭', keywords: ['ripen'],
+    text: '등장: 적 배에 3 피해.',
+    onPlay: (g) => g.damageFoeShip(3),
+  },
+  watermelon: {
+    name: '수박 폭탄', type: 'tactic', cost: 6, art: '🍉', target: 'foeCrew', keywords: ['ripen'],
+    text: '적 선원 하나에게 5 피해. 튄 과즙이 그 양옆 적 선원에게도 2 피해.',
+    effect: (g, t) => {
+      const i = g.foe.board.findIndex((c) => c.uid === t);
+      const sides = [g.foe.board[i - 1], g.foe.board[i + 1]].filter(Boolean).map((c) => c.uid);
+      g.damageCrew(t, 5);
+      sides.forEach((uid) => g.damageCrew(uid, 2));
+    },
+  },
+  compost: {
+    name: '과수원 거름', type: 'tactic', cost: 1, art: '🌾',
+    text: '카드 1장을 뽑고, 손패의 숙성 카드를 모두 한 번 더 익힌다.',
+    effect: (g) => { g.draw(1); g.ripenHand(true); },
+  },
+  orchardboss: {
+    name: '능금 회장', type: 'crew', cost: 9, atk: 6, hp: 8, art: '🌳', keywords: ['ripen'],
+    text: '백 년 된 과수원을 이끄는 협회장. 등장: 아군 선원 모두 체력 +2.',
+    onPlay: (g) => g.buffAll(0, 2),
+  },
+
+  // ── 에버랜드의 아이들 ──
+  rabbit: { name: '깡총 토끼', type: 'crew', cost: 1, atk: 1, hp: 3, art: '🐇', text: '' },
+  bunny: { name: '아기 토끼', type: 'crew', cost: 1, atk: 1, hp: 1, art: '🐰', token: true, text: '' },
+  zebra: { name: '얼룩말', type: 'crew', cost: 2, atk: 2, hp: 3, art: '🦓', keywords: ['charge'], text: '' },
+  goat: { name: '아기 염소', type: 'crew', cost: 2, atk: 2, hp: 3, art: '🐐', keywords: ['thorns'], text: '' },
+  panda: {
+    name: '대나무 판다', type: 'crew', cost: 3, atk: 3, hp: 4, art: '🐼',
+    text: '등장: 내 배의 선체를 3 회복한다.',
+    onPlay: (g) => g.healShip(3),
+  },
+  giraffe: { name: '목긴 기린', type: 'crew', cost: 3, atk: 2, hp: 4, art: '🦒', keywords: ['reach'], text: '' },
+  leopard: {
+    name: '점박이 표범', type: 'crew', cost: 3, atk: 3, hp: 2, art: '🐆', keywords: ['devour', 'charge'],
+    text: '',
+    onPlay: (g, self) => g.devour(self.uid),
+  },
+  hippo: { name: '하마 수문장', type: 'crew', cost: 4, atk: 3, hp: 6, art: '🦛', keywords: ['guard'], text: '' },
+  rhino: { name: '코뿔소 돌격대', type: 'crew', cost: 4, atk: 4, hp: 3, art: '🦏', keywords: ['charge'], text: '' },
+  elephant: {
+    name: '코끼리 가족', type: 'crew', cost: 5, atk: 3, hp: 7, art: '🐘', keywords: ['guard'],
+    text: '등장: 다른 아군 선원 모두 체력 +1.',
+    onPlay: (g, self) => { g.buffAll(0, 1); g.buff(self.uid, 0, -1); },
+  },
+  tiger: {
+    name: '줄무늬 호랑이', type: 'crew', cost: 5, atk: 5, hp: 4, art: '🐯', keywords: ['devour'],
+    text: '',
+    onPlay: (g, self) => g.devour(self.uid),
+  },
+  lionking: {
+    name: '레오 대장', type: 'crew', cost: 7, atk: 5, hp: 5, art: '🦁', keywords: ['devour', 'charge'],
+    text: '사파리를 다스리는 갈기 대장.',
+    onPlay: (g, self) => g.devour(self.uid),
+  },
+  safaribus: {
+    name: '사파리 버스', type: 'tactic', cost: 3, art: '🚌',
+    text: '아기 토끼(1/1) 2마리를 부른다.',
+    effect: (g) => g.summon('bunny', 2),
+  },
+  freshgrass: {
+    name: '신선한 풀', type: 'tactic', cost: 2, art: '🥬',
+    text: '아군 선원 모두 체력 +1. 카드 1장을 뽑는다.',
+    effect: (g) => { g.buffAll(0, 1); g.draw(1); },
+  },
+
+  // ── 해바라기 협회 ──
+  daisy: { name: '데이지 소녀', type: 'crew', cost: 1, atk: 1, hp: 3, art: '🌼', keywords: ['photo'], text: '' },
+  tulip: { name: '튤립 기사', type: 'crew', cost: 2, atk: 2, hp: 4, art: '🌷', keywords: ['photo'], text: '' },
+  snail: { name: '정원 달팽이', type: 'crew', cost: 2, atk: 1, hp: 4, art: '🐌', keywords: ['guard'], text: '' },
+  cactus: { name: '선인장 가시병', type: 'crew', cost: 3, atk: 3, hp: 4, art: '🌵', keywords: ['thorns', 'photo'], text: '' },
+  lotus: {
+    name: '연꽃 치유사', type: 'crew', cost: 3, atk: 2, hp: 3, art: '🪷', keywords: ['photo'],
+    text: '등장: 내 배의 선체를 3 회복한다.',
+    onPlay: (g) => g.healShip(3),
+  },
+  bouquet: {
+    name: '꽃다발 전령', type: 'crew', cost: 3, atk: 2, hp: 2, art: '💐',
+    text: '등장: 카드 1장을 뽑는다.',
+    onPlay: (g) => g.draw(1),
+  },
+  rose: { name: '장미 검사', type: 'crew', cost: 4, atk: 4, hp: 4, art: '🌹', keywords: ['photo', 'thorns'], text: '' },
+  palm: { name: '야자수 파수꾼', type: 'crew', cost: 5, atk: 3, hp: 7, art: '🌴', keywords: ['guard', 'photo'], text: '' },
+  helia: {
+    name: '헬리아', type: 'crew', cost: 7, atk: 5, hp: 6, art: '🌞', keywords: ['photo'],
+    text: '해바라기 협회의 태양 회장. 등장: 이번 턴 바람 +3.',
+    onPlay: (g) => g.gainWind(3),
+  },
+  bloom: {
+    name: '만개', type: 'tactic', cost: 0, art: '🌸',
+    text: '남은 바람을 모두 쓴다. 1마다 무작위 적 선원에게 1 피해(적 선원이 없으면 적 배에).',
+    effect: (g) => {
+      const n = g.me.wind;
+      g.gainWind(-n);
+      for (let i = 0; i < n; i++) { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 1); else g.damageFoeShip(1); }
+    },
+  },
+  watering: {
+    name: '물뿌리개', type: 'tactic', cost: 1, art: '🪣', target: 'allyCrew',
+    text: '아군 선원 하나에게 체력 +2. 카드 1장을 뽑는다.',
+    effect: (g, t) => { g.buff(t, 0, 2); g.draw(1); },
+  },
+  clearsky: {
+    name: '맑은 하늘', type: 'tactic', cost: 2, art: '🌤️',
+    text: '카드 1장을 뽑는다. 다음 턴 바람 +1.',
+    effect: (g) => { g.draw(1); g.bankWind(1); },
+  },
+
+  // ── 상어 사냥단 ──
+  baitfish: {
+    name: '미끼 물고기', type: 'crew', cost: 1, atk: 1, hp: 1, art: '🐟',
+    text: '등장: 무작위 적 선원에게 1 피해.',
+    onPlay: (g) => { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 1); },
+  },
+  diver: { name: '작살 다이버', type: 'crew', cost: 2, atk: 2, hp: 3, art: '🤿', keywords: ['blood'], text: '' },
+  krill: { name: '크릴 방벽', type: 'crew', cost: 2, atk: 1, hp: 4, art: '🦐', keywords: ['guard'], text: '' },
+  surfer: { name: '파도 사냥꾼', type: 'crew', cost: 3, atk: 3, hp: 3, art: '🏄', keywords: ['charge', 'blood'], text: '' },
+  lobster: { name: '집게 바닷가재', type: 'crew', cost: 3, atk: 3, hp: 5, art: '🦞', keywords: ['thorns'], text: '' },
+  sharkboat: {
+    name: '상어잡이 보트', type: 'crew', cost: 5, atk: 4, hp: 5, art: '🚣', keywords: ['blood'],
+    text: '등장: 무작위 적 선원에게 1 피해.',
+    onPlay: (g) => { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 1); },
+  },
+  megalodon: { name: '메갈로돈', type: 'crew', cost: 7, atk: 5, hp: 6, art: '🌑', keywords: ['blood', 'double'], text: '심연에서 깨어난 고대 상어.' },
+  chum: {
+    name: '피바다', type: 'tactic', cost: 2, art: '🩸',
+    text: '모든 적 선원에게 1 피해. 카드 1장을 뽑는다.',
+    effect: (g) => { g.damageAllFoes(1); g.draw(1); },
+  },
+  lure: {
+    name: '미끼 던지기', type: 'tactic', cost: 1, art: '🎏', target: 'foeCrew',
+    text: '적 선원 하나에게 1 피해. 무작위 아군 선원 공격력 +1.',
+    effect: (g, t) => { g.damageCrew(t, 1); const a = g.randomAllyCrew(); if (a) g.buff(a.uid, 1, 0); },
+  },
+  sharknet: {
+    name: '상어 그물', type: 'tactic', cost: 2, art: '🪤', target: 'foeCrew',
+    text: '적 선원 하나에게 1 피해를 주고 다음 턴에 공격하지 못하게 묶는다.',
+    effect: (g, t) => { g.damageCrew(t, 1); g.freeze(t); },
+  },
+
+  // ── 버섯 포자단 ──
+  spore: {
+    name: '포자', type: 'crew', cost: 0, atk: 0, hp: 1, art: '🦠', token: true, noAttack: true,
+    text: '공격할 수 없다. 이 포자가 있는 배의 주인 턴이 끝날 때 그 배에 1 피해.',
+    onTurnEnd: (g) => g.damageMyShip(1),
+  },
+  sprout: { name: '균사 새싹', type: 'crew', cost: 1, atk: 1, hp: 1, art: '🌱', keywords: ['spore'], text: '' },
+  leafling: { name: '낙엽 은신자', type: 'crew', cost: 2, atk: 2, hp: 1, art: '🍂', keywords: ['stealth', 'spore'], text: '' },
+  larva: { name: '버섯 애벌레', type: 'crew', cost: 2, atk: 2, hp: 2, art: '🐛', keywords: ['spore'], text: '' },
+  potguard: { name: '화분 수호병', type: 'crew', cost: 3, atk: 1, hp: 5, art: '🪴', keywords: ['guard', 'spore'], text: '' },
+  culturist: {
+    name: '포자 배양사', type: 'crew', cost: 4, atk: 3, hp: 4, art: '🧫',
+    text: '등장: 적 갑판에 포자 1개를 심는다.',
+    onPlay: (g) => g.plantSpores(1),
+  },
+  troll: { name: '이끼 트롤', type: 'crew', cost: 5, atk: 4, hp: 6, art: '🧌', text: '' },
+  mykos: {
+    name: '미코스', type: 'crew', cost: 7, atk: 4, hp: 7, art: '🌲',
+    text: '숲 전체에 뿌리를 뻗은 균사 거목. 등장: 적 갑판에 포자 3개를 심는다.',
+    onPlay: (g) => g.plantSpores(3),
+  },
+  wither: {
+    name: '시들게 하기', type: 'tactic', cost: 2, art: '🥀', target: 'foeCrew',
+    text: '적 선원 하나에게 2 피해. 그 선원이 쓰러지면 적 갑판에 포자 1개를 심는다.',
+    effect: (g, t) => { g.damageCrew(t, 2); if (!g.isAlive(t)) g.plantSpores(1); },
+  },
+  sporecloud: {
+    name: '포자 구름', type: 'tactic', cost: 3, art: '🌁',
+    text: '적 갑판에 포자 2개를 심는다. 카드 1장을 뽑는다.',
+    effect: (g) => { g.plantSpores(2); g.draw(1); },
+  },
+  mushsoup: {
+    name: '버섯 수프', type: 'tactic', cost: 2, art: '🍵',
+    text: '내 배의 선체를 4 회복한다.',
+    effect: (g) => g.healShip(4),
+  },
 };
 
 // skill: 선장 스킬. 한 턴에 한 번, 바람을 써서 쓴다.
@@ -992,5 +1196,60 @@ export const FACTIONS = {
       effect: (g) => { if (g.flip()) g.gainTreasure(1); else g.draw(1); },
     },
     deck: { luckykid: 3, cardsharp: 3, fortune: 2, roulette: 2, bouncer: 2, highroller: 2, jackpot: 1, allin: 2, dicebomb: 2, luckyday: 2, parrot: 1, cannon: 1, puffer: 1, twins: 1, chest: 1, veteran: 2, gull: 1, supply: 1 },
+  },
+  fruit: {
+    name: '한국과수협회',
+    emblem: '🍎',
+    desc: '숙성형. 크고 비싼 과일 카드를 손에 묵혀 익힌 뒤 싸게 내어 단숨에 판을 뒤집는다.',
+    skill: {
+      name: '수확', art: '🧺', cost: 2,
+      text: '손패의 숙성 카드를 모두 한 번 더 익힌다. 익힐 카드가 없으면 카드 1장을 뽑는다.',
+      effect: (g) => { if (!g.ripenHand(true)) g.draw(1); },
+    },
+    deck: { greenapple: 3, cherry: 2, pear: 2, peach: 2, mango: 2, watermelon: 2, compost: 1, orchardboss: 1, lookout: 2, carpenter: 2, veteran: 2, cannon: 2, gull: 1, supply: 1, repair: 1, amulet: 1, puffer: 1, parrot: 1, map: 1 },
+  },
+  zoo: {
+    name: '에버랜드의 아이들',
+    emblem: '🎢',
+    desc: '동물원형. 튼튼한 초식동물로 갑판을 지키고, 맹수가 작은 동료를 잡아먹어 거대해진다.',
+    skill: {
+      name: '먹이 주기', art: '🥩', cost: 2,
+      text: '아기 토끼(1/1) 1마리를 부른다.',
+      effect: (g) => g.summon('bunny', 1),
+    },
+    deck: { rabbit: 3, zebra: 2, goat: 2, panda: 2, giraffe: 2, leopard: 2, hippo: 2, rhino: 2, elephant: 1, tiger: 2, lionking: 1, safaribus: 2, freshgrass: 2, veteran: 1, gull: 1, cannon: 1, supply: 1, lookout: 1 },
+  },
+  sun: {
+    name: '해바라기 협회',
+    emblem: '🌻',
+    desc: '저축형. 광합성으로 남은 바람을 다음 턴에 넘겨 모으고, 한 턴에 몰아 쓴다.',
+    skill: {
+      name: '햇볕 쬐기', art: '☀️', cost: 1,
+      text: '다음 턴 바람 +1. 무작위 아군 선원 체력 +1.',
+      effect: (g) => { g.bankWind(1); const a = g.randomAllyCrew(); if (a) g.buff(a.uid, 0, 1); },
+    },
+    deck: { daisy: 3, tulip: 3, snail: 2, cactus: 2, lotus: 2, bouquet: 2, rose: 2, palm: 2, helia: 1, bloom: 2, watering: 2, clearsky: 1, veteran: 1, cannon: 2, gull: 1, supply: 1, lookout: 1 },
+  },
+  shark: {
+    name: '상어 사냥단',
+    emblem: '🦈',
+    desc: '사냥형. 미끼로 적 선원에게 상처를 내고, 피 냄새를 맡은 사냥꾼이 달려들어 끝낸다.',
+    skill: {
+      name: '지느러미 출몰', art: '🔺', cost: 2, target: 'foeCrew',
+      text: '적 선원 하나에게 1 피해. 이미 다친 선원이면 2 피해.',
+      effect: (g, t) => { const c = g.foe.board.find((c) => c.uid === t); if (c) g.damageCrew(t, c.hp < c.maxHp ? 2 : 1); },
+    },
+    deck: { baitfish: 3, diver: 3, krill: 2, surfer: 2, lobster: 2, sharkboat: 2, megalodon: 1, chum: 2, lure: 2, sharknet: 2, veteran: 2, cannon: 1, gull: 1, supply: 1, lookout: 1, carpenter: 2, rum: 1 },
+  },
+  mush: {
+    name: '버섯 포자단',
+    emblem: '🍄',
+    desc: '잠식형. 쓰러질 때마다 적 갑판에 포자를 심어 자리를 막고, 포자가 적 배를 천천히 갉아먹는다.',
+    skill: {
+      name: '번식', art: '🧬', cost: 3,
+      text: '적 갑판에 포자 1개를 심는다.',
+      effect: (g) => g.plantSpores(1),
+    },
+    deck: { sprout: 3, leafling: 2, larva: 2, potguard: 2, culturist: 2, troll: 2, mykos: 1, wither: 2, sporecloud: 2, mushsoup: 1, veteran: 2, carpenter: 2, cannon: 2, lookout: 1, gull: 1, supply: 1, puffer: 1, map: 1 },
   },
 };

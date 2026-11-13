@@ -102,7 +102,7 @@ function cardEl(card, factionId, { inHand = false, showText = inHand, owner = nu
   const atk = (card.atk ?? d.atk) + tension;
   const hp = card.hp ?? d.hp;
   const chips = [...(d.keywords || []), ...(card.gained || [])].map((k) => `<span class="chip k-${k}">${KEYWORDS[k].name}</span>`).join('');
-  const cost = owner ? costOf(owner, card.defId) : d.cost;
+  const cost = owner ? costOf(owner, card) : d.cost;
   el.innerHTML = `
     <div class="frame">
       <div class="art">${d.arm ? armArt(d.art, tension) : `<span class="emoji">${d.art}</span>`}</div>
@@ -627,7 +627,7 @@ function openDex() {
   const owners = {};
   for (const [f, { deck }] of Object.entries(FACTIONS)) for (const id of Object.keys(deck)) (owners[id] ??= []).push(f);
   const home = (id) => (owners[id]?.length === 1 ? owners[id][0] : 'neutral');
-  const tokenHome = { spirit: 'ghost', monkey: 'monkey', spark: 'storm' };
+  const tokenHome = { spirit: 'ghost', monkey: 'monkey', spark: 'storm', spore: 'mush', bunny: 'zoo', blueberry: 'fruit' };
   const ids = Object.keys(CARDS).filter((id) => id !== 'coin' && (tokenHome[id] ?? home(id)) === dexTab)
     .sort((a, b) => CARDS[a].cost - CARDS[b].cost);
   const skill = FACTIONS[dexTab]?.skill;
