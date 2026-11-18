@@ -1,4 +1,4 @@
-// AI: 낼 수 있는 카드를 비싼 것부터 내고, 선장 스킬을 쓰고, 공격은 후보마다 미리 쳐 보고 레이스·갑판을 평가해 고른다.
+// AI: 낼 수 있는 카드를 비싼 것부터 내고, 리더 스킬을 쓰고, 공격은 후보마다 미리 쳐 보고 레이스·갑판을 평가해 고른다.
 // 난이도가 낮을수록 정해진 확률로 아무 행동이나 골라 실수한다.
 import { CARDS, FACTIONS } from './cards.js';
 import { RULES, applyAction, canPlay, canUseSkill, costOf, legalAttackTargets, hasKeyword, targetable } from './engine.js';
@@ -128,7 +128,7 @@ function strongest(list, score) {
   return [...list].sort((a, b) => score(b) - score(a))[0].uid;
 }
 
-// 선장 스킬 판단. 대상(uid), true(대상 없음), false(안 씀).
+// 리더 스킬 판단. 대상(uid), true(대상 없음), false(안 씀).
 const SKILL_AI = {
   stretch: (me, foe) => strongest(foe.board.filter((c) => dmg(1, c) >= c.hp), value) || strongest(foe.board, (c) => c.atk),
   red: () => true,
@@ -167,7 +167,7 @@ function chooseSkill(s) {
   if (SKILL_AI[me.factionId] && SKILL_AI[me.factionId](me, foe) === false) return null;
   if (sk.target) {
     const targets = (sk.target === 'foeCrew' ? foe.board : me.board).map((c) => c.uid);
-    // 선장 스킬은 카드를 쓰지 않으니, 조금이라도 이득이면 쓴다.
+    // 리더 스킬은 카드를 쓰지 않으니, 조금이라도 이득이면 쓴다.
     return searchTarget(s, (target) => ({ type: 'skill', target }), targets, 0.01);
   }
   return { type: 'skill' };
@@ -383,7 +383,7 @@ function rollout(s, pi) {
   return evaluate(s, pi);
 }
 
-// 공격 후보 평가. 손에 쓸 카드가 있거나 선장 스킬이 남았으면 공격 뒤의 카드·스킬까지 이번 턴 끝까지 해 본다
+// 공격 후보 평가. 손에 쓸 카드가 있거나 리더 스킬이 남았으면 공격 뒤의 카드·스킬까지 이번 턴 끝까지 해 본다
 // (냉기로 얼려 두고 고드름, 이미 친 선원에게 과부하처럼 때린 다음 이어지는 수를 보려고).
 function searchAttack(s) {
   const pi = s.current;
@@ -424,7 +424,7 @@ function tryFirst(s, action) {
   return finishTurn(t, s.current);
 }
 
-// 낼 만한 카드 하나하나, 선장 스킬, 공격 중 무엇을 먼저 할지 정한다.
+// 낼 만한 카드 하나하나, 리더 스킬, 공격 중 무엇을 먼저 할지 정한다.
 // (불을 붙인 뒤 화산 소스·꼬치꾼, 메스로 깎은 뒤 잡기처럼 순서가 중요한 수를 찾으려고)
 function chooseAction(s) {
   const skill = chooseSkill(s);

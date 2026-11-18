@@ -463,7 +463,7 @@ function validTarget(s, pi, kind, uid) {
 export function canUseSkill(s, pi) {
   const p = s.players[pi];
   const sk = FACTIONS[p.factionId].skill;
-  if (p.skillUsed) return '선장 스킬은 한 턴에 한 번만 쓸 수 있다.';
+  if (p.skillUsed) return '리더 스킬은 한 턴에 한 번만 쓸 수 있다.';
   if (sk.cost > p.wind) return '바람이 부족하다.';
   if (sk.treasureCost && p.treasure < sk.treasureCost) return '보물이 부족하다.';
   return sk.target ? targetError(s, pi, sk.target) : null;
@@ -540,7 +540,7 @@ export function applyAction(s, action) {
     me.wind -= sk.cost;
     if (sk.treasureCost) me.treasure -= sk.treasureCost;
     me.skillUsed = true;
-    log(s, `✨ ${me.name}: 선장 스킬 「${sk.name}」!`);
+    log(s, `✨ ${me.name}: 리더 스킬 「${sk.name}」!`);
     sk.effect(effectApi(s, pi), action.target);
     checkWinner(s);
     return null;

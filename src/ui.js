@@ -221,7 +221,7 @@ function render(entered = new Set()) {
   const skillBtn = $('skill-btn');
   const skillErr = canUseSkill(state, ME);
   skillBtn.innerHTML = `<span class="sk-cost">${sk.cost}</span>${sk.art} ${sk.name}${sk.treasureCost ? ` <small>💰${sk.treasureCost}</small>` : ''}`;
-  skillBtn.title = `선장 스킬: ${sk.text}`;
+  skillBtn.title = `리더 스킬: ${sk.text}`;
   skillBtn.disabled = !myTurn;
   skillBtn.classList.toggle('usable', myTurn && !skillErr);
   skillBtn.classList.toggle('used', me.skillUsed);
@@ -444,7 +444,7 @@ async function perform(action) {
   } else if (action.type === 'skill') {
     if (!canUseSkill(state, pi)) {
       const sk = skillOf(pi);
-      await showBanner(`✨ ${sk.art} ${sk.name}<span class="who">${pi === ME ? '선장 스킬!' : `${label(pi)} 선장 스킬!`}</span>`, 900);
+      await showBanner(`✨ ${sk.art} ${sk.name}<span class="who">${pi === ME ? '리더 스킬!' : `${label(pi)} 리더 스킬!`}</span>`, 900);
     }
   } else if (action.type === 'play') {
     const card = state.players[pi].hand[action.handIndex];
@@ -623,7 +623,7 @@ function openDeck() {
   const f = FACTIONS[p.factionId];
   const sk = f.skill;
   $('deck-desc').innerHTML = `${f.emblem} <b>${f.name}</b> — ${f.desc} 남은 덱 ${p.deck.length}장 · 손패 ${p.hand.length}장.`
-    + `<span class="dex-skill">✨ 선장 스킬 ${sk.art} <b>${sk.name}</b> (바람 ${sk.cost}${sk.treasureCost ? ` · 보물 ${sk.treasureCost}` : ''}) — ${sk.text}</span>`;
+    + `<span class="dex-skill">✨ 리더 스킬 ${sk.art} <b>${sk.name}</b> (바람 ${sk.cost}${sk.treasureCost ? ` · 보물 ${sk.treasureCost}` : ''}) — ${sk.text}</span>`;
   const box = $('deck-cards');
   box.innerHTML = '';
   const ids = Object.keys(f.deck).sort((a, b) => CARDS[a].cost - CARDS[b].cost || CARDS[a].name.localeCompare(CARDS[b].name));
@@ -689,7 +689,7 @@ function openDex() {
   const skill = FACTIONS[dexTab]?.skill;
   $('dex-desc').innerHTML = dexTab === 'neutral'
     ? '여러 해적단이 함께 쓰는 카드입니다.'
-    : `${FACTIONS[dexTab].desc} ${deckSplit(FACTIONS[dexTab].deck)}.<span class="dex-skill">✨ 선장 스킬 ${skill.art} <b>${skill.name}</b> (바람 ${skill.cost}${skill.treasureCost ? ` · 보물 ${skill.treasureCost}` : ''}) — ${skill.text}</span>`;
+    : `${FACTIONS[dexTab].desc} ${deckSplit(FACTIONS[dexTab].deck)}.<span class="dex-skill">✨ 리더 스킬 ${skill.art} <b>${skill.name}</b> (바람 ${skill.cost}${skill.treasureCost ? ` · 보물 ${skill.treasureCost}` : ''}) — ${skill.text}</span>`;
   const box = $('dex-cards');
   box.innerHTML = '';
   const addCard = (id, label) => {

@@ -1,6 +1,6 @@
 {
-  "name": "onepica",
-  "short_name": "onepica",
+  "name": "onepicard",
+  "short_name": "onepicard",
   "description": "고무팔 해적들이 주인공인 카드게임",
   "start_url": ".",
   "display": "fullscreen",
