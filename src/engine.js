@@ -14,7 +14,7 @@ export const RULES = {
   discountLimit: 2,
   ripenLimit: 2,
   sporeLimit: 3, // 한 갑판에 심을 수 있는 포자 수
-  sporeLife: 2, // 포자가 피해를 주는 횟수. 그 뒤 시든다
+  sporeLife: 2, // 포자가 머무는 주인 턴 수. 마지막 턴 끝에 1 피해를 주고 시든다
 };
 
 let uidSeq = 1;

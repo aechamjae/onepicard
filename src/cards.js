@@ -26,7 +26,7 @@ export const KEYWORDS = {
   ripen: { name: '숙성', desc: '손패에 든 채로 내 턴을 맞을 때마다 비용이 1 줄어든다(최대 -2).' },
   devour: { name: '포식', desc: '낼 때 다른 아군 선원 중 가장 약한 하나를 잡아먹고 그 공격력·체력을 얻는다.' },
   blood: { name: '피 냄새', desc: '체력이 깎인 적 선원을 공격하면 공격력 +2.' },
-  spore: { name: '포자', desc: '쓰러지면 적 갑판에 포자(0/1, 공격 불가)를 심는다. 포자는 주인의 턴이 끝날 때 그 배에 1 피해를 주고, 2번 주면 시든다. 한 갑판에 3개까지. 갑판이 가득 차도 선원을 낼 수 있고, 그때 포자 하나를 밟아 없애며 그 선원이 1 피해를 받는다.' },
+  spore: { name: '포자', desc: '쓰러지면 적 갑판에 포자(0/1, 공격 불가)를 심는다. 포자는 첫 턴엔 자리만 차지하고, 두 번째로 주인의 턴이 끝날 때 그 배에 1 피해를 주고 시든다. 한 갑판에 3개까지. 갑판이 가득 차도 선원을 낼 수 있고, 그때 포자 하나를 밟아 없애며 그 선원이 1 피해를 받는다.' },
 };
 
 // 카드 효과 안에서 키워드를 확인할 때 쓴다(효과로 얻은 키워드 포함).
@@ -904,8 +904,8 @@ export const CARDS = {
   // ── 버섯 포자 군집 ──
   spore: {
     name: '포자', type: 'crew', cost: 0, atk: 0, hp: 1, art: '🦠', token: true, noAttack: true, keywords: ['thorns'],
-    text: '공격할 수 없다. 주인 턴이 끝날 때 그 배에 1 피해, 2번 주면 시든다. 갑판이 가득 차면 선원을 낼 때 밟혀 터지며 1 피해.',
-    onTurnEnd: (g, self) => { g.damageMyShip(1); if (--self.life <= 0) g.wither(self.uid); },
+    text: '공격할 수 없다. 첫 턴엔 자리만 차지하고, 두 번째 주인 턴이 끝날 때 그 배에 1 피해를 주고 시든다. 갑판이 가득 차면 선원을 낼 때 밟혀 터지며 1 피해.',
+    onTurnEnd: (g, self) => { if (--self.life <= 0) { g.damageMyShip(1); g.wither(self.uid); } },
   },
   sprout: { name: '균사 새싹', type: 'crew', cost: 1, atk: 2, hp: 2, art: '🌱', keywords: ['spore'], text: '' },
   leafling: { name: '낙엽 은신자', type: 'crew', cost: 2, atk: 3, hp: 2, art: '🍂', keywords: ['stealth', 'spore'], text: '' },

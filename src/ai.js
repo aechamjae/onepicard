@@ -250,7 +250,9 @@ function chooseAttack(s) {
   const foe = s.players[1 - pi];
   // 내가 먼저 움직이니 같은 턴 수면 내가 이긴다. 상대가 더 빠르면 배 대신 공격 선원을 끊는다.
   const losingRace = raceTurns(foe, me) < raceTurns(me, foe);
-  const attackers = me.board.filter((c) => c.canAttack).sort((a, b) => b.atk - a.atk);
+  // 피 냄새 선원은 다른 선원이 먼저 상처를 낸 뒤에 달려든다.
+  const blood = (c) => (hasKeyword(c, 'blood') ? 1 : 0);
+  const attackers = me.board.filter((c) => c.canAttack).sort((a, b) => blood(a) - blood(b) || b.atk - a.atk);
   for (const a of attackers) {
     const power = a.atk + (a.tension || 0);
     const legal = attackTargets(s, pi, a);
@@ -373,25 +375,58 @@ function rollout(s, pi) {
   return evaluate(s, pi);
 }
 
+// 공격 후보 평가. 손에 쓸 카드가 있거나 선장 스킬이 남았으면 공격 뒤의 카드·스킬까지 이번 턴 끝까지 해 본다
+// (냉기로 얼려 두고 고드름, 이미 친 선원에게 과부하처럼 때린 다음 이어지는 수를 보려고).
 function searchAttack(s) {
   const pi = s.current;
   const me = s.players[pi];
+  const more = (!canUseSkill(s, pi) || me.hand.some((_, i) => !canPlay(s, pi, i)));
+  const rollout2 = more ? finishTurn : rollout;
   let best = null;
-  let bestScore = rollout(cloneState(s), pi); // 규칙대로만 쳤을 때가 기준
+  let bestScore = rollout2(cloneState(s), pi); // 규칙대로만 쳤을 때가 기준
   for (const a of me.board.filter((c) => c.canAttack)) {
     for (const target of attackTargets(s, pi, a)) {
       const action = { type: 'attack', attacker: a.uid, target };
       const t = cloneState(s);
       if (applyAction(t, action)) continue;
-      const score = rollout(t, pi);
+      const score = rollout2(t, pi);
       if (score > bestScore + 0.01) { bestScore = score; best = action; }
     }
   }
   return best || chooseAttack(s);
 }
 
+// ── 순서 정하기 ──
+// 카드·스킬을 먼저 쓸지, 먼저 칠지. 때린 다음에야 쓸모가 커지는 카드가 많다.
+// (냉기로 얼린 뒤 고드름·서리 입김, 상처 낸 뒤 지느러미·피 냄새, 이미 친 선원에게 과부하, 친 선원을 잡아먹고 포식 돌격)
+// 두 갈래를 판을 복제해 이번 턴 끝까지 해 보고, 끝난 판이 나은 쪽을 고른다.
+
+// 이번 턴 남은 행동을 규칙대로 끝까지 해 본 뒤 판 점수.
+function finishTurn(s, pi) {
+  for (let i = 0; i < 30 && s.winner === null && s.current === pi; i++) {
+    const a = choosePlay(s) || chooseSkill(s) || chooseAttack(s);
+    if (!a || applyAction(s, a)) break;
+  }
+  return evaluate(s, pi);
+}
+
+function tryFirst(s, action) {
+  const t = cloneState(s);
+  if (applyAction(t, action)) return -Infinity;
+  return finishTurn(t, s.current);
+}
+
+function chooseAction(s) {
+  const use = choosePlay(s) || chooseSkill(s);
+  if (!use) return searchAttack(s);
+  // 비교는 양쪽 다 같은 규칙(chooseAttack)으로 해야 공평하다. 먼저 치기로 하면 그때 가장 좋은 공격을 찾는다.
+  const attack = chooseAttack(s);
+  if (attack && tryFirst(s, attack) > tryFirst(s, use) + 0.01) return searchAttack(s);
+  return use;
+}
+
 export function aiNextAction(s, level = 'hard') {
   const { mistake } = AI_LEVELS[level] ?? AI_LEVELS.hard;
   if (mistake && s.rng() < mistake) return randomAction(s);
-  return choosePlay(s) || chooseSkill(s) || searchAttack(s) || { type: 'end' };
+  return chooseAction(s) || { type: 'end' };
 }
