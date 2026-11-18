@@ -408,13 +408,13 @@ export const CARDS = {
   lighthouse: { name: '등대지기', type: 'crew', cost: 4, atk: 2, hp: 6, art: '🔦', keywords: ['guard'], text: '' },
   shortcut: { name: '지름길 항해사', type: 'crew', cost: 4, atk: 3, hp: 3, art: '🛶', keywords: ['sneak', 'tailwind'], text: '' },
   guildmaster: {
-    name: '나미', type: 'crew', cost: 6, atk: 4, hp: 5, art: '🎓', keywords: ['tailwind'],
-    text: '항해사 길드를 이끄는 길드 마스터. 등장: 카드 2장을 뽑는다.',
+    name: '하레다스', type: 'crew', cost: 6, atk: 4, hp: 5, art: '🧙‍♂️', keywords: ['tailwind'],
+    text: '하늘섬 웨더리아의 기상 학자. 등장: 카드 2장을 뽑는다.',
     onPlay: (g) => g.draw(2),
   },
   admiral: {
-    name: '에넬', type: 'crew', cost: 7, atk: 5, hp: 6, art: '⛈️',
-    text: '대항해를 이끄는 제독. 등장: 공격력이 가장 높은 적 선원 하나를 상대 손패로 되돌린다.',
+    name: '쿠마', type: 'crew', cost: 7, atk: 5, hp: 6, art: '🐾',
+    text: '손바닥으로 무엇이든 튕겨 날려 보내는 칠무해. 등장: 공격력이 가장 높은 적 선원 하나를 상대 손패로 되돌린다.',
     onPlay: (g) => {
       const list = g.foe.board.filter((c) => !c.stealth).sort((a, b) => b.atk - a.atk);
       if (list.length) g.bounce(list[0].uid);
@@ -660,8 +660,8 @@ export const CARDS = {
 
   // ── 황금 상인조합 (신규) ──
   changer: {
-    name: '환전상', type: 'crew', cost: 2, atk: 2, hp: 4, art: '💱', keywords: ['trade'],
-    text: '거래: 이번 턴에 바람 +3.',
+    name: '나미', type: 'crew', cost: 2, atk: 2, hp: 4, art: '🐈‍⬛', keywords: ['trade'],
+    text: '보물을 노리는 도둑 고양이. 거래: 이번 턴에 바람 +3.',
     onPlay: (g) => { if (g.trade()) g.gainWind(3); },
   },
   goldbar: {
@@ -929,7 +929,7 @@ export const CARDS = {
     onPlay: (g, self) => { const a = g.randomAllyCrew(self.uid); if (a) g.buff(a.uid, 1, 0); },
   },
   hange: {
-    name: '한지', type: 'crew', cost: 3, atk: 2, hp: 4, art: '🔬',
+    name: '한지', type: 'crew', cost: 3, atk: 2, hp: 4, art: '👓',
     text: '등장: 공격력이 가장 높은 적 선원을 붙잡아 얼린다.',
     onPlay: (g) => {
       const list = g.foe.board.filter((c) => !c.stealth && !c.submerged && !CARDS[c.defId].noAttack).sort((a, b) => b.atk - a.atk);
@@ -985,9 +985,9 @@ export const CARDS = {
     onPlay: (g) => { if (g.exchange()) g.draw(1); },
   },
   havoc: { name: '하보크', type: 'crew', cost: 2, atk: 3, hp: 2, art: '🚬', text: '' },
-  falman: { name: '팔만', type: 'crew', cost: 2, atk: 1, hp: 4, art: '📚', keywords: ['guard'], text: '' },
+  falman: { name: '팔만', type: 'crew', cost: 2, atk: 1, hp: 4, art: '📚', text: '' },
   hughes: {
-    name: '휴즈', type: 'crew', cost: 2, atk: 2, hp: 2, art: '📸',
+    name: '휴즈', type: 'crew', cost: 2, atk: 1, hp: 3, art: '📸', keywords: ['guard'],
     text: '유언: 카드 1장을 뽑는다.',
     onDeath: (g) => g.draw(1),
   },
