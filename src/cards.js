@@ -186,8 +186,8 @@ export const CARDS = {
   ringmaster: { name: '도리', type: 'crew', cost: 6, atk: 4, hp: 6, art: '🤠', arm: true, keywords: ['reach', 'tension'], text: '거인처럼 긴 팔을 가진 곡예단장.' },
   slingshot: {
     name: '고무줄 새총', type: 'tactic', cost: 2, art: '🪃', target: 'allyCrew',
-    text: '아군 선원 하나의 팔을 끝까지 당긴다: 탄력 3, 이번 턴에 바로 공격할 수 있다.',
-    effect: (g, t) => { g.setTension(t, 3); g.ready(t); },
+    text: '아군 선원 하나의 팔을 당긴다: 탄력 2(이미 더 많으면 그대로), 이번 턴에 바로 공격할 수 있다.',
+    effect: (g, t) => { const c = g.me.board.find((c) => c.uid === t); g.setTension(t, Math.max(2, c?.tension || 0)); g.ready(t); },
   },
   grab: {
     name: '휘감아 던지기', type: 'tactic', cost: 3, art: '🎣', target: 'foeCrew',
@@ -907,18 +907,18 @@ export const CARDS = {
     text: '공격할 수 없다. 첫 턴엔 자리만 차지하고, 두 번째 주인 턴이 끝날 때 그 배에 1 피해를 주고 시든다. 갑판이 가득 차면 선원을 낼 때 밟혀 터지며 1 피해.',
     onTurnEnd: (g, self) => { if (--self.life <= 0) { g.damageMyShip(1); g.wither(self.uid); } },
   },
-  sprout: { name: '균사 새싹', type: 'crew', cost: 1, atk: 2, hp: 2, art: '🌱', keywords: ['spore'], text: '' },
-  leafling: { name: '낙엽 은신자', type: 'crew', cost: 2, atk: 3, hp: 2, art: '🍂', keywords: ['stealth', 'spore'], text: '' },
-  larva: { name: '버섯 애벌레', type: 'crew', cost: 2, atk: 3, hp: 3, art: '🐛', keywords: ['spore'], text: '' },
-  potguard: { name: '화분 수호병', type: 'crew', cost: 3, atk: 2, hp: 5, art: '🪴', keywords: ['guard', 'spore'], text: '' },
+  sprout: { name: '균사 새싹', type: 'crew', cost: 1, atk: 2, hp: 3, art: '🌱', keywords: ['spore'], text: '' },
+  leafling: { name: '낙엽 은신자', type: 'crew', cost: 2, atk: 3, hp: 3, art: '🍂', keywords: ['stealth', 'spore'], text: '' },
+  larva: { name: '버섯 애벌레', type: 'crew', cost: 2, atk: 3, hp: 4, art: '🐛', keywords: ['spore'], text: '' },
+  potguard: { name: '화분 수호병', type: 'crew', cost: 3, atk: 2, hp: 6, art: '🪴', keywords: ['guard', 'spore'], text: '' },
   culturist: {
-    name: '포자 배양사', type: 'crew', cost: 4, atk: 3, hp: 5, art: '🧫',
+    name: '포자 배양사', type: 'crew', cost: 4, atk: 3, hp: 6, art: '🧫',
     text: '등장: 적 갑판에 포자 2개를 심는다.',
     onPlay: (g) => g.plantSpores(2),
   },
-  troll: { name: '이끼 트롤', type: 'crew', cost: 5, atk: 5, hp: 7, art: '🧌', text: '' },
+  troll: { name: '이끼 트롤', type: 'crew', cost: 5, atk: 5, hp: 8, art: '🧌', text: '' },
   mykos: {
-    name: '미코스', type: 'crew', cost: 7, atk: 6, hp: 8, art: '🌲',
+    name: '미코스', type: 'crew', cost: 7, atk: 6, hp: 9, art: '🌲',
     text: '숲 전체에 뿌리를 뻗은 균사 거목. 등장: 적 갑판에 포자 3개를 심는다.',
     onPlay: (g) => g.plantSpores(3),
   },
@@ -966,7 +966,7 @@ export const CARDS = {
   },
 
   // ── 버섯 포자 군집 (추가) ──
-  mosssnail: { name: '이끼 달팽이', type: 'crew', cost: 2, atk: 2, hp: 3, art: '🐌', keywords: ['spore'], text: '' },
+  mosssnail: { name: '이끼 달팽이', type: 'crew', cost: 2, atk: 2, hp: 4, art: '🐌', keywords: ['spore'], text: '' },
 };
 
 // 공용 카드: 여러 해적단이 함께 쓰는 카드. 덱마다 공용 카드는 5장, 나머지 25장은 그 해적단 고유 카드로 채운다.
@@ -1155,7 +1155,7 @@ export const FACTIONS = {
     emblem: '🍄',
     desc: '잠식형. 단단한 균사 선원으로 버티며 적 갑판에 포자를 심고, 포자가 적 배를 갉아먹는다.',
     skill: {
-      name: '번식', art: '🧬', cost: 2,
+      name: '번식', art: '🧬', cost: 1,
       text: '적 갑판에 포자 1개를 심는다.',
       effect: (g) => g.plantSpores(1),
     },
