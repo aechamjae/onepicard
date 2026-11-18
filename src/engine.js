@@ -132,12 +132,18 @@ function checkWinner(s) {
   }
 }
 
-// 쓰러진 선원을 치운다. 망령은 한 번 되살아나고, 유언(onDeath)은 치운 뒤에 발동한다.
+// 쓰러진 선원을 치운다. 망령은 한 번 되살아나고, 거인화 선원은 그 자리에서 거인이 되며, 유언(onDeath)은 치운 뒤에 발동한다.
 function removeDead(s) {
+  const titans = []; // [플레이어, 새로 일어난 거인]
   s.players.forEach((p, pi) => {
     const dead = [];
     for (const c of p.board.filter((c) => c.hp <= 0)) {
-      if (hasKeyword(c, 'ghost') && !c.revived) {
+      if (hasKeyword(c, 'titan') && CARDS[c.defId].titan) {
+        const t = makeCrew(uidSeq++, CARDS[c.defId].titan);
+        p.board[p.board.indexOf(c)] = t;
+        titans.push([pi, t]);
+        log(s, `⚡ 「${CARDS[c.defId].name}」이(가) 「${CARDS[t.defId].name}」이(가) 되어 다시 일어났다!`);
+      } else if (hasKeyword(c, 'ghost') && !c.revived) {
         c.revived = true;
         c.hp = 1;
         c.burning = false;
@@ -153,8 +159,25 @@ function removeDead(s) {
       const d = CARDS[c.defId];
       if (d.onDeath) d.onDeath(effectApi(s, pi));
       if (hasKeyword(c, 'spore')) plantSpores(s, 1 - pi, 1);
+      if (hasKeyword(c, 'devotion')) {
+        const heir = p.board.filter((a) => !CARDS[a.defId].noAttack).sort((a, b) => b.atk - a.atk)[0];
+        if (heir) {
+          heir.atk++;
+          log(s, `✊ 헌신! 「${CARDS[heir.defId].name}」의 공격력 +1.`);
+        }
+      }
+    }
+    for (const c of [...p.board]) {
+      const d = CARDS[c.defId];
+      if (d.onAllyDeath && c.hp > 0) d.onAllyDeath(effectApi(s, pi), c);
     }
   });
+  // 거인이 일어날 때 효과(초대형 거인의 폭발 등). 그 효과로 쓰러진 선원을 다시 치운다.
+  for (const [pi, t] of titans) {
+    const d = CARDS[t.defId];
+    if (d.onRise) d.onRise(effectApi(s, pi), t);
+  }
+  if (titans.length && s.players.some((p) => p.board.some((c) => c.hp <= 0))) removeDead(s);
 }
 
 const isSpore = (c) => !!CARDS[c.defId].noAttack;
@@ -224,8 +247,28 @@ function heal(s, p, n) {
 function effectApi(s, pi) {
   const me = s.players[pi];
   const foe = s.players[1 - pi];
-  return {
+  const api = {
     me, foe,
+    get turn() { return s.turn; },
+    // 등가교환: 손패에서 재료 카드를 먼저, 없으면 가장 싼 카드 1장을 버린다(행운의 동전은 버리지 않는다).
+    // 버렸으면 true. 버린 카드가 재료면 그 효과(onDiscard)가 터진다.
+    exchange: () => {
+      const pool = me.hand.filter((c) => c.defId !== 'coin');
+      if (!pool.length) return false;
+      const mats = pool.filter((c) => (CARDS[c.defId].keywords || []).includes('material'));
+      const pick = [...(mats.length ? mats : pool)].sort((a, b) => costOf(me, a) - costOf(me, b))[0];
+      me.hand = me.hand.filter((c) => c !== pick);
+      const d = CARDS[pick.defId];
+      log(s, `⚗ 등가교환: 「${d.name}」을(를) 재료로 바쳤다.`);
+      if (d.onDiscard) d.onDiscard(api);
+      return true;
+    },
+    // 이 선원을 뺀 바다 위 모든 선원(아군 포함)에게 피해.
+    damageOthers: (selfUid, n) => {
+      for (const c of [...me.board, ...foe.board]) if (c.uid !== selfUid) hurt(c, n);
+      log(s, `바다 위 다른 모든 선원에게 ${n} 피해.`);
+      removeDead(s);
+    },
     draw: (n) => drawCards(s, pi, n),
     gainWind: (n) => { me.wind += n; },
     healShip: (n) => {
@@ -432,6 +475,7 @@ function effectApi(s, pi) {
     },
     randomFoeCrew: () => (foe.board.length ? foe.board[Math.floor(s.rng() * foe.board.length)] : null),
   };
+  return api;
 }
 
 // 안개 속에 숨었거나 잠항 중인 선원은 공격이나 대상 지정 카드로 고를 수 없다.
@@ -568,6 +612,10 @@ export function applyAction(s, action) {
     } else {
       const defender = foe.board.find((c) => c.uid === action.target);
       const idx = foe.board.indexOf(defender);
+      if (hasKeyword(attacker, 'odm') && defender.hp >= attacker.atk) {
+        power += 2;
+        log(s, `🪢 입체기동! 큰 적의 목덜미를 노린다. (공격력 +2)`);
+      }
       if (hasKeyword(attacker, 'blood') && defender.hp < defender.maxHp) {
         power += 2;
         log(s, `🩸 피 냄새를 맡았다! (공격력 +2)`);

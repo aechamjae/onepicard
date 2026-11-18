@@ -199,6 +199,10 @@ main[hidden] { display: none; }
 .chip.k-scorch { background: #ff6a2b; color: #3a0d00; }
 .chip.k-grow { background: #c9a75c; color: #2b1f0b; }
 .chip.k-lifesteal { background: #b3213f; }
+.chip.k-odm { background: #5f7d45; }
+.chip.k-devotion { background: #c0392b; }
+.chip.k-titan { background: #7a4a2a; }
+.chip.k-exchange, .chip.k-material { background: #c9a24a; color: #2a1d00; }
 .chip.k-double { background: #e0a400; color: #2b1f00; }
 .chip.k-shield { background: #4fb3ff; color: #062033; }
 .chip.k-thorns { background: #3f8f4a; }
@@ -260,6 +264,8 @@ main[hidden] { display: none; }
 .f-fruit { --fa: #e5483b; --fb: #4f7a1f; --fc: #ffe9a8; --art-bg: radial-gradient(circle at 50% 35%, #fff6e0, #f2a15a 60%, #8cc152); }
 .f-zoo { --fa: #e8a33d; --fb: #4a3418; --fc: #fff1c9; --art-bg: radial-gradient(circle at 50% 40%, #fff7dd, #d9b66f 60%, #8fae5c); }
 .f-shark { --fa: #4a7fa8; --fb: #10233a; --fc: #ff8a8a; --art-bg: radial-gradient(circle at 50% 35%, #dff1ff, #5b8fb8 60%, #8b1e2b); }
+.f-scout { --fa: #4f6b3a; --fb: #1c2616; --fc: #e9e1c8; --art-bg: radial-gradient(circle at 50% 35%, #f3eedc, #a8a37a 60%, #4f6b3a); }
+.f-alchemy { --fa: #2f5fa8; --fb: #141f38; --fc: #f2d27a; --art-bg: radial-gradient(circle at 50% 35%, #fff4d6, #c9a24a 60%, #2f5fa8); }
 .f-mush { --fa: #a0623f; --fb: #2e2418; --fc: #e9d8b5; --art-bg: radial-gradient(circle at 50% 35%, #f6ecd8, #b98a5c 60%, #5e7a3a); }
 .card.tactic { --fa: #f6e7c2; --fb: #d8b874; --name: #3b2410; --art-bg: radial-gradient(circle, #fffaf0, #e8d3a2); }
 .card.tactic .name { text-shadow: none; }

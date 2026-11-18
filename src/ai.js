@@ -105,6 +105,13 @@ const TACTIC_AI = {
   sporecloud: (me, foe) => foe.board.length <= RULES.boardLimit - 2,
   mushsoup: (me) => me.hull <= RULES.startHull - 4,
   insurance: (me) => me.hull <= RULES.startHull - 4,
+  flare: (me) => strongest(me.board.filter((c) => !c.canAttack && !c.attacked && !c.held && !c.frozen && c.atk >= 2), (c) => c.atk),
+  thunderspear: (me, foe) => strongest(foe.board.filter((c) => dmg(c.hp >= 5 ? 6 : 4, c) >= c.hp), value) || strongest(foe.board.filter((c) => c.atk >= 4), (c) => c.atk),
+  sasageyo: (me) => me.board.length >= 2,
+  expedition: (me) => me.hand.length <= 5 && me.hull > 8,
+  circle: (me) => me.hand.length <= 6 && me.hand.some((c) => c.defId !== 'coin'),
+  stonepiece: () => false, // 재료로 버려질 때 터지는 쪽이 더 값지다
+  philostone: (me) => me.hull > 8 && strongest(me.board, (c) => c.atk),
   buyout: (me, foe) => {
     if (me.treasure > 0 && me.board.length < RULES.boardLimit) {
       const t = strongest(foe.board.filter((c) => c.atk <= 4 && !CARDS[c.defId].token), value);
@@ -134,6 +141,8 @@ const SKILL_AI = {
   swords: (me) => strongest(me.board, (c) => (hasKeyword(c, 'slash') ? 0 : 10) + c.atk),
   guild: (me) => me.hand.length <= 6 && me.deck.length > 0,
   surgeon: (me, foe) => strongest(foe.board.filter((c) => dmg(1, c) >= c.hp), value) || strongest(foe.board, (c) => c.atk),
+  scout: (me) => strongest(me.board.filter((c) => !hasKeyword(c, 'odm')), (c) => c.atk) || strongest(me.board, (c) => c.atk),
+  alchemy: (me) => me.board.length < RULES.boardLimit && me.hand.some((c) => c.defId !== 'coin'),
   frost: (me, foe) => strongest(foe.board.filter((c) => c.frozen ? dmg(2, c) >= c.hp : c.atk >= 2), (c) => (c.frozen ? 10 : 0) + c.atk),
   fruit: () => true,
   zoo: (me) => me.board.length < RULES.boardLimit,
@@ -271,7 +280,7 @@ function chooseAttack(s) {
       if (doomed(d)) continue;
       const slash = hasKeyword(a, 'slash');
       const back = slash ? 0 : d.atk + (hasKeyword(d, 'thorns') ? 1 : 0);
-      const bite = hasKeyword(a, 'blood') && d.hp < d.maxHp ? 2 : 0;
+      const bite = (hasKeyword(a, 'blood') && d.hp < d.maxHp ? 2 : 0) + (hasKeyword(a, 'odm') && d.hp >= a.atk ? 2 : 0);
       const kills = dmg(power + bite, d) >= d.hp;
       const survives = a.hp - dmg(back, a) > (a.burning ? RULES.burnDamage : 0);
       let score = 0;
@@ -327,6 +336,8 @@ function crewWorth(c) {
   if (hasKeyword(c, 'ghost') && !c.revived) w += c.atk * 1.2 + 0.8;
   if (c.shield) w += c.atk;
   if (d.onDeath) w += 2;
+  if (d.onAllyDeath) w += 2;
+  if (d.titan) w += 5; // 쓰러져도 거인이 되어 일어난다
   if (d.onTurnEnd) w += 3;
   if (hasKeyword(c, 'grow') && c.grown < RULES.growLimit) w += 2;
   if (c.burning) w -= 2.5; // 불이 꺼지지 않아 매 턴 체력이 깎인다

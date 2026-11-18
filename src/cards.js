@@ -25,6 +25,11 @@ export const KEYWORDS = {
   ripen: { name: '숙성', desc: '손패에 든 채로 내 턴을 맞을 때마다 비용이 1 줄어든다(최대 -2).' },
   devour: { name: '포식', desc: '낼 때 다른 아군 선원 중 가장 약한 하나를 잡아먹고 그 공격력·체력을 얻는다.' },
   blood: { name: '피 냄새', desc: '체력이 깎인 적 선원을 공격하면 공격력 +2.' },
+  odm: { name: '입체기동', desc: '적 선원의 체력이 이 선원의 공격력 이상이면, 그 선원을 공격할 때 공격력 +2.' },
+  devotion: { name: '헌신', desc: '쓰러지면 공격력이 가장 높은 아군 선원의 공격력 +1.' },
+  titan: { name: '거인화', desc: '처음 쓰러지면 카드에 적힌 거인이 되어 그 자리에서 다시 일어난다(쓰러진 것으로 치지 않는다).' },
+  exchange: { name: '등가교환', desc: '낼 때 손패에서 재료 카드를 먼저, 없으면 가장 싼 카드 1장을 버리고 추가 효과를 낸다. 행운의 동전은 버리지 않는다. 버릴 카드가 없으면 추가 효과도 없다.' },
+  material: { name: '재료', desc: '등가교환으로 버려지면 카드에 적힌 효과가 터진다.' },
   spore: { name: '포자', desc: '쓰러지면 적 갑판에 포자(0/1, 공격 불가)를 심는다. 포자는 첫 턴엔 자리만 차지하고, 두 번째로 주인의 턴이 끝날 때 그 배에 1 피해를 주고 시든다. 한 갑판에 3개까지. 갑판이 가득 차도 선원을 낼 수 있고, 그때 포자 하나를 밟아 없애며 그 선원이 1 피해를 받는다.' },
 };
 
@@ -909,6 +914,138 @@ export const CARDS = {
 
   // ── 버섯 포자 군집 (추가) ──
   mosssnail: { name: '이끼 달팽이', type: 'crew', cost: 2, atk: 2, hp: 4, art: '🐌', keywords: ['spore'], text: '' },
+
+  // ── 조사병단 ──
+  cadet: { name: '훈련병', type: 'crew', cost: 1, atk: 1, hp: 2, art: '🪖', keywords: ['devotion'], text: '' },
+  sasha: {
+    name: '사샤', type: 'crew', cost: 2, atk: 2, hp: 2, art: '🥔',
+    text: '등장: 무작위 적 선원에게 1 피해.',
+    onPlay: (g) => { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 1); },
+  },
+  connie: { name: '코니', type: 'crew', cost: 2, atk: 2, hp: 3, art: '🏃', keywords: ['odm'], text: '' },
+  jean: {
+    name: '장', type: 'crew', cost: 3, atk: 3, hp: 3, art: '🐴', keywords: ['odm'],
+    text: '등장: 무작위 다른 아군 선원의 공격력 +1.',
+    onPlay: (g, self) => { const a = g.randomAllyCrew(self.uid); if (a) g.buff(a.uid, 1, 0); },
+  },
+  hange: {
+    name: '한지', type: 'crew', cost: 3, atk: 2, hp: 4, art: '🔬',
+    text: '등장: 공격력이 가장 높은 적 선원을 붙잡아 얼린다.',
+    onPlay: (g) => {
+      const list = g.foe.board.filter((c) => !c.stealth && !c.submerged && !CARDS[c.defId].noAttack).sort((a, b) => b.atk - a.atk);
+      if (list.length) g.freeze(list[0].uid);
+    },
+  },
+  armin: {
+    name: '아르민', type: 'crew', cost: 4, atk: 1, hp: 3, art: '📘', keywords: ['titan'], titan: 'colossal',
+    text: '등장: 카드 1장을 뽑는다. 거인화: 초대형 거인(3/6).',
+    onPlay: (g) => g.draw(1),
+  },
+  colossal: {
+    name: '초대형 거인', type: 'crew', cost: 4, atk: 3, hp: 6, art: '🚨', token: true,
+    text: '일어날 때 폭발해 바다 위 다른 모든 선원(아군 포함)에게 2 피해.',
+    onRise: (g, self) => g.damageOthers(self.uid, 2),
+  },
+  mike: { name: '미케', type: 'crew', cost: 4, atk: 3, hp: 5, art: '👃', keywords: ['guard'], text: '' },
+  mikasa: { name: '미카사', type: 'crew', cost: 4, atk: 3, hp: 4, art: '🧣', keywords: ['odm', 'double'], text: '' },
+  eren: { name: '에렌', type: 'crew', cost: 5, atk: 3, hp: 4, art: '🗝️', keywords: ['titan'], titan: 'attacktitan', text: '거인화: 진격의 거인(4/5).' },
+  attacktitan: { name: '진격의 거인', type: 'crew', cost: 5, atk: 4, hp: 5, art: '👺', token: true, text: '' },
+  erwin: {
+    name: '엘빈', type: 'crew', cost: 5, atk: 4, hp: 5, art: '🎖️',
+    text: '아군 선원이 쓰러지면 카드 1장을 뽑는다(턴마다 1번).',
+    onAllyDeath: (g, self) => { if (self.drewTurn !== g.turn) { self.drewTurn = g.turn; g.draw(1); } },
+  },
+  levi: { name: '리바이', type: 'crew', cost: 6, atk: 3, hp: 5, art: '🫖', keywords: ['odm', 'double'], text: '인류 최강의 병사.' },
+  flare: {
+    name: '신호탄', type: 'tactic', cost: 1, art: '🎇', target: 'allyCrew',
+    text: '아직 공격하지 않은 아군 선원 하나가 이번 턴에 바로 공격할 수 있다.',
+    effect: (g, t) => { const c = g.me.board.find((c) => c.uid === t); if (c && !c.attacked && !c.held) g.ready(t); },
+  },
+  thunderspear: {
+    name: '뇌창', type: 'tactic', cost: 3, art: '🚀', target: 'foeCrew',
+    text: '적 선원 하나에게 4 피해. 그 선원의 체력이 5 이상이면 6 피해.',
+    effect: (g, t) => { const c = g.foe.board.find((c) => c.uid === t); if (c) g.damageCrew(t, c.hp >= 5 ? 6 : 4); },
+  },
+  sasageyo: {
+    name: '심장을 바쳐라', type: 'tactic', cost: 4, art: '✊',
+    text: '아군 선원 모두에게 공격력 +1. 카드 1장을 뽑는다.',
+    effect: (g) => { g.buffAll(1, 0); g.draw(1); },
+  },
+  expedition: {
+    name: '벽외 조사', type: 'tactic', cost: 2, art: '🐎',
+    text: '카드 2장을 뽑는다. 내 배에 2 피해.',
+    effect: (g) => { g.draw(2); g.damageMyShip(2); },
+  },
+
+  // ── 국가 연금술사 ──
+  hayate: { name: '하야테', type: 'crew', cost: 1, atk: 2, hp: 1, art: '🐕', keywords: ['charge'], text: '' },
+  fuery: {
+    name: '퓨리', type: 'crew', cost: 1, atk: 1, hp: 2, art: '📻', keywords: ['exchange'],
+    text: '등가교환: 카드 1장을 뽑는다.',
+    onPlay: (g) => { if (g.exchange()) g.draw(1); },
+  },
+  havoc: { name: '하보크', type: 'crew', cost: 2, atk: 3, hp: 2, art: '🚬', text: '' },
+  falman: { name: '팔만', type: 'crew', cost: 2, atk: 1, hp: 4, art: '📚', keywords: ['guard'], text: '' },
+  hughes: {
+    name: '휴즈', type: 'crew', cost: 2, atk: 2, hp: 2, art: '📸',
+    text: '유언: 카드 1장을 뽑는다.',
+    onDeath: (g) => g.draw(1),
+  },
+  hawkeye: {
+    name: '호크아이', type: 'crew', cost: 3, atk: 2, hp: 3, art: '👁️',
+    text: '등장: 공격력이 가장 높은 적 선원에게 2 피해. 아군 연금술사가 있으면 4 피해.',
+    onPlay: (g, self) => {
+      const t = g.foe.board.filter((c) => !c.stealth && !c.submerged && !CARDS[c.defId].noAttack).sort((a, b) => b.atk - a.atk)[0];
+      if (t) g.damageCrew(t.uid, g.me.board.some((c) => c.uid !== self.uid && CARDS[c.defId].alchemist) ? 4 : 2);
+    },
+  },
+  winry: {
+    name: '윈리', type: 'crew', cost: 3, atk: 2, hp: 3, art: '👩‍🏭',
+    text: '등장: 오토메일 정비. 에드에게, 없으면 공격력이 가장 높은 다른 아군 선원에게 공격력 +1, 체력 +2.',
+    onPlay: (g, self) => {
+      const others = g.me.board.filter((c) => c.uid !== self.uid && !CARDS[c.defId].noAttack);
+      const t = others.find((c) => c.defId === 'edward') || others.sort((a, b) => b.atk - a.atk)[0];
+      if (t) g.buff(t.uid, 1, 2);
+    },
+  },
+  breda: { name: '브레다', type: 'crew', cost: 3, atk: 2, hp: 4, art: '🍔', keywords: ['guard'], text: '' },
+  edward: {
+    name: '에드', type: 'crew', cost: 4, atk: 3, hp: 4, art: '👏', keywords: ['exchange'], alchemist: true,
+    text: '강철의 연금술사. 등가교환: 공격력 +2, 체력 +2.',
+    onPlay: (g, self) => { if (g.exchange()) g.buff(self.uid, 2, 2); },
+  },
+  armstrong: {
+    name: '암스트롱', type: 'crew', cost: 5, atk: 4, hp: 6, art: '💪', keywords: ['exchange'], alchemist: true,
+    text: '강완의 연금술사. 등가교환: 적 선원 모두에게 2 피해.',
+    onPlay: (g) => { if (g.exchange()) g.damageAllFoes(2); },
+  },
+  kimblee: {
+    name: '킴블리', type: 'crew', cost: 5, atk: 4, hp: 4, art: '🌺', alchemist: true,
+    text: '홍련의 연금술사. 유언: 적 선원 모두에게 2 피해.',
+    onDeath: (g) => g.damageAllFoes(2),
+  },
+  mustang: {
+    name: '머스탱', type: 'crew', cost: 7, atk: 5, hp: 6, art: '❤️‍🔥', keywords: ['scorch'], alchemist: true,
+    text: '불꽃의 연금술사. 등장: 적 선원 모두에게 불을 붙인다.',
+    onPlay: (g) => g.burnAllFoes(),
+  },
+  stonewall: { name: '돌벽', type: 'crew', cost: 0, atk: 0, hp: 3, art: '🗻', token: true, keywords: ['guard'], text: '' },
+  circle: {
+    name: '연성진', type: 'tactic', cost: 2, art: '🔯', keywords: ['exchange'],
+    text: '등가교환: 카드 2장을 뽑는다.',
+    effect: (g) => { if (g.exchange()) g.draw(2); },
+  },
+  stonepiece: {
+    name: '현자의 돌 조각', type: 'tactic', cost: 0, art: '🔻', keywords: ['material'],
+    text: '이번 턴에 바람 +1. 재료: 버려지면 무작위 적 선원에게 2 피해(없으면 적 배에 2 피해).',
+    effect: (g) => g.gainWind(1),
+    onDiscard: (g) => { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 2); else g.damageFoeShip(2); },
+  },
+  philostone: {
+    name: '현자의 돌', type: 'tactic', cost: 3, art: '🔴', target: 'allyCrew',
+    text: '아군 선원 하나에게 공격력 +4, 체력 +4. 내 배에 4 피해.',
+    effect: (g, t) => { g.buff(t, 4, 4); g.damageMyShip(4); },
+  },
 };
 
 // 공용 카드: 여러 해적단이 함께 쓰는 카드. 덱마다 공용 카드는 5장, 나머지 25장은 그 해적단 고유 카드로 채운다.
@@ -1091,5 +1228,27 @@ export const FACTIONS = {
       effect: (g) => g.plantSpores(1),
     },
     deck: { sprout: 3, leafling: 3, larva: 3, mosssnail: 3, potguard: 2, culturist: 2, troll: 2, mykos: 1, wither: 2, sporecloud: 2, mushsoup: 2, veteran: 1, cannon: 1, puffer: 1, supply: 1, map: 1 },
+  },
+  scout: {
+    name: '조사병단',
+    emblem: '🕊️',
+    desc: '거인 사냥형. 입체기동으로 큰 적을 베고, 쓰러진 동료의 헌신을 이어받는다. 에렌과 아르민은 쓰러지면 거인이 되어 일어난다.',
+    skill: {
+      name: '와이어 앵커', art: '🪢', cost: 2, target: 'allyCrew',
+      text: '아군 선원 하나에게 공격력 +1과 입체기동을 준다.',
+      effect: (g, t) => { g.buff(t, 1, 0); g.grant(t, 'odm'); },
+    },
+    deck: { cadet: 3, sasha: 3, connie: 2, jean: 2, hange: 2, armin: 1, mike: 2, mikasa: 1, eren: 1, erwin: 1, levi: 1, flare: 2, thunderspear: 2, sasageyo: 1, expedition: 1, cannon: 1, supply: 1, veteran: 1, carpenter: 1, lookout: 1 },
+  },
+  alchemy: {
+    name: '국가 연금술사',
+    emblem: '⚗️',
+    desc: '등가교환형. 손패를 재료로 바쳐 카드를 강화하고, 연금술사와 부하들이 함께 싸운다.',
+    skill: {
+      name: '손뼉 연성', art: '🏛️', cost: 3,
+      text: '손패에서 재료 카드를 먼저, 없으면 가장 싼 카드 1장을 버리고 돌벽(0/3 수호)을 세운다.',
+      effect: (g) => { if (g.me.board.length < 5 && g.exchange()) g.summon('stonewall', 1); },
+    },
+    deck: { hayate: 1, fuery: 2, havoc: 2, falman: 2, hughes: 2, hawkeye: 2, winry: 2, breda: 2, edward: 2, armstrong: 1, kimblee: 1, mustang: 1, circle: 2, stonepiece: 2, philostone: 1, cannon: 1, supply: 1, veteran: 1, carpenter: 1, lookout: 1 },
   },
 };

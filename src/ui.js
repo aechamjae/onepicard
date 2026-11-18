@@ -683,7 +683,7 @@ function openDex() {
   const owners = {};
   for (const [f, { deck }] of Object.entries(FACTIONS)) for (const id of Object.keys(deck)) (owners[id] ??= []).push(f);
   const home = (id) => (COMMON.has(id) || owners[id]?.length !== 1 ? 'neutral' : owners[id][0]);
-  const tokenHome = { spirit: 'ghost', monkey: 'monkey', spore: 'mush', bunny: 'zoo', blueberry: 'fruit' };
+  const tokenHome = { spirit: 'ghost', monkey: 'monkey', spore: 'mush', bunny: 'zoo', blueberry: 'fruit', colossal: 'scout', attacktitan: 'scout', stonewall: 'alchemy' };
   const ids = Object.keys(CARDS).filter((id) => id !== 'coin' && (tokenHome[id] ?? home(id)) === dexTab)
     .sort((a, b) => CARDS[a].cost - CARDS[b].cost);
   const skill = FACTIONS[dexTab]?.skill;
