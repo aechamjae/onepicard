@@ -200,38 +200,46 @@ function randomAction(s) {
   return pick(options);
 }
 
-function choosePlay(s) {
+// 지금 낼 만한 카드마다 정한 행동(대상 포함)을 낼 순서대로 모은다. choosePlay는 그중 첫 번째를 낸다.
+function playOptions(s, firstOnly = false) {
   const pi = s.current;
   const me = s.players[pi];
   const foe = foeView(s.players[1 - pi]);
+  const out = [];
   // 순풍 카드를 먼저 내 할인을 쌓고, 낸 카드 수만큼 강해지는 연쇄 카드는 마지막에 낸다. 나머지는 비싼 것부터.
   const rank = (d, id) => ((d.keywords || []).includes('tailwind') ? 0 : COMBO.has(id) ? 2 : 1);
   const order = me.hand
     .map((card, i) => ({ i, card, d: CARDS[card.defId], id: card.defId }))
     .sort((a, b) => rank(a.d, a.id) - rank(b.d, b.id) || costOf(me, b.card) - costOf(me, a.card));
+  const seen = new Set();
   for (const { i, card, d, id } of order) {
-    if (id === 'coin') continue;
+    if (firstOnly && out.length) break;
+    if (id === 'coin' || seen.has(id)) continue; // 같은 카드는 한 번만 따진다
     if (canPlay(s, pi, i)) {
       // 동전 1개로 낼 수 있게 되는 선원이 있으면 동전을 먼저 쓴다.
       const coinIdx = me.hand.findIndex((c) => c.defId === 'coin');
-      if (coinIdx >= 0 && d.type === 'crew' && costOf(me, card) === me.wind + 1 && me.board.length < RULES.boardLimit) {
-        return { type: 'play', handIndex: coinIdx };
+      if (coinIdx >= 0 && d.type === 'crew' && costOf(me, card) === me.wind + 1 && me.board.length < RULES.boardLimit && !seen.has('coin')) {
+        seen.add('coin');
+        out.push({ type: 'play', handIndex: coinIdx });
       }
       continue;
     }
-    if (d.type === 'crew') return { type: 'play', handIndex: i };
+    seen.add(id);
+    if (d.type === 'crew') { out.push({ type: 'play', handIndex: i }); continue; }
     // 쓸 상황인지는 카드별 규칙으로 거르고, 대상은 미리 써 보고 고른다.
     if (TACTIC_AI[id] && TACTIC_AI[id](me, foe) === false) continue;
     if (d.target) {
       const targets = (d.target === 'foeCrew' ? foe.board : me.board).map((c) => c.uid);
       const pick = searchTarget(s, (target) => ({ type: 'play', handIndex: i, target }), targets, 0.3 + costOf(me, card) * COST_MARGIN);
-      if (pick) return pick;
+      if (pick) out.push(pick);
       continue;
     }
-    return { type: 'play', handIndex: i };
+    out.push({ type: 'play', handIndex: i });
   }
-  return null;
+  return out;
 }
+
+const choosePlay = (s) => playOptions(s, true)[0] || null;
 
 const doomed = (c) => c.burning && c.hp <= RULES.burnDamage && !c.shield && !(hasKeyword(c, 'ghost') && !c.revived);
 
@@ -416,13 +424,22 @@ function tryFirst(s, action) {
   return finishTurn(t, s.current);
 }
 
+// 낼 만한 카드 하나하나, 선장 스킬, 공격 중 무엇을 먼저 할지 정한다.
+// (불을 붙인 뒤 화산 소스·꼬치꾼, 메스로 깎은 뒤 잡기처럼 순서가 중요한 수를 찾으려고)
 function chooseAction(s) {
-  const use = choosePlay(s) || chooseSkill(s);
-  if (!use) return searchAttack(s);
-  // 비교는 양쪽 다 같은 규칙(chooseAttack)으로 해야 공평하다. 먼저 치기로 하면 그때 가장 좋은 공격을 찾는다.
+  const skill = chooseSkill(s);
+  const uses = [...playOptions(s), ...(skill ? [skill] : [])];
+  if (!uses.length) return searchAttack(s);
+  // 비교는 모두 같은 규칙(chooseAttack)으로 이어 가야 공평하다. 먼저 치기로 하면 그때 가장 좋은 공격을 찾는다.
   const attack = chooseAttack(s);
-  if (attack && tryFirst(s, attack) > tryFirst(s, use) + 0.01) return searchAttack(s);
-  return use;
+  let best = uses[0];
+  let bestScore = tryFirst(s, best);
+  for (const a of uses.slice(1)) {
+    const score = tryFirst(s, a);
+    if (score > bestScore + 0.01) { bestScore = score; best = a; }
+  }
+  if (attack && tryFirst(s, attack) > bestScore + 0.01) return searchAttack(s);
+  return best;
 }
 
 export function aiNextAction(s, level = 'hard') {

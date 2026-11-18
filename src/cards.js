@@ -339,8 +339,8 @@ export const CARDS = {
   },
   overclock: {
     name: '과부하', type: 'tactic', cost: 3, art: '🔋', target: 'allyCrew',
-    text: '아군 선원 하나에게 공격력 +3. 이번 턴에 바로 공격할 수 있다.',
-    effect: (g, t) => { g.buff(t, 3, 0); g.ready(t); },
+    text: '아군 선원 하나에게 공격력 +2. 이번 턴에 바로 공격할 수 있다.',
+    effect: (g, t) => { g.buff(t, 2, 0); g.ready(t); },
   },
   blueprint: {
     name: '설계도', type: 'tactic', cost: 2, art: '📐',
