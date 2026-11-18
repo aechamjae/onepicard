@@ -170,8 +170,8 @@ export const CARDS = {
   },
   urchin: { name: '성게 수호병', type: 'crew', cost: 3, atk: 1, hp: 5, art: '🦔', keywords: ['guard', 'thorns'], text: '' },
   abyss: {
-    name: '고래밥', type: 'crew', cost: 7, atk: 6, hp: 6, art: '🐋',
-    text: '심연에서 올라온 거대 고래 함장. 내 턴이 끝날 때 보물 1개를 얻는다.',
+    name: '라분', type: 'crew', cost: 7, atk: 6, hp: 6, art: '🐋',
+    text: '곶에서 동료를 기다려 온 거대 고래. 내 턴이 끝날 때 보물 1개를 얻는다.',
     onTurnEnd: (g) => g.gainTreasure(1),
   },
 
@@ -206,7 +206,7 @@ export const CARDS = {
   },
   bubble: { name: '고무 거품 기사', type: 'crew', cost: 2, atk: 1, hp: 2, art: '🫧', keywords: ['shield', 'elastic'], text: '' },
   doublepunch: { name: '바제스', type: 'crew', cost: 6, atk: 4, hp: 5, art: '🥊', arm: true, keywords: ['double', 'elastic'], text: '고무주먹 두 개로 링을 휩쓴 챔피언.' },
-  octoarm: { name: '루피', type: 'crew', cost: 7, atk: 6, hp: 7, art: '😎', arm: true, keywords: ['reach', 'elastic', 'tension'], text: '여덟 개의 팔을 휘두르는 곡예왕.' },
+  octoarm: { name: '루피', type: 'crew', cost: 7, atk: 6, hp: 7, art: '🍖', arm: true, keywords: ['reach', 'elastic', 'tension'], text: '여덟 개의 팔을 휘두르는 곡예왕.' },
 
   // ── 유령선단 ──
   wisp: { name: '도깨비불', type: 'crew', cost: 2, atk: 2, hp: 2, art: '🕯️', keywords: ['ghost'], text: '' },
@@ -267,7 +267,7 @@ export const CARDS = {
   },
   twinflame: { name: '불쇼 웍잡이', type: 'crew', cost: 4, atk: 3, hp: 4, art: '🥘', keywords: ['double', 'scorch'], text: '' },
   feast: {
-    name: '해적 만찬', type: 'tactic', cost: 4, art: '🍖',
+    name: '해적 만찬', type: 'tactic', cost: 4, art: '🍗',
     text: '아군 선원 모두 체력 +1. 내 배의 선체를 3 회복한다.',
     effect: (g) => { g.buffAll(0, 1); g.healShip(3); },
   },
@@ -463,8 +463,8 @@ export const CARDS = {
     onPlay: (g, self) => { if (g.trade()) g.buff(self.uid, 3, 0); },
   },
   goldcaptain: {
-    name: '우소픈', type: 'crew', cost: 7, atk: 5, hp: 6, art: '🤴',
-    text: '황금 상인조합의 선장. 등장: 보물을 최대 4개 써서, 쓴 만큼 공격력·체력이 오른다.',
+    name: '테소로', type: 'crew', cost: 7, atk: 5, hp: 6, art: '🎰',
+    text: '황금 도시를 다스리는 황금왕. 등장: 보물을 최대 4개 써서, 쓴 만큼 공격력·체력이 오른다.',
     onPlay: (g, self) => {
       let n = 0;
       while (n < 4 && g.trade()) n++;
@@ -703,8 +703,8 @@ export const CARDS = {
   polar: { name: '털매머드 갑판장', type: 'crew', cost: 3, atk: 1, hp: 4, art: '🦣', keywords: ['chill'], text: '' },
   iceram: { name: '빙산 충각선', type: 'crew', cost: 5, atk: 4, hp: 4, art: '🏔️', keywords: ['charge', 'chill'], text: '' },
   frostqueen: {
-    name: '시르바', type: 'crew', cost: 7, atk: 5, hp: 8, art: '👸', keywords: ['chill'],
-    text: '얼음 바다를 다스리는 빙하 여제. 등장: 모든 적 선원을 얼린다.',
+    name: '쿠잔', type: 'crew', cost: 7, atk: 5, hp: 8, art: '🚲', keywords: ['chill'],
+    text: '바다를 얼려 자전거로 건너는 전 해군 대장. 등장: 모든 적 선원을 얼린다.',
     onPlay: (g) => g.freezeAllFoes(),
   },
   icicle: {
