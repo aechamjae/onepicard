@@ -16,7 +16,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="onepica">
   <meta name="application-name" content="onepica">
-  <link rel="stylesheet" href="style.css?v=202611180450">
+  <link rel="stylesheet" href="style.css?v=202611180755">
 </head>
 <body>
   <div class="sea" aria-hidden="true"></div>
@@ -185,7 +185,7 @@
   <!-- 홈 화면 앱이나 캐시가 예전 index.html을 쓰고 있으면, 최신 버전 번호(version.json)를 캐시 없이 받아 와 새 주소로 다시 연다. -->
   <script>
     (function () {
-      var BUILD = '?v=202611180450'.slice(3);
+      var BUILD = '?v=202611180755'.slice(3);
       fetch('version.json?t=' + Date.now(), { cache: 'no-store' })
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (j) {
@@ -202,13 +202,13 @@
   <script type="importmap">
     {
       "imports": {
-        "./src/cards.js": "./src/cards.js?v=202611180450",
-        "./src/engine.js": "./src/engine.js?v=202611180450",
-        "./src/ai.js": "./src/ai.js?v=202611180450",
-        "./src/difficulty.js": "./src/difficulty.js?v=202611180450"
+        "./src/cards.js": "./src/cards.js?v=202611180755",
+        "./src/engine.js": "./src/engine.js?v=202611180755",
+        "./src/ai.js": "./src/ai.js?v=202611180755",
+        "./src/difficulty.js": "./src/difficulty.js?v=202611180755"
       }
     }
   </script>
-  <script type="module" src="src/ui.js?v=202611180450"></script>
+  <script type="module" src="src/ui.js?v=202611180755"></script>
 </body>
 </html>

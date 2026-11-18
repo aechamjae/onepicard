@@ -180,7 +180,7 @@ export const CARDS = {
   rookie: { name: '말랑 고무손', type: 'crew', cost: 1, atk: 1, hp: 1, art: '🙃', arm: true, keywords: ['elastic'], text: '' },
   boxer: { name: '고무주먹 권투사', type: 'crew', cost: 2, atk: 2, hp: 3, art: '😤', arm: true, keywords: ['tension'], text: '' },
   whip: { name: '채찍팔 갑판장', type: 'crew', cost: 3, atk: 2, hp: 1, art: '😼', arm: true, keywords: ['reach'], text: '' },
-  balloon: { name: '풍선배 방패수', type: 'crew', cost: 3, atk: 1, hp: 7, art: '🎈', keywords: ['guard', 'elastic'], text: '' },
+  balloon: { name: '풍선배 방패수', type: 'crew', cost: 3, atk: 1, hp: 8, art: '🎈', keywords: ['guard', 'elastic'], text: '' },
   spring: { name: '용수철 포수', type: 'crew', cost: 4, atk: 3, hp: 4, art: '😆', arm: true, keywords: ['tension', 'elastic'], text: '' },
   catapult: { name: '새총팔 투척수', type: 'crew', cost: 4, atk: 1, hp: 2, art: '😝', arm: true, keywords: ['reach', 'elastic'], text: '' },
   ringmaster: { name: '도리', type: 'crew', cost: 6, atk: 4, hp: 6, art: '🤠', arm: true, keywords: ['reach', 'tension'], text: '거인처럼 긴 팔을 가진 곡예단장.' },
@@ -326,7 +326,7 @@ export const CARDS = {
   piston: { name: '피스톤 권투봇', type: 'crew', cost: 3, atk: 1, hp: 2, art: '🤖', keywords: ['grow'], text: '' },
   turret: { name: '증기 포탑', type: 'crew', cost: 5, atk: 1, hp: 6, art: '🗼', keywords: ['guard', 'grow'], text: '' },
   tinker: {
-    name: '땜장이', type: 'crew', cost: 3, atk: 2, hp: 2, art: '🛠️',
+    name: '땜장이', type: 'crew', cost: 3, atk: 2, hp: 3, art: '🛠️',
     text: '등장: 무작위 다른 아군 선원에게 공격력 +2, 체력 +2.',
     onPlay: (g, self) => { const t = g.randomAllyCrew(self.uid); if (t) g.buff(t.uid, 2, 2); },
   },
@@ -795,7 +795,7 @@ export const CARDS = {
   blueberry: { name: '블루베리 꼬마', type: 'crew', cost: 1, atk: 1, hp: 1, art: '🫐', token: true, text: '' },
   pear: { name: '배나무 파수꾼', type: 'crew', cost: 5, atk: 2, hp: 5, art: '🍐', keywords: ['guard', 'ripen'], text: '' },
   peach: {
-    name: '복숭아 치유사', type: 'crew', cost: 5, atk: 3, hp: 4, art: '🍑', keywords: ['ripen'],
+    name: '복숭아 치유사', type: 'crew', cost: 5, atk: 3, hp: 5, art: '🍑', keywords: ['ripen'],
     text: '등장: 내 배의 선체를 4 회복한다.',
     onPlay: (g) => g.healShip(4),
   },
