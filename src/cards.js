@@ -182,7 +182,7 @@ export const CARDS = {
   balloon: { name: '풍선배 방패수', type: 'crew', cost: 4, atk: 1, hp: 6, art: '🎈', keywords: ['guard', 'elastic'], text: '' },
   spring: { name: '용수철 포수', type: 'crew', cost: 4, atk: 3, hp: 4, art: '😆', arm: true, keywords: ['tension', 'elastic'], text: '' },
   catapult: { name: '새총팔 투척수', type: 'crew', cost: 3, atk: 1, hp: 2, art: '😝', arm: true, keywords: ['reach', 'elastic'], text: '' },
-  ringmaster: { name: '도리', type: 'crew', cost: 6, atk: 4, hp: 7, art: '🤠', arm: true, keywords: ['reach', 'tension'], text: '거인처럼 긴 팔을 가진 곡예단장.' },
+  ringmaster: { name: '버기', type: 'crew', cost: 6, atk: 4, hp: 7, art: '🤡', arm: true, keywords: ['reach', 'tension'], text: '몸을 떼어 날리는 서커스 해적단 선장.' },
   slingshot: {
     name: '고무줄 새총', type: 'tactic', cost: 2, art: '🪃', target: 'allyCrew',
     text: '아군 선원 하나의 팔을 당긴다: 탄력 2(이미 더 많으면 그대로), 이번 턴에 바로 공격할 수 있다.',
