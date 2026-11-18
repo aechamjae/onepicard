@@ -98,6 +98,7 @@ function startTurn(s) {
   p.played = 0; // 이번 턴에 낸 카드 수(연쇄)
   for (const c of p.board) {
     c.canAttack = !c.frozen && !CARDS[c.defId].noAttack;
+    c.held = c.frozen; // 얼어서 이번 턴 공격을 못 하게 된 선원(칼 갈기로 풀 수 있다)
     c.frozen = false;
     c.submerged = false;
     c.attacked = false;
@@ -401,6 +402,18 @@ function effectApi(s, pi) {
     shield: (uid) => {
       const f = findCrew(s, uid);
       if (f) f.crew.shield = true;
+    },
+    // 상태이상 제거: 불을 끄고, 얼어붙은 것을 녹인다(얼어서 이번 턴 공격을 못 하던 선원은 다시 공격할 수 있다).
+    cleanse: (uid) => {
+      const f = findCrew(s, uid);
+      if (!f) return;
+      const c = f.crew;
+      const had = c.burning || c.frozen || c.held;
+      c.burning = false;
+      c.frozen = false;
+      if (c.held && !c.attacked && !CARDS[c.defId].noAttack) c.canAttack = true;
+      c.held = false;
+      if (had) log(s, `✨ 「${CARDS[c.defId].name}」의 상태이상이 모두 풀렸다.`);
     },
     extinguish: (uid) => {
       const f = findCrew(s, uid);
