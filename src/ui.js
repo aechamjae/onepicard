@@ -3,6 +3,7 @@ import { CARDS, FACTIONS, KEYWORDS, COMMON } from './cards.js';
 import { RULES, createGame, applyAction, canPlay, canUseSkill, costOf, legalAttackTargets, hasKeyword, targetable } from './engine.js';
 import { aiNextAction } from './ai.js';
 import { DIFFICULTIES } from './difficulty.js';
+import { openStats, recordResult } from './stats.js';
 
 // 화면 아래쪽(나)과 위쪽(상대)에 놓일 플레이어. 친구 모드에서는 턴마다 뒤바뀐다.
 let ME = 0;
@@ -131,7 +132,6 @@ function statusIcons(card) {
   if (card.revived) icons.push('<span title="망령으로 되살아남">👻</span>');
   if (card.submerged) icons.push('<span title="잠항 중: 공격·대상 지정 불가">🌊</span>');
   if (card.grown) icons.push(`<span title="성장">⚙${card.grown}</span>`);
-  if (card.charged) icons.push(`<span title="공명">🌩${card.charged}</span>`);
   return icons.length ? `<div class="status">${icons.join('')}</div>` : '';
 }
 
@@ -683,7 +683,7 @@ function openDex() {
   const owners = {};
   for (const [f, { deck }] of Object.entries(FACTIONS)) for (const id of Object.keys(deck)) (owners[id] ??= []).push(f);
   const home = (id) => (COMMON.has(id) || owners[id]?.length !== 1 ? 'neutral' : owners[id][0]);
-  const tokenHome = { spirit: 'ghost', monkey: 'monkey', spark: 'storm', spore: 'mush', bunny: 'zoo', blueberry: 'fruit' };
+  const tokenHome = { spirit: 'ghost', monkey: 'monkey', spore: 'mush', bunny: 'zoo', blueberry: 'fruit' };
   const ids = Object.keys(CARDS).filter((id) => id !== 'coin' && (tokenHome[id] ?? home(id)) === dexTab)
     .sort((a, b) => CARDS[a].cost - CARDS[b].cost);
   const skill = FACTIONS[dexTab]?.skill;
@@ -873,6 +873,10 @@ function goLandscape() {
 
 function showGameOver() {
   const won = isDuo() || state.winner === ME;
+  if (!isDuo() && !state.recorded) {
+    state.recorded = true;
+    recordResult(difficulty, state.players[ME].factionId, state.players[FOE].factionId, state.winner === ME);
+  }
   const winner = state.players[state.winner];
   $('gameover-emoji').textContent = won ? '🏆' : '🌊';
   $('gameover-title').textContent = isDuo() ? `${winner.name} 승리!` : won ? '승리!' : '패배...';
@@ -907,6 +911,9 @@ $('rules').onclick = (e) => { if (e.target.id === 'rules') $('rules').hidden = t
 $('inspect').onclick = () => { $('inspect').hidden = true; };
 $('dex-btn').onclick = openDex;
 $('dex-close').onclick = () => { $('dex').hidden = true; };
+$('stats-btn').onclick = openStats;
+$('stats-close').onclick = () => { $('stats').hidden = true; };
+$('stats').onclick = (e) => { if (e.target.id === 'stats') $('stats').hidden = true; };
 $('kw-rules').innerHTML = Object.values(KEYWORDS).map((k) => `<li><b>${k.name}</b> ${k.desc}</li>`).join('');
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;

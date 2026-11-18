@@ -10,7 +10,6 @@ export const RULES = {
   startHand: 4,
   burnDamage: 2,
   growLimit: 2,
-  resonanceLimit: 2,
   discountLimit: 2,
   ripenLimit: 2,
   sporeLimit: 3, // 한 갑판에 심을 수 있는 포자 수
@@ -519,9 +518,6 @@ export function applyAction(s, action) {
     } else {
       log(s, `${me.name}: 「${d.name}」 사용.`);
       d.effect(g, action.target);
-      const charged = me.board.filter((c) => hasKeyword(c, 'resonance') && (c.charged || 0) < RULES.resonanceLimit);
-      for (const c of charged) { c.atk++; c.charged = (c.charged || 0) + 1; }
-      if (charged.length) log(s, `🌩 공명! 선원 ${charged.length}명의 공격력 +1.`);
     }
     if (tailwind) {
       me.discount = Math.min(RULES.discountLimit, me.discount + 1);

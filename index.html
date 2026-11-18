@@ -93,7 +93,10 @@
       </div>
       <p id="pick-title" class="pick-title" hidden></p>
       <div id="faction-list"></div>
-      <button id="dex-btn" class="ghost dex-open">📖 카드 도감</button>
+      <div class="start-extra">
+        <button id="dex-btn" class="ghost dex-open">📖 카드 도감</button>
+        <button id="stats-btn" class="ghost dex-open">📊 승률·상성</button>
+      </div>
     </div>
   </div>
 
@@ -167,6 +170,17 @@
     </div>
   </div>
 
+  <div id="stats" class="overlay" hidden>
+    <div class="panel stats-panel">
+      <div class="dex-head">
+        <h2 class="title">📊 승률·상성</h2>
+        <button id="stats-close" class="ghost">닫기</button>
+      </div>
+      <div id="stats-tabs" class="stats-tabs" role="tablist"></div>
+      <div id="stats-body"></div>
+    </div>
+  </div>
+
   <div id="deck-ov" class="overlay" hidden>
     <div class="panel dex-panel">
       <div class="dex-head">
@@ -205,7 +219,9 @@
         "./src/cards.js": "./src/cards.js?v=202611181338",
         "./src/engine.js": "./src/engine.js?v=202611181338",
         "./src/ai.js": "./src/ai.js?v=202611181338",
-        "./src/difficulty.js": "./src/difficulty.js?v=202611181338"
+        "./src/difficulty.js": "./src/difficulty.js?v=202611181338",
+        "./src/matchups.js": "./src/matchups.js?v=202611181338",
+        "./src/stats.js": "./src/stats.js?v=202611181338"
       }
     }
   </script>

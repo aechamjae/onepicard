@@ -20,7 +20,6 @@ export const KEYWORDS = {
   slash: { name: '일섬', desc: '적 선원을 공격할 때 반격 피해(가시 포함)를 받지 않는다.' },
   tailwind: { name: '순풍', desc: '이 카드를 내면 이번 턴에 다음으로 내는 카드의 비용이 1 줄어든다. 순풍 카드를 이어서 내면 할인이 쌓인다(최대 -2).' },
   submerge: { name: '잠항', desc: '낸 뒤 내 다음 턴이 올 때까지 바닷속에 숨어, 공격이나 대상 지정 카드로 고를 수 없다.' },
-  resonance: { name: '공명', desc: '내가 전술 카드를 쓸 때마다 공격력 +1 (최대 2번).' },
   trade: { name: '거래', desc: '낼 때 보물이 있으면 1개를 자동으로 써서 카드에 적힌 추가 효과를 낸다.' },
   chill: { name: '냉기', desc: '이 선원과 싸워 피해를 입고 살아남은 적 선원은 얼어붙어 다음 턴에 공격할 수 없다.' },
   ripen: { name: '숙성', desc: '손패에 든 채로 내 턴을 맞을 때마다 비용이 1 줄어든다(최대 -2).' },
@@ -544,55 +543,6 @@ export const CARDS = {
     effect: (g, t) => { const c = g.me.board.find((c) => c.uid === t); if (c) c.hp = c.maxHp; g.shield(t); },
   },
 
-  // ── 폭풍 주술단 ──
-  spark: {
-    name: '번개 조각', type: 'tactic', cost: 0, art: '⚡', token: true,
-    text: '무작위 적 선원에게 1 피해. 적 선원이 없으면 적 배에 1 피해.',
-    effect: (g) => { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 1); else g.damageFoeShip(1); },
-  },
-  breeze: { name: '풍경 소리꾼', type: 'crew', cost: 1, atk: 1, hp: 2, art: '🎐', keywords: ['resonance'], text: '' },
-  cloud: {
-    name: '먹구름 소환사', type: 'crew', cost: 2, atk: 1, hp: 3, art: '☁️', keywords: ['resonance'],
-    text: '등장: 번개 조각 1장을 손에 넣는다.',
-    onPlay: (g) => g.addToHand('spark', 1),
-  },
-  wavepriest: { name: '물결 세이렌', type: 'crew', cost: 3, atk: 1, hp: 5, art: '🧜', keywords: ['guard', 'resonance'], text: '' },
-  drummer: { name: '천둥 고수', type: 'crew', cost: 3, atk: 2, hp: 4, art: '🥁', keywords: ['resonance'], text: '' },
-  stormcaller: {
-    name: '폭풍 주술사', type: 'crew', cost: 4, atk: 3, hp: 5, art: '🧙', keywords: ['resonance'],
-    text: '등장: 카드 1장을 뽑는다.',
-    onPlay: (g) => g.draw(1),
-  },
-  twister: {
-    name: '프로메테우스', type: 'crew', cost: 5, atk: 4, hp: 4, art: '🌞',
-    text: '하늘의 불을 훔친 태양의 거인. 등장: 모든 적 선원에게 1 피해.',
-    onPlay: (g) => g.damageAllFoes(1),
-  },
-  stormlord: {
-    name: '웨더리아의 군주', type: 'crew', cost: 7, atk: 5, hp: 7, art: '🌦️', keywords: ['resonance'],
-    text: '폭풍을 부리는 군주. 등장: 번개 조각 3장을 손에 넣는다.',
-    onPlay: (g) => g.addToHand('spark', 3),
-  },
-  bolt: {
-    name: '낙뢰', type: 'tactic', cost: 3, art: '☄️', target: 'foeCrew',
-    text: '적 선원 하나에게 3 피해.',
-    effect: (g, t) => g.damageCrew(t, 3),
-  },
-  windread: {
-    name: '바람결 읽기', type: 'tactic', cost: 1, art: '🍃',
-    text: '카드 1장을 뽑는다.',
-    effect: (g) => g.draw(1),
-  },
-  static: {
-    name: '정전기', type: 'tactic', cost: 1, art: '✨', target: 'allyCrew',
-    text: '아군 선원 하나에게 공격력 +2.',
-    effect: (g, t) => g.buff(t, 2, 0),
-  },
-  downpour: {
-    name: '폭풍우', type: 'tactic', cost: 5, art: '🌧️',
-    text: '모든 적 선원에게 2 피해.',
-    effect: (g) => g.damageAllFoes(2),
-  },
   // ── 공용 (신규) ──
   gull: {
     name: '갈매기 전령', type: 'crew', cost: 1, atk: 1, hp: 1, art: '🐦',
@@ -701,14 +651,6 @@ export const CARDS = {
     name: '심장 적출', type: 'tactic', cost: 3, art: '💔', target: 'foeCrew',
     text: '적 선원 하나에게 그 선원의 공격력만큼 피해.',
     effect: (g, t) => { const c = g.foe.board.find((c) => c.uid === t); if (c) g.damageCrew(t, c.atk); },
-  },
-
-  // ── 폭풍 주술단 (신규) ──
-  thunderhawk: { name: '천둥 매', type: 'crew', cost: 3, atk: 2, hp: 3, art: '🦅', keywords: ['charge', 'resonance'], text: '' },
-  chainbolt: {
-    name: '연쇄 번개', type: 'tactic', cost: 2, art: '🔗',
-    text: '무작위 적 선원에게 1 피해를 세 번.',
-    effect: (g) => { for (let i = 0; i < 3; i++) { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 1); } },
   },
 
   // ── 황금 상인조합 (신규) ──
@@ -1083,17 +1025,6 @@ export const FACTIONS = {
       effect: (g, t) => { g.damageCrew(t, 1); const a = g.randomAllyCrew(); if (a) g.buff(a.uid, 0, 1); },
     },
     deck: { intern: 3, engineer: 2, headnurse: 1, walrus: 2, sedative: 2, incisor: 2, torpedo: 2, chiefsurgeon: 1, incision: 2, transplant: 2, surgery: 1, takt: 1, anatomist: 2, heartrip: 2, lookout: 1, repair: 1, veteran: 1, gull: 1, supply: 1 },
-  },
-  storm: {
-    name: '폭풍 주술단',
-    emblem: '🌩️',
-    desc: '주문형. 전술 카드를 쓸 때마다 공명하는 선원들이 점점 강해진다.',
-    skill: {
-      name: '바람 부르기', art: '📯', cost: 3,
-      text: '번개 조각(0비용: 무작위 적 선원에게 1 피해) 1장을 손에 넣는다.',
-      effect: (g) => g.addToHand('spark', 1),
-    },
-    deck: { breeze: 3, cloud: 3, wavepriest: 2, drummer: 2, stormcaller: 2, twister: 1, stormlord: 1, bolt: 2, windread: 2, static: 2, downpour: 1, thunderhawk: 2, chainbolt: 2, cannon: 1, barrel: 1, map: 1, veteran: 1, supply: 1 },
   },
   merchant: {
     name: '황금 상인조합',
