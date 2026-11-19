@@ -857,13 +857,13 @@ export const CARDS = {
   sprout: { name: '균사 새싹', type: 'crew', cost: 1, atk: 2, hp: 2, art: '🌱', keywords: ['spore'], text: '' },
   leafling: { name: '낙엽 은신자', type: 'crew', cost: 2, atk: 3, hp: 2, art: '🍂', keywords: ['stealth', 'spore'], text: '' },
   larva: { name: '버섯 애벌레', type: 'crew', cost: 3, atk: 4, hp: 4, art: '🐛', keywords: ['spore'], text: '' },
-  potguard: { name: '화분 수호병', type: 'crew', cost: 4, atk: 2, hp: 6, art: '🪴', keywords: ['guard', 'spore'], text: '' },
+  potguard: { name: '화분 수호병', type: 'crew', cost: 4, atk: 3, hp: 6, art: '🪴', keywords: ['guard', 'spore'], text: '' },
   culturist: {
     name: '포자 배양사', type: 'crew', cost: 4, atk: 4, hp: 5, art: '🧫',
     text: '등장: 적 갑판에 포자 2개를 심는다.',
     onPlay: (g) => g.plantSpores(2),
   },
-  troll: { name: '이끼 트롤', type: 'crew', cost: 5, atk: 5, hp: 8, art: '🧌', text: '' },
+  troll: { name: '이끼 트롤', type: 'crew', cost: 5, atk: 5, hp: 8, art: '🧌', keywords: ['spore'], text: '' },
   mykos: {
     name: '미코스', type: 'crew', cost: 6, atk: 5, hp: 7, art: '🌲',
     text: '숲 전체에 뿌리를 뻗은 균사 거목. 등장: 적 갑판에 포자 3개를 심는다.',
