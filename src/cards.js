@@ -215,15 +215,15 @@ export const CARDS = {
 
   // ── 유령선단 ──
   wisp: { name: '도깨비불', type: 'crew', cost: 2, atk: 2, hp: 2, art: '🕯️', keywords: ['ghost'], text: '' },
-  bones: { name: '해골 갑판원', type: 'crew', cost: 3, atk: 3, hp: 3, art: '💀', keywords: ['ghost'], text: '' },
-  haunt: { name: '원혼 수부', type: 'crew', cost: 3, atk: 2, hp: 3, art: '⚰️', keywords: ['ghost'], text: '' },
+  bones: { name: '해골 갑판원', type: 'crew', cost: 3, atk: 2, hp: 3, art: '💀', keywords: ['ghost'], text: '' },
+  haunt: { name: '원혼 수부', type: 'crew', cost: 3, atk: 2, hp: 2, art: '⚰️', keywords: ['ghost'], text: '' },
   lantern: {
     name: '등불 무녀', type: 'crew', cost: 2, atk: 1, hp: 2, art: '🏮',
     text: '등장: 카드 1장을 뽑는다. 유언: 카드 1장을 뽑는다.',
     onPlay: (g) => g.draw(1),
     onDeath: (g) => g.draw(1),
   },
-  shroud: { name: '수의 경비병', type: 'crew', cost: 3, atk: 1, hp: 2, art: '🧟', keywords: ['guard', 'ghost'], text: '' },
+  shroud: { name: '수의 경비병', type: 'crew', cost: 3, atk: 2, hp: 4, art: '🧟', keywords: ['guard', 'ghost'], text: '' },
   banshee: {
     name: '울부짖는 밴시', type: 'crew', cost: 3, atk: 4, hp: 2, art: '😱',
     text: '유언: 모든 적 선원에게 1 피해.',
