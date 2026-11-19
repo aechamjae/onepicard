@@ -955,7 +955,7 @@ export const CARDS = {
     text: '아군 선원이 쓰러지면 카드 1장을 뽑는다(턴마다 1번).',
     onAllyDeath: (g, self) => { if (self.drewTurn !== g.turn) { self.drewTurn = g.turn; g.draw(1); } },
   },
-  levi: { name: '리바이', type: 'crew', cost: 6, atk: 3, hp: 5, art: '🫖', keywords: ['odm', 'double'], text: '인류 최강의 병사.' },
+  levi: { name: '리바이', type: 'crew', cost: 8, atk: 4, hp: 6, art: '🫖', keywords: ['charge', 'odm', 'double'], text: '인류 최강의 병사.' },
   flare: {
     name: '신호탄', type: 'tactic', cost: 1, art: '🎇', target: 'allyCrew',
     text: '아직 공격하지 않은 아군 선원 하나가 이번 턴에 바로 공격할 수 있다.',
@@ -1234,7 +1234,7 @@ export const FACTIONS = {
     emblem: '🕊️',
     desc: '거인 사냥형. 입체기동으로 큰 적을 베고, 쓰러진 동료의 헌신을 이어받는다. 에렌과 아르민은 쓰러지면 거인이 되어 일어난다.',
     skill: {
-      name: '와이어 앵커', art: '🪢', cost: 2, target: 'allyCrew',
+      name: '와이어 앵커', art: '🪢', cost: 3, target: 'allyCrew',
       text: '아군 선원 하나에게 공격력 +1과 입체기동을 준다.',
       effect: (g, t) => { g.buff(t, 1, 0); g.grant(t, 'odm'); },
     },
