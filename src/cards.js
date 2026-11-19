@@ -216,7 +216,7 @@ export const CARDS = {
   // ── 유령선단 ──
   wisp: { name: '도깨비불', type: 'crew', cost: 2, atk: 2, hp: 2, art: '🕯️', keywords: ['ghost'], text: '' },
   bones: { name: '해골 갑판원', type: 'crew', cost: 3, atk: 3, hp: 3, art: '💀', keywords: ['ghost'], text: '' },
-  haunt: { name: '원혼 수부', type: 'crew', cost: 3, atk: 3, hp: 2, art: '⚰️', keywords: ['ghost'], text: '' },
+  haunt: { name: '원혼 수부', type: 'crew', cost: 3, atk: 2, hp: 3, art: '⚰️', keywords: ['ghost'], text: '' },
   lantern: {
     name: '등불 무녀', type: 'crew', cost: 2, atk: 1, hp: 2, art: '🏮',
     text: '등장: 카드 1장을 뽑는다. 유언: 카드 1장을 뽑는다.',
