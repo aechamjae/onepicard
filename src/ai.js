@@ -1,7 +1,7 @@
 // AI: 낼 수 있는 카드를 비싼 것부터 내고, 리더 스킬을 쓰고, 공격은 후보마다 미리 쳐 보고 레이스·갑판을 평가해 고른다.
 // 난이도가 낮을수록 정해진 확률로 아무 행동이나 골라 실수한다.
 import { CARDS, FACTIONS } from './cards.js';
-import { RULES, applyAction, canPlay, canUseSkill, costOf, legalAttackTargets, hasKeyword, targetable } from './engine.js';
+import { RULES, applyAction, canPlay, canUseSkill, costOf, legalAttackTargets, hasKeyword, targetable, hasRoom } from './engine.js';
 
 export const AI_LEVELS = {
   easy: { mistake: 0.55 },
@@ -134,18 +134,18 @@ const SKILL_AI = {
   stretch: (me, foe) => strongest(foe.board.filter((c) => dmg(1, c) >= c.hp), value) || strongest(foe.board, (c) => c.atk),
   red: () => true,
   deep: (me) => strongest(me.board, (c) => (hasKeyword(c, 'guard') ? 10 : 0) + c.hp),
-  ghost: (me) => me.board.length < RULES.boardLimit,
+  ghost: (me) => hasRoom(me),
   flame: (me, foe) => strongest(foe.board.filter((c) => !c.burning), value),
-  monkey: (me) => me.board.length < RULES.boardLimit,
+  monkey: (me) => hasRoom(me),
   clock: (me) => strongest(me.board, (c) => c.atk),
   swords: (me) => strongest(me.board, (c) => (hasKeyword(c, 'slash') ? 0 : 10) + c.atk),
   guild: (me) => me.hand.length <= 6 && me.deck.length > 0,
   surgeon: (me, foe) => strongest(foe.board.filter((c) => dmg(1, c) >= c.hp), value) || strongest(foe.board, (c) => c.atk),
   scout: (me) => strongest(me.board.filter((c) => !hasKeyword(c, 'odm')), (c) => c.atk) || strongest(me.board, (c) => c.atk),
-  alchemy: (me) => me.board.length < RULES.boardLimit && me.hand.some((c) => c.defId !== 'coin'),
+  alchemy: (me) => hasRoom(me) && me.hand.some((c) => c.defId !== 'coin'),
   frost: (me, foe) => strongest(foe.board.filter((c) => c.frozen ? dmg(2, c) >= c.hp : c.atk >= 2), (c) => (c.frozen ? 10 : 0) + c.atk),
   fruit: () => true,
-  zoo: (me) => me.board.length < RULES.boardLimit,
+  zoo: (me) => hasRoom(me),
   shark: (me, foe) => strongest(foe.board.filter((c) => dmg(c.hp < c.maxHp ? 2 : 1, c) >= c.hp), value) || strongest(foe.board, (c) => (c.hp < c.maxHp ? 10 : 0) + c.atk),
   mush: (me, foe) => foe.board.length < RULES.boardLimit,
   merchant: (me, foe) => strongest(foe.board.filter((c) => c.atk >= 3 && !c.frozen), (c) => c.atk),

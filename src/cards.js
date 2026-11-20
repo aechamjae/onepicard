@@ -1091,7 +1091,7 @@ export const FACTIONS = {
     emblem: '👻',
     desc: '끈질긴형. 쓰러져도 망령으로 다시 일어나고, 쓰러질 때 유언을 남긴다.',
     skill: {
-      name: '혼 부르기', art: '🔔', cost: 4,
+      name: '혼 부르기', art: '🔔', cost: 4, summons: true,
       text: '떠도는 혼(1/1 망령)을 1명 불러낸다.',
       effect: (g) => g.summon('spirit', 1),
     },
@@ -1113,7 +1113,7 @@ export const FACTIONS = {
     emblem: '🐒',
     desc: '물량형. 원숭이 떼를 불러 갑판을 채우고 한꺼번에 강해진다.',
     skill: {
-      name: '휘파람', art: '🎶', cost: 2,
+      name: '휘파람', art: '🎶', cost: 2, summons: true,
       text: '꼬마 원숭이(1/1 돌격) 1마리를 부른다.',
       effect: (g) => g.summon('monkey', 1),
     },
@@ -1201,7 +1201,7 @@ export const FACTIONS = {
     emblem: '🎢',
     desc: '동물원형. 튼튼한 초식동물로 갑판을 지키고, 맹수가 작은 동료를 잡아먹어 거대해진다.',
     skill: {
-      name: '먹이 주기', art: '🥩', cost: 3,
+      name: '먹이 주기', art: '🥩', cost: 3, summons: true,
       text: '아기 토끼(1/1) 1마리를 부른다.',
       effect: (g) => g.summon('bunny', 1),
     },
@@ -1245,9 +1245,9 @@ export const FACTIONS = {
     emblem: '⚗️',
     desc: '등가교환형. 손패를 재료로 바쳐 카드를 강화하고, 연금술사와 부하들이 함께 싸운다.',
     skill: {
-      name: '손뼉 연성', art: '🏛️', cost: 3,
-      text: '손패에서 재료 카드를 먼저, 없으면 가장 싼 카드 1장을 버리고 돌벽(0/3 수호)을 세운다.',
-      effect: (g) => { if (g.me.board.length < 5 && g.exchange()) g.summon('stonewall', 1); },
+      name: '손뼉 연성', art: '🏛️', cost: 3, summons: true, discards: true,
+      text: '손패에서 재료 카드를 먼저, 없으면 가장 싼 카드 1장을 버리고 돌벽(0/3 수호)을 세운다. 갑판이 가득 차면 포자를 밟고 세운다.',
+      effect: (g) => { if (g.exchange()) g.summon('stonewall', 1); },
     },
     deck: { hayate: 1, fuery: 2, havoc: 2, falman: 2, hughes: 2, hawkeye: 2, winry: 2, breda: 2, edward: 2, armstrong: 1, kimblee: 1, mustang: 1, circle: 2, stonepiece: 2, philostone: 1, cannon: 1, supply: 1, veteran: 1, carpenter: 1, lookout: 1 },
   },

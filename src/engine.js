@@ -182,6 +182,29 @@ function removeDead(s) {
 
 const isSpore = (c) => !!CARDS[c.defId].noAttack;
 
+// 갑판에 선원을 올린다. 갑판이 가득 차 있으면 포자 하나를 밟아 없애고 자리를 만들며, 터진 포자에 1 피해를 받는다.
+// 자리가 없으면(가득 찼는데 포자도 없으면) false.
+function boardCrew(s, p, crew, verb) {
+  const crushed = p.board.length >= RULES.boardLimit;
+  if (crushed) {
+    const spore = p.board.find(isSpore);
+    if (!spore) return false;
+    p.board = p.board.filter((c) => c !== spore);
+    log(s, `🦶 ${p.name}이(가) 포자를 밟아 없앴다.`);
+  }
+  p.board.push(crew);
+  log(s, `${p.name}: 「${CARDS[crew.defId].name}」 ${verb}.`);
+  if (crushed) {
+    hurt(crew, 1); // 밟은 포자가 터져 1 피해
+    log(s, `🦠 터진 포자에 「${CARDS[crew.defId].name}」이(가) 1 피해.`);
+    removeDead(s);
+  }
+  return true;
+}
+
+// 선원을 둘 자리가 있는지(가득 찼어도 밟을 포자가 있으면 된다).
+export const hasRoom = (p) => p.board.length < RULES.boardLimit || p.board.some(isSpore);
+
 // 포자: 상대 갑판 빈자리에 공격할 수 없는 포자를 심는다.
 function plantSpores(s, pi, n) {
   const p = s.players[pi];
@@ -412,10 +435,7 @@ function effectApi(s, pi) {
       if (foe.board.length) log(s, '🔥 적 선원 모두에게 불이 붙었다.');
     },
     summon: (defId, n = 1) => {
-      for (let i = 0; i < n && me.board.length < RULES.boardLimit; i++) {
-        me.board.push(makeCrew(uidSeq++, defId));
-        log(s, `${me.name}: 「${CARDS[defId].name}」 합류.`);
-      }
+      for (let i = 0; i < n; i++) if (!boardCrew(s, me, makeCrew(uidSeq++, defId), '합류')) break;
     },
     randomAllyCrew: (exceptUid) => {
       const list = me.board.filter((c) => c.uid !== exceptUid);
@@ -510,6 +530,8 @@ export function canUseSkill(s, pi) {
   if (p.skillUsed) return '리더 스킬은 한 턴에 한 번만 쓸 수 있다.';
   if (sk.cost > p.wind) return '바람이 부족하다.';
   if (sk.treasureCost && p.treasure < sk.treasureCost) return '보물이 부족하다.';
+  if (sk.summons && !hasRoom(p)) return '선원을 둘 자리가 없다.';
+  if (sk.discards && !p.hand.some((c) => c.defId !== 'coin')) return '재료로 바칠 카드가 없다.';
   return sk.target ? targetError(s, pi, sk.target) : null;
 }
 
@@ -519,7 +541,7 @@ export function canPlay(s, pi, handIndex) {
   if (!card) return '그 카드가 없다.';
   const d = CARDS[card.defId];
   if (costOf(p, card) > p.wind) return '바람이 부족하다.';
-  if (d.type === 'crew' && p.board.length >= RULES.boardLimit && !p.board.some(isSpore)) return `선원은 ${RULES.boardLimit}명까지만 둘 수 있다.`;
+  if (d.type === 'crew' && !hasRoom(p)) return `선원은 ${RULES.boardLimit}명까지만 둘 수 있다.`;
   return d.target ? targetError(s, pi, d.target) : null;
 }
 
@@ -544,21 +566,8 @@ export function applyAction(s, action) {
     me.hand.splice(action.handIndex, 1);
     const g = effectApi(s, pi);
     if (d.type === 'crew') {
-      // 갑판이 가득 차 있으면 포자 하나를 밟아 없애고 자리를 만든다.
-      const crushed = me.board.length >= RULES.boardLimit;
-      if (crushed) {
-        const spore = me.board.find(isSpore);
-        me.board = me.board.filter((c) => c !== spore);
-        log(s, `🦶 ${me.name}이(가) 포자를 밟아 없앴다.`);
-      }
       const crew = makeCrew(card.uid, card.defId);
-      me.board.push(crew);
-      log(s, `${me.name}: 「${d.name}」 승선.`);
-      if (crushed) {
-        hurt(crew, 1); // 밟은 포자가 터져 1 피해
-        log(s, `🦠 터진 포자에 「${d.name}」이(가) 1 피해.`);
-        removeDead(s);
-      }
+      boardCrew(s, me, crew, '승선');
       if (d.onPlay) d.onPlay(g, crew);
     } else {
       log(s, `${me.name}: 「${d.name}」 사용.`);
