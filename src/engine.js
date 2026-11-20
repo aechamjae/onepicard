@@ -105,7 +105,7 @@ function startTurn(s) {
   }
   log(s, `── ${p.name}의 턴 (바람 ${p.wind}) ──`);
   for (const c of p.board.filter((c) => c.burning)) {
-    hurt(c, RULES.burnDamage);
+    hurt(c, RULES.burnDamage, false, true);
     log(s, `🔥 「${CARDS[c.defId].name}」이(가) 화상으로 ${RULES.burnDamage} 피해.`);
   }
   removeDead(s);
@@ -145,8 +145,7 @@ function removeDead(s) {
         log(s, `⚡ 「${CARDS[c.defId].name}」이(가) 「${CARDS[t.defId].name}」이(가) 되어 다시 일어났다!`);
       } else if (hasKeyword(c, 'ghost') && !c.revived) {
         c.revived = true;
-        c.hp = 1;
-        c.burning = false;
+        c.hp = 1; // 붙은 불은 꺼지지 않는다
         log(s, `👻 「${CARDS[c.defId].name}」이(가) 망령이 되어 다시 일어났다!`);
       } else {
         dead.push(c);
@@ -257,13 +256,14 @@ export function costOf(p, card) {
 
 // 선원에게 피해를 준다. 탄성이 있으면 1 줄어든다. 실제로 들어간 피해를 돌려준다.
 // blow: 선원끼리 싸울 때의 타격. 공격력 0이라도 보호막은 깨뜨린다(돌벽 반격 등).
-function hurt(crew, n, blow = false) {
+// melt: 탄성을 무시하는 피해(불에 타는 피해, 되살아난 망령의 타격).
+function hurt(crew, n, blow = false, melt = false) {
   if (n <= 0 && !(blow && crew.shield)) return 0;
   if (crew.shield) {
     crew.shield = false; // 보호막이 대신 맞고 깨진다
     return 0;
   }
-  const dealt = hasKeyword(crew, 'elastic') ? Math.max(0, n - 1) : n;
+  const dealt = hasKeyword(crew, 'elastic') && !melt ? Math.max(0, n - 1) : n;
   crew.hp -= dealt;
   return dealt;
 }
@@ -642,11 +642,11 @@ export function applyAction(s, action) {
         power += 2;
         log(s, `🩸 피 냄새를 맡았다! (공격력 +2)`);
       }
-      const dealt = hurt(defender, power, true);
+      const dealt = hurt(defender, power, true, !!attacker.revived); // 망령으로 되살아난 선원은 고무를 뚫고 지나간다
       const slash = hasKeyword(attacker, 'slash');
       const thorns = hasKeyword(defender, 'thorns') && !slash ? 1 : 0;
       const hadShield = attacker.shield;
-      const back = slash ? 0 : hurt(attacker, defender.atk + thorns, true);
+      const back = slash ? 0 : hurt(attacker, defender.atk + thorns, true, !!defender.revived);
       if (hadShield && !attacker.shield && defender.atk + thorns <= 0) log(s, `🛡 「${CARDS[defender.defId].name}」의 반격에 「${aName}」의 보호막이 깨졌다.`);
       if (thorns) log(s, `🌵 가시에 찔렸다!`);
       if (slash) log(s, `⚔ 일섬! 반격을 받지 않았다.`);
@@ -666,10 +666,11 @@ export function applyAction(s, action) {
         attacker.frozen = true;
         log(s, `❄ 「${aName}」이(가) 얼어붙었다.`);
       }
+      // 뻗기: 양옆에 있는 적 선원 중 무작위 하나에게 1 피해.
       if (hasKeyword(attacker, 'reach')) {
-        for (const side of [foe.board[idx - 1], foe.board[idx + 1]]) {
-          if (side && hurt(side, 1)) log(s, `🤸 뻗은 팔이 「${CARDS[side.defId].name}」도 후려쳤다.`);
-        }
+        const sides = [foe.board[idx - 1], foe.board[idx + 1]].filter(Boolean);
+        const side = sides[Math.floor(s.rng() * sides.length)];
+        if (side && hurt(side, 1)) log(s, `🤸 뻗은 팔이 「${CARDS[side.defId].name}」도 후려쳤다.`);
       }
       removeDead(s);
     }
