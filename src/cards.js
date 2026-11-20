@@ -230,9 +230,9 @@ export const CARDS = {
     onDeath: (g) => g.damageAllFoes(1),
   },
   phantom: {
-    name: '덱켄', type: 'crew', cost: 6, atk: 4, hp: 3, art: '☠️', keywords: ['ghost'],
-    text: '유령선을 이끄는 선장. 등장: 무작위 적 선원에게 2 피해.',
-    onPlay: (g) => { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 2); },
+    name: '덱켄', type: 'crew', cost: 6, atk: 4, hp: 4, art: '☠️', keywords: ['ghost'],
+    text: '유령선을 이끄는 선장. 등장: 무작위 적 선원에게 1 피해.',
+    onPlay: (g) => { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 1); },
   },
   vampire: { name: '스튜시', type: 'crew', cost: 5, atk: 3, hp: 3, art: '🧛', keywords: ['lifesteal', 'ghost'], text: '피를 탐하는 흡혈 귀족.' },
   spirit: { name: '떠도는 혼', type: 'crew', cost: 1, atk: 1, hp: 2, art: '👤', keywords: ['ghost'], token: true, text: '' },
@@ -266,13 +266,13 @@ export const CARDS = {
     onPlay: (g) => { const t = g.randomFoeCrew(); if (t) g.burn(t.uid); },
   },
   inferno: {
-    name: '제프', type: 'crew', cost: 8, atk: 5, hp: 7, art: '👹', keywords: ['scorch'],
+    name: '제프', type: 'crew', cost: 8, atk: 5, hp: 6, art: '👹', keywords: ['scorch'],
     text: '불꽃 주방을 지휘하는 화염 주방장. 등장: 모든 적 선원에게 불을 붙인다.',
     onPlay: (g) => g.burnAllFoes(),
   },
   twinflame: { name: '불쇼 웍잡이', type: 'crew', cost: 4, atk: 3, hp: 4, art: '🥘', keywords: ['double', 'scorch'], text: '' },
   feast: {
-    name: '해적 만찬', type: 'tactic', cost: 4, art: '🍗',
+    name: '해적 만찬', type: 'tactic', cost: 3, art: '🍗',
     text: '아군 선원 모두 체력 +1. 내 배의 선체를 3 회복한다.',
     effect: (g) => { g.buffAll(0, 1); g.healShip(3); },
   },
@@ -387,7 +387,7 @@ export const CARDS = {
     effect: (g, t) => { g.buff(t, 0, 2); g.draw(1); },
   },
   bladestorm: {
-    name: '검기 폭풍', type: 'tactic', cost: 6, art: '✴️',
+    name: '검기 폭풍', type: 'tactic', cost: 7, art: '✴️',
     text: '모든 적 선원에게 2 피해.',
     effect: (g) => g.damageAllFoes(2),
   },
@@ -752,7 +752,7 @@ export const CARDS = {
     onPlay: (g) => g.damageFoeShip(3),
   },
   watermelon: {
-    name: '수박 폭탄', type: 'tactic', cost: 6, art: '🍉', target: 'foeCrew', keywords: ['ripen'],
+    name: '수박 폭탄', type: 'tactic', cost: 7, art: '🍉', target: 'foeCrew', keywords: ['ripen'],
     text: '적 선원 하나에게 5 피해. 튄 과즙이 그 양옆 적 선원에게도 2 피해.',
     effect: (g, t) => {
       const i = g.foe.board.findIndex((c) => c.uid === t);
@@ -881,8 +881,8 @@ export const CARDS = {
   },
   mushsoup: {
     name: '버섯 수프', type: 'tactic', cost: 1, art: '🍵',
-    text: '내 배의 선체를 4 회복한다.',
-    effect: (g) => g.healShip(4),
+    text: '내 배의 선체를 5 회복한다.',
+    effect: (g) => g.healShip(5),
   },
 
   // ── 한국과수협회 (추가) ──
@@ -907,7 +907,7 @@ export const CARDS = {
 
   // ── 상어 사냥단 (추가) ──
   squid: {
-    name: '먹물 오징어', type: 'crew', cost: 2, atk: 2, hp: 3, art: '🦑',
+    name: '먹물 오징어', type: 'crew', cost: 2, atk: 2, hp: 2, art: '🦑',
     text: '등장: 무작위 적 선원 하나는 먹물에 가려 다음 턴에 공격할 수 없다.',
     onPlay: (g) => { const t = g.randomFoeCrew(); if (t) g.freeze(t.uid); },
   },
@@ -955,7 +955,7 @@ export const CARDS = {
     text: '아군 선원이 쓰러지면 카드 1장을 뽑는다(턴마다 1번).',
     onAllyDeath: (g, self) => { if (self.drewTurn !== g.turn) { self.drewTurn = g.turn; g.draw(1); } },
   },
-  levi: { name: '리바이', type: 'crew', cost: 7, atk: 4, hp: 6, art: '🫖', keywords: ['charge', 'odm', 'double'], text: '인류 최강의 병사.' },
+  levi: { name: '리바이', type: 'crew', cost: 7, atk: 4, hp: 7, art: '🫖', keywords: ['charge', 'odm', 'double'], text: '인류 최강의 병사.' },
   flare: {
     name: '신호탄', type: 'tactic', cost: 1, art: '🎇', target: 'allyCrew',
     text: '아직 공격하지 않은 아군 선원 하나가 이번 턴에 바로 공격할 수 있다.',
@@ -1190,7 +1190,7 @@ export const FACTIONS = {
     emblem: '🍎',
     desc: '숙성형. 크고 비싼 과일 카드를 손에 묵혀 익힌 뒤 싸게 내어 단숨에 판을 뒤집는다.',
     skill: {
-      name: '수확', art: '🧺', cost: 4,
+      name: '수확', art: '🧺', cost: 3,
       text: '손패의 숙성 카드를 모두 한 번 더 익힌다. 익힐 카드가 없으면 카드 1장을 뽑는다.',
       effect: (g) => { if (!g.ripenHand(true)) g.draw(1); },
     },
@@ -1212,7 +1212,7 @@ export const FACTIONS = {
     emblem: '🦈',
     desc: '사냥형. 미끼로 적 선원에게 상처를 내고, 피 냄새를 맡은 사냥꾼이 달려들어 끝낸다.',
     skill: {
-      name: '지느러미 출몰', art: '🔺', cost: 4, target: 'foeCrew',
+      name: '지느러미 출몰', art: '🔺', cost: 3, target: 'foeCrew',
       text: '적 선원 하나에게 1 피해. 이미 다친 선원이면 2 피해.',
       effect: (g, t) => { const c = g.foe.board.find((c) => c.uid === t); if (c) g.damageCrew(t, c.hp < c.maxHp ? 2 : 1); },
     },
@@ -1227,7 +1227,7 @@ export const FACTIONS = {
       text: '적 갑판에 포자 1개를 심는다.',
       effect: (g) => g.plantSpores(1),
     },
-    deck: { sprout: 3, leafling: 3, larva: 3, mosssnail: 3, potguard: 2, culturist: 2, troll: 2, mykos: 1, wither: 2, sporecloud: 2, mushsoup: 2, veteran: 1, cannon: 1, puffer: 1, supply: 1, map: 1 },
+    deck: { sprout: 3, leafling: 3, larva: 3, mosssnail: 3, potguard: 2, culturist: 2, troll: 2, mykos: 1, wither: 2, sporecloud: 2, mushsoup: 2, veteran: 2, cannon: 2, supply: 1 },
   },
   scout: {
     name: '조사병단',
