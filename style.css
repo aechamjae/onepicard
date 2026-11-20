@@ -159,7 +159,8 @@ main[hidden] { display: none; }
 .mode-list { margin: 0 auto 8px; }
 .pick-title { margin: 0 0 10px; font-family: var(--display); color: var(--gold); display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }
 .pick-title[hidden], .diff-wrap[hidden], .diff-desc[hidden] { display: none; }
-#rival-wrap { margin: 2px 0 10px; }
+#rival-wrap { margin: 2px 0 6px; }
+#order-wrap { margin: 0 0 10px; }
 .pick-title button { padding: 3px 12px; font-size: .8rem; }
 .overlay.handoff { background: #021018; backdrop-filter: none; }
 .dex-skill { display: block; margin-top: 6px; padding: 6px 10px; border-radius: 10px; background: #8a5cf033; color: #e8dcff; }

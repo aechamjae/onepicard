@@ -22,11 +22,16 @@ let session = 0; // 판마다 바뀐다. 홈으로 나가면 진행 중이던 �
 let difficulty = loadDifficulty();
 let mode = loadMode(); // 'ai' | 'duo'(친구와 한 폰에서 번갈아)
 let rivalMode = loadRivalMode(); // AI 대전에서 상대 해적단: 'random' | 'choose'
+let order = loadOrder(); // AI 대전에서 내 순서: 'random' | 'first'(선공) | 'second'(후공)
 let firstPick = null; // 두 번 고르는 흐름(친구 모드, AI 상대 직접 고르기)에서 먼저 고른 해적단
 
 function loadMode() {
   try { if (localStorage.getItem('mode') === 'duo') return 'duo'; } catch {}
   return 'ai';
+}
+function loadOrder() {
+  try { const v = localStorage.getItem('order'); if (v === 'first' || v === 'second') return v; } catch {}
+  return 'random';
 }
 function loadRivalMode() {
   try { if (localStorage.getItem('rival') === 'choose') return 'choose'; } catch {}
@@ -778,6 +783,23 @@ function renderMode() {
     };
     rivals.append(b);
   }
+  const orders = $('order-list');
+  orders.innerHTML = '';
+  for (const [id, text] of [['random', '🎲 무작위'], ['first', '⚔️ 선공'], ['second', '🪙 후공']]) {
+    const b = document.createElement('button');
+    b.className = `diff${id === order ? ' on' : ''}`;
+    b.setAttribute('role', 'radio');
+    b.setAttribute('aria-checked', String(id === order));
+    b.textContent = text;
+    b.title = id === 'second' ? '후공은 카드 1장을 더 받고 행운의 동전을 받아요.' : id === 'first' ? '먼저 시작하지만 시작 카드가 1장 적어요.' : '선공·후공을 무작위로 정해요.';
+    b.onclick = () => {
+      order = id;
+      try { localStorage.setItem('order', id); } catch {}
+      showStart();
+    };
+    orders.append(b);
+  }
+  $('order-wrap').hidden = isDuo();
   $('diff-wrap').hidden = isDuo();
   $('diff-desc').hidden = isDuo();
   $('rival-wrap').hidden = isDuo();
@@ -848,11 +870,16 @@ async function startGame(factionId, rival = null) {
   session++;
   const others = Object.keys(FACTIONS).filter((f) => f !== factionId);
   const aiFaction = rival ?? others[Math.floor(Math.random() * others.length)];
+  // AI 대전: 후공이면 AI가 0번 자리(선공)에 앉는다. 난이도 조건([나, AI])도 자리에 맞춰 뒤집는다.
+  const meFirst = isDuo() || order === 'first' || (order === 'random' && Math.random() < 0.5);
+  const hc = DIFFICULTIES[difficulty].handicap;
   state = createGame(isDuo()
     ? { playerFaction: factionId, aiFaction, names: ['1P', '2P'], handicap: DIFFICULTIES.normal.handicap }
-    : { playerFaction: factionId, aiFaction, handicap: DIFFICULTIES[difficulty].handicap });
-  ME = 0;
-  FOE = 1;
+    : meFirst
+      ? { playerFaction: factionId, aiFaction, handicap: hc }
+      : { playerFaction: aiFaction, aiFaction: factionId, names: ['AI', '나'], handicap: { hull: [hc.hull[1], hc.hull[0]], extraCards: [hc.extraCards[1], hc.extraCards[0]] } });
+  ME = meFirst ? 0 : 1;
+  FOE = 1 - ME;
   document.body.classList.add('playing');
   goLandscape();
   selected = null;
@@ -866,7 +893,14 @@ async function startGame(factionId, rival = null) {
     showBanner(`${FACTIONS[factionId].emblem} 1P VS 2P ${FACTIONS[aiFaction].emblem}<span class="who">1P 먼저!</span>`, 1300);
     return;
   }
-  showBanner(`🌊 VS ${FACTIONS[aiFaction].emblem} ${FACTIONS[aiFaction].name}<span class="who">${diff.emoji} ${diff.name}</span>`, 1300);
+  showBanner(`🌊 VS ${FACTIONS[aiFaction].emblem} ${FACTIONS[aiFaction].name}<span class="who">${diff.emoji} ${diff.name} · ${meFirst ? '내가 선공' : '내가 후공 🪙'}</span>`, 1300);
+  if (!meFirst) {
+    // AI가 먼저 둔다. 시작 배너가 끝난 뒤 AI 차례를 진행한다.
+    busy = true;
+    const game = session;
+    await sleep(1400);
+    if (game === session) await runAI();
+  }
 }
 
 // 폰이면 전체 화면으로 바꾸고 가로로 고정해 본다. 지원하지 않는 브라우저(iOS 등)는 조용히 넘어간다.
