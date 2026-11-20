@@ -227,7 +227,12 @@ function playOptions(s, firstOnly = false) {
       continue;
     }
     seen.add(id);
-    if (d.type === 'crew') { out.push({ type: 'play', handIndex: i }); continue; }
+    if (d.type === 'crew') {
+      // 갑판이 가득 차 포자를 밟고 들어가면 1 피해를 받는다. 체력 1 선원은 들어가자마자 쓰러지니(등장 효과가 없으면) 내지 않는다.
+      if (me.board.length >= RULES.boardLimit && d.hp <= 1 && !d.onPlay && !(d.keywords || []).includes('shield')) continue;
+      out.push({ type: 'play', handIndex: i });
+      continue;
+    }
     // 쓸 상황인지는 카드별 규칙으로 거르고, 대상은 미리 써 보고 고른다.
     if (TACTIC_AI[id] && TACTIC_AI[id](me, foe) === false) continue;
     if (d.target) {
@@ -288,7 +293,9 @@ function chooseAttack(s) {
       else if (kills && survives) score = 10 + value(d);
       else if (kills && value(d) >= value(a)) score = 5 + value(d) - value(a);
       else if (kills && losingRace) score = 3 + d.atk + (hasKeyword(d, 'plunder') ? 2 : 0);
-      else if (!canHitShip && survives) score = 1; // 수호를 깎아 둔다
+      // 수호를 깎아 둔다: 실제로 피해가 들어가거나(뻗기로 옆을 치는 것 포함) 보호막을 벗길 때만.
+      // 피해 0으로 반격만 맞는 공격(공격력 0 선원, 탄성에 막히는 1 공격 등)은 하지 않는다.
+      else if (!canHitShip && survives && (dmg(power + bite, d) > 0 || d.shield || (hasKeyword(a, 'reach') && foe.board.length > 1))) score = 1;
       if (score > bestScore) { bestScore = score; best = uid; }
     }
     if (best !== null) return { type: 'attack', attacker: a.uid, target: best };
