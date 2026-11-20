@@ -918,7 +918,7 @@ export const CARDS = {
   // ── 조사병단 ──
   cadet: { name: '훈련병', type: 'crew', cost: 1, atk: 1, hp: 2, art: '🪖', keywords: ['devotion'], text: '' },
   sasha: {
-    name: '사샤', type: 'crew', cost: 2, atk: 2, hp: 2, art: '🥔',
+    name: '사샤', type: 'crew', cost: 2, atk: 2, hp: 2, art: '🥔', keywords: ['devotion'],
     text: '등장: 무작위 적 선원에게 1 피해.',
     onPlay: (g) => { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 1); },
   },
@@ -929,7 +929,7 @@ export const CARDS = {
     onPlay: (g, self) => { const a = g.randomAllyCrew(self.uid); if (a) g.buff(a.uid, 1, 0); },
   },
   hange: {
-    name: '한지', type: 'crew', cost: 3, atk: 2, hp: 4, art: '👓',
+    name: '한지', type: 'crew', cost: 3, atk: 2, hp: 4, art: '👓', keywords: ['devotion'],
     text: '등장: 공격력이 가장 높은 적 선원을 붙잡아 얼린다.',
     onPlay: (g) => {
       const list = g.foe.board.filter((c) => !c.stealth && !c.submerged && !CARDS[c.defId].noAttack).sort((a, b) => b.atk - a.atk);
@@ -946,12 +946,12 @@ export const CARDS = {
     text: '일어날 때 폭발해 바다 위 다른 모든 선원(아군 포함)에게 2 피해.',
     onRise: (g, self) => g.damageOthers(self.uid, 2),
   },
-  mike: { name: '미케', type: 'crew', cost: 4, atk: 3, hp: 5, art: '👃', keywords: ['guard'], text: '' },
+  mike: { name: '미케', type: 'crew', cost: 4, atk: 2, hp: 5, art: '👃', keywords: ['guard', 'devotion'], text: '' },
   mikasa: { name: '미카사', type: 'crew', cost: 4, atk: 3, hp: 4, art: '🧣', keywords: ['odm', 'double'], text: '' },
   eren: { name: '에렌', type: 'crew', cost: 5, atk: 3, hp: 4, art: '🗝️', keywords: ['titan'], titan: 'attacktitan', text: '거인화: 진격의 거인(4/5).' },
   attacktitan: { name: '진격의 거인', type: 'crew', cost: 5, atk: 4, hp: 5, art: '👺', token: true, text: '' },
   erwin: {
-    name: '엘빈', type: 'crew', cost: 5, atk: 4, hp: 5, art: '🎖️',
+    name: '엘빈', type: 'crew', cost: 5, atk: 4, hp: 4, art: '🎖️', keywords: ['devotion'],
     text: '아군 선원이 쓰러지면 카드 1장을 뽑는다(턴마다 1번).',
     onAllyDeath: (g, self) => { if (self.drewTurn !== g.turn) { self.drewTurn = g.turn; g.draw(1); } },
   },
