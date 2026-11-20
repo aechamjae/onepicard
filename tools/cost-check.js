@@ -12,7 +12,7 @@ export const KW_VALUE = {
 
 // 등장·유언·턴 끝 같은 효과의 값(키워드 말고 카드 글에 적힌 효과).
 export const EFFECT = {
-  lookout: 2, powder: 2, gunner: 1, harpoon: 1, tide: 1, pearl: 1, abyss: 3, pinball: 2,
+  lookout: 2, powder: 2, gunner: 1, harpoon: 2, tide: 1, pearl: 1, abyss: 3, pinball: 2,
   lantern: 3, banshee: 1, phantom: 2, spicy: 2, cook: 1, grill: 2, inferno: 4,
   banana: 2, tamer: 2, kingkong: 4, tinker: 3, iai: 1, sensei: 2, swordsaint: 4,
   surveyor: 2, compass: 2, guildmaster: 4, admiral: 4, navigator: 2, clipper: 3,

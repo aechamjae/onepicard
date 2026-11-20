@@ -76,7 +76,7 @@ GitHub Pages: 저장소 **Settings → Pages → Branch: `main` / `(root)`** 로
 시작 화면의 **📊 승률·상성**에는 탭이 두 개 있습니다.
 
 - **🧑 내 전적**: AI 대전을 끝까지 한 판의 승패가 해적단별, 상대별로 쌓입니다. 난이도별로 걸러 볼 수 있고, 기록은 그 기기의 브라우저에만 저장됩니다. 친구와 대결과 중간에 그만둔 판은 기록하지 않습니다.
-- **🤖 AI 상성표**: AI끼리 붙인 해적단 평균 승률과 해적단 쌍별 상성표를 보여 줍니다. `src/matchups.js`에 미리 계산해 둔 값이라, 밸런스를 바꾼 뒤에는 `node tools/matchups.js 300 --write`로 다시 만들어야 합니다.
+- **🤖 AI 상성표**: AI끼리 붙인 해적단 평균 승률과 해적단 쌍별 상성표를 보여 줍니다. `src/matchups.js`에 미리 계산해 둔 값이라, 밸런스를 바꾼 뒤에는 `node tools/matchups.js 1000 --write`로 다시 만들어야 합니다.
 
 ## 구조
 
@@ -94,4 +94,4 @@ tools/card-list.js      모든 카드의 능력치·키워드·효과를 CARDS.m
 tools/matchups.js       모든 해적단 쌍을 붙여 평균 승률과 쏠린 상성 확인 (--write: 게임 안 상성표 갱신)
 ```
 
-밸런스 확인: `node tools/simulate.js 1000` · 러시 확인: `node tools/rush.js` · 전체 상성 확인: `node tools/matchups.js 400` (평균 승률 48~52%, 상성 80% 미만이 목표)
+밸런스 확인: `node tools/simulate.js 1000` · 러시 확인: `node tools/rush.js` · 전체 상성 확인: `node tools/matchups.js 1000` (평균 승률 48~52%, 상성 70% 이하가 목표)

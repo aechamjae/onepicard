@@ -1,7 +1,7 @@
 // 모든 해적단 쌍(nC2)을 선후공 번갈아 N판씩 붙여, 해적단별 평균 승률과 한쪽으로 쏠린 상성을 보여 준다.
 // 사용: node tools/matchups.js [쌍마다 판수=200] [--write]
 // --write를 붙이면 결과를 src/matchups.js에 저장해, 게임 안 📊 승률·상성 화면에 보여 준다.
-// 목표: 평균 승률 48~52%, 어떤 상성도 80% 미만.
+// 목표: 평균 승률 48~52%, 어떤 상성도 70% 이하. 판수가 적으면 오차가 커서(300판 ±3%) 1000판으로 확인한다.
 import { writeFileSync } from 'node:fs';
 import { createGame, applyAction } from '../src/engine.js';
 import { aiNextAction } from '../src/ai.js';
@@ -32,7 +32,7 @@ for (let i = 0; i < ids.length; i++) {
     (table[b] ??= {})[a] = Math.round((1 - r) * 1000) / 1000;
     rates[a].push(r);
     rates[b].push(1 - r);
-    if (r >= 0.8 || r <= 0.2) skewed.push(r >= 0.5 ? [a, b, r] : [b, a, 1 - r]);
+    if (r > 0.7 || r < 0.3) skewed.push(r >= 0.5 ? [a, b, r] : [b, a, 1 - r]);
   }
 }
 const pct = (x) => `${Math.round(x * 100)}%`;
@@ -41,7 +41,7 @@ for (const [f, avg] of rows) {
   const ok = avg >= 0.48 && avg <= 0.52 ? '' : '  ← 범위 밖';
   console.log(`${FACTIONS[f].emblem} ${FACTIONS[f].name}: 평균 ${(avg * 100).toFixed(1)}% (최악 ${pct(Math.min(...rates[f]))}, 최고 ${pct(Math.max(...rates[f]))})${ok}`);
 }
-console.log(skewed.length ? '80% 넘는 상성:' : '80% 넘는 상성 없음');
+console.log(skewed.length ? '70% 넘는 상성:' : '70% 넘는 상성 없음');
 for (const [w, l, r] of skewed) console.log(`  ${FACTIONS[w].name} > ${FACTIONS[l].name} ${pct(r)}`);
 
 if (args.includes('--write')) {

@@ -142,9 +142,9 @@ export const CARDS = {
   // ── 심해 함대 ──
   sentinel: { name: '집게발 파수꾼', type: 'crew', cost: 2, atk: 2, hp: 3, art: '🦀', keywords: ['guard'], text: '' },
   harpoon: {
-    name: '작살 사수', type: 'crew', cost: 3, atk: 3, hp: 4, art: '🔱',
-    text: '등장: 무작위 적 선원에게 1 피해.',
-    onPlay: (g) => { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 1); },
+    name: '작살 사수', type: 'crew', cost: 3, atk: 3, hp: 3, art: '🔱',
+    text: '등장: 무작위 적 선원에게 2 피해.',
+    onPlay: (g) => { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 2); },
   },
   tide: {
     name: '소라고둥 예언자', type: 'crew', cost: 4, atk: 4, hp: 6, art: '🐚',
@@ -225,7 +225,7 @@ export const CARDS = {
   },
   shroud: { name: '수의 경비병', type: 'crew', cost: 3, atk: 2, hp: 4, art: '🧟', keywords: ['guard', 'ghost'], text: '' },
   banshee: {
-    name: '울부짖는 밴시', type: 'crew', cost: 3, atk: 3, hp: 2, art: '😱',
+    name: '울부짖는 밴시', type: 'crew', cost: 3, atk: 3, hp: 1, art: '😱',
     text: '유언: 모든 적 선원에게 1 피해.',
     onDeath: (g) => g.damageAllFoes(1),
   },
@@ -261,12 +261,12 @@ export const CARDS = {
   },
   flambe: { name: '플람베 달인', type: 'crew', cost: 3, atk: 4, hp: 3, art: '🍳', keywords: ['scorch'], text: '' },
   grill: {
-    name: '화로 수호자', type: 'crew', cost: 4, atk: 3, hp: 3, art: '♨️', keywords: ['guard'],
+    name: '화로 수호자', type: 'crew', cost: 4, atk: 3, hp: 4, art: '♨️', keywords: ['guard'],
     text: '등장: 무작위 적 선원에게 불을 붙인다.',
     onPlay: (g) => { const t = g.randomFoeCrew(); if (t) g.burn(t.uid); },
   },
   inferno: {
-    name: '제프', type: 'crew', cost: 7, atk: 5, hp: 6, art: '👹', keywords: ['scorch'],
+    name: '제프', type: 'crew', cost: 8, atk: 5, hp: 7, art: '👹', keywords: ['scorch'],
     text: '불꽃 주방을 지휘하는 화염 주방장. 등장: 모든 적 선원에게 불을 붙인다.',
     onPlay: (g) => g.burnAllFoes(),
   },
@@ -282,7 +282,7 @@ export const CARDS = {
     effect: (g, t) => { g.damageCrew(t, 1); g.burn(t); },
   },
   hotpot: {
-    name: '펄펄 끓는 냄비', type: 'tactic', cost: 5, art: '🍲',
+    name: '펄펄 끓는 냄비', type: 'tactic', cost: 4, art: '🍲',
     text: '모든 적 선원에게 1 피해를 주고 불을 붙인다.',
     effect: (g) => { g.damageAllFoes(1); g.burnAllFoes(); },
   },
@@ -367,7 +367,7 @@ export const CARDS = {
     onPlay: (g, self) => { const t = g.randomAllyCrew(self.uid); if (t) { g.buff(t.uid, 1, 0); g.grant(t.uid, 'slash'); } },
   },
   gale: { name: '킬러', type: 'crew', cost: 5, atk: 3, hp: 4, art: '💨', keywords: ['charge', 'slash'], text: '질풍처럼 베고 지나가는 검호.' },
-  nitoryu: { name: '오뎅', type: 'crew', cost: 4, atk: 3, hp: 3, art: '🍢', keywords: ['double', 'slash'], text: '두 자루 칼을 쓰는 이도류 낭인.' },
+  nitoryu: { name: '오뎅', type: 'crew', cost: 4, atk: 3, hp: 4, art: '🍢', keywords: ['double', 'slash'], text: '두 자루 칼을 쓰는 이도류 낭인.' },
   swordsaint: {
     name: '류마', type: 'crew', cost: 7, atk: 4, hp: 4, art: '🏯', keywords: ['slash'],
     text: '전설로 불리는 검성. 등장: 체력이 가장 낮은 적 선원 하나를 단칼에 벤다.',
@@ -608,12 +608,12 @@ export const CARDS = {
 
   // ── 불꽃 요리단 (신규) ──
   skewer: {
-    name: '숯불 꼬치꾼', type: 'crew', cost: 2, atk: 3, hp: 3, art: '🍡',
+    name: '숯불 꼬치꾼', type: 'crew', cost: 2, atk: 2, hp: 3, art: '🍡',
     text: '등장: 불붙은 적 선원 모두에게 1 피해.',
     onPlay: (g) => g.foe.board.filter((c) => c.burning).map((c) => c.uid).forEach((uid) => g.damageCrew(uid, 1)),
   },
   volcano: {
-    name: '화산 소스', type: 'tactic', cost: 2, art: '🌋',
+    name: '화산 소스', type: 'tactic', cost: 3, art: '🌋',
     text: '불붙은 적 선원 모두에게 4 피해.',
     effect: (g) => g.foe.board.filter((c) => c.burning).map((c) => c.uid).forEach((uid) => g.damageCrew(uid, 4)),
   },
@@ -708,7 +708,7 @@ export const CARDS = {
   polar: { name: '털매머드 갑판장', type: 'crew', cost: 3, atk: 1, hp: 4, art: '🦣', keywords: ['chill'], text: '' },
   iceram: { name: '빙산 충각선', type: 'crew', cost: 5, atk: 4, hp: 4, art: '🏔️', keywords: ['charge', 'chill'], text: '' },
   frostqueen: {
-    name: '쿠잔', type: 'crew', cost: 7, atk: 5, hp: 6, art: '🚲', keywords: ['chill'],
+    name: '쿠잔', type: 'crew', cost: 7, atk: 5, hp: 7, art: '🚲', keywords: ['chill'],
     text: '바다를 얼려 자전거로 건너는 전 해군 대장. 등장: 모든 적 선원을 얼린다.',
     onPlay: (g) => g.freezeAllFoes(),
   },
