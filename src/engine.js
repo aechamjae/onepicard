@@ -225,8 +225,9 @@ export function costOf(p, card) {
 }
 
 // 선원에게 피해를 준다. 탄성이 있으면 1 줄어든다. 실제로 들어간 피해를 돌려준다.
-function hurt(crew, n) {
-  if (n <= 0) return 0;
+// blow: 선원끼리 싸울 때의 타격. 공격력 0이라도 보호막은 깨뜨린다(돌벽 반격 등).
+function hurt(crew, n, blow = false) {
+  if (n <= 0 && !(blow && crew.shield)) return 0;
   if (crew.shield) {
     crew.shield = false; // 보호막이 대신 맞고 깨진다
     return 0;
@@ -620,10 +621,12 @@ export function applyAction(s, action) {
         power += 2;
         log(s, `🩸 피 냄새를 맡았다! (공격력 +2)`);
       }
-      const dealt = hurt(defender, power);
+      const dealt = hurt(defender, power, true);
       const slash = hasKeyword(attacker, 'slash');
       const thorns = hasKeyword(defender, 'thorns') && !slash ? 1 : 0;
-      const back = slash ? 0 : hurt(attacker, defender.atk + thorns);
+      const hadShield = attacker.shield;
+      const back = slash ? 0 : hurt(attacker, defender.atk + thorns, true);
+      if (hadShield && !attacker.shield && defender.atk + thorns <= 0) log(s, `🛡 「${CARDS[defender.defId].name}」의 반격에 「${aName}」의 보호막이 깨졌다.`);
       if (thorns) log(s, `🌵 가시에 찔렸다!`);
       if (slash) log(s, `⚔ 일섬! 반격을 받지 않았다.`);
       if (hasKeyword(attacker, 'lifesteal')) heal(s, me, dealt);
