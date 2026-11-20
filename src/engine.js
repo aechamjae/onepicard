@@ -202,6 +202,14 @@ function boardCrew(s, p, crew, verb) {
   return true;
 }
 
+// 등가교환으로 버릴 카드: 재료 카드를 먼저, 없으면 가장 싼 카드. 행운의 동전과 exceptUid(지금 내는 카드)는 빼고 고른다.
+export function exchangePick(p, exceptUid = null) {
+  const pool = p.hand.filter((c) => c.defId !== 'coin' && c.uid !== exceptUid);
+  if (!pool.length) return null;
+  const mats = pool.filter((c) => (CARDS[c.defId].keywords || []).includes('material'));
+  return [...(mats.length ? mats : pool)].sort((a, b) => costOf(p, a) - costOf(p, b))[0];
+}
+
 // 선원을 둘 자리가 있는지(가득 찼어도 밟을 포자가 있으면 된다).
 export const hasRoom = (p) => p.board.length < RULES.boardLimit || p.board.some(isSpore);
 
@@ -277,10 +285,11 @@ function effectApi(s, pi) {
     // 등가교환: 손패에서 재료 카드를 먼저, 없으면 가장 싼 카드 1장을 버린다(행운의 동전은 버리지 않는다).
     // 버렸으면 true. 버린 카드가 재료면 그 효과(onDiscard)가 터진다.
     exchange: () => {
-      const pool = me.hand.filter((c) => c.defId !== 'coin');
-      if (!pool.length) return false;
-      const mats = pool.filter((c) => (CARDS[c.defId].keywords || []).includes('material'));
-      const pick = [...(mats.length ? mats : pool)].sort((a, b) => costOf(me, a) - costOf(me, b))[0];
+      const pick = exchangePick(me);
+      if (!pick) {
+        log(s, '⚗ 바칠 카드가 없어 등가교환 효과는 없었다.');
+        return false;
+      }
       me.hand = me.hand.filter((c) => c !== pick);
       const d = CARDS[pick.defId];
       log(s, `⚗ 등가교환: 「${d.name}」을(를) 재료로 바쳤다.`);
@@ -308,7 +317,10 @@ function effectApi(s, pi) {
     get played() { return me.played; },
     // 거래: 보물이 있으면 1개를 써서 true. 없으면 false.
     trade: () => {
-      if (me.treasure < 1) return false;
+      if (me.treasure < 1) {
+        log(s, '💰 보물이 없어 거래 효과는 없었다.');
+        return false;
+      }
       me.treasure--;
       log(s, `💰 ${me.name}이(가) 보물 1개를 내고 거래했다. (${me.treasure}/${RULES.treasureToWin})`);
       return true;

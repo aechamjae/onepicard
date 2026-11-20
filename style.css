@@ -216,6 +216,15 @@ main[hidden] { display: none; }
 .card.stealthy { opacity: .6; }
 .card.stealthy .art { filter: blur(1px) grayscale(.4); }
 .card.revived .art { opacity: .7; filter: saturate(.5) hue-rotate(200deg); }
+.card .cond {
+  position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%); max-width: calc(100% - 4px);
+  padding: 0 5px; border-radius: 999px; font-size: .56rem; font-weight: 900; line-height: 1.5;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid #fff8;
+}
+.c-ok { background: #2f9e5a; color: #fff; }
+.c-no { background: #7a2a24; color: #ffd9d4; }
+.c-info { background: #2f5d7a; color: #e6f4ff; }
+.skill-btn .sk-cond { display: block; width: fit-content; margin: 2px auto 0; padding: 0 6px; border-radius: 999px; font-size: .62rem; font-weight: 900; }
 .card .text {
   margin-top: 4px; padding: 4px; border-radius: 7px;
   background: #00000030; color: #fff; font-size: .62rem; line-height: 1.3; text-align: center;

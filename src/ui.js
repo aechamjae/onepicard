@@ -4,6 +4,7 @@ import { RULES, createGame, applyAction, canPlay, canUseSkill, costOf, legalAtta
 import { aiNextAction } from './ai.js';
 import { DIFFICULTIES } from './difficulty.js';
 import { openStats, recordResult } from './stats.js';
+import { cardCondition, skillCondition } from './conditions.js';
 
 // 화면 아래쪽(나)과 위쪽(상대)에 놓일 플레이어. 친구 모드에서는 턴마다 뒤바뀐다.
 let ME = 0;
@@ -93,7 +94,7 @@ function armArt(face, tension = 0) {
 // ── 그리기 ──
 
 // owner: 손패 카드의 주인. 주면 순풍으로 깎인 비용을 보여 준다.
-function cardEl(card, factionId, { inHand = false, showText = inHand, owner = null } = {}) {
+function cardEl(card, factionId, { inHand = false, showText = inHand, owner = null, foe = null } = {}) {
   const d = CARDS[card.defId];
   const el = document.createElement('div');
   el.className = `card ${d.type} f-${factionId}`;
@@ -104,9 +105,12 @@ function cardEl(card, factionId, { inHand = false, showText = inHand, owner = nu
   const hp = card.hp ?? d.hp;
   const chips = [...(d.keywords || []), ...(card.gained || [])].map((k) => `<span class="chip k-${k}">${KEYWORDS[k].name}</span>`).join('');
   const cost = owner ? costOf(owner, card) : d.cost;
+  // 손패: 상황에 따라 달라지는 효과가 지금 어떻게 되는지 꼬리표로 보여 준다.
+  const cond = owner && foe ? cardCondition(owner, foe, card) : null;
+  const condHtml = cond ? `<div class="cond c-${cond.tone}" title="${cond.long}">${cond.short}</div>` : '';
   el.innerHTML = `
     <div class="frame">
-      <div class="art">${d.arm ? armArt(d.art, tension) : `<span class="emoji">${d.art}</span>`}</div>
+      <div class="art">${d.arm ? armArt(d.art, tension) : `<span class="emoji">${d.art}</span>`}${condHtml}</div>
       <div class="name">${d.name}</div>
       ${chips ? `<div class="chips">${chips}</div>` : ''}
       ${showText && d.text ? `<div class="text">${d.text}</div>` : ''}
@@ -207,7 +211,7 @@ function render(entered = new Set()) {
   hand.innerHTML = '';
   let anyPlayable = false;
   me.hand.forEach((card, i) => {
-    const el = cardEl(card, me.factionId, { inHand: true, owner: me });
+    const el = cardEl(card, me.factionId, { inHand: true, owner: me, foe });
     const playable = myTurn && !canPlay(state, ME, i);
     anyPlayable ||= playable;
     el.classList.add(playable ? 'playable' : 'unaffordable');
@@ -220,8 +224,9 @@ function render(entered = new Set()) {
   const sk = skillOf(ME);
   const skillBtn = $('skill-btn');
   const skillErr = canUseSkill(state, ME);
-  skillBtn.innerHTML = `<span class="sk-cost">${sk.cost}</span>${sk.art} ${sk.name}${sk.treasureCost ? ` <small>💰${sk.treasureCost}</small>` : ''}`;
-  skillBtn.title = `리더 스킬: ${sk.text}`;
+  const skCond = skillCondition(me, foe);
+  skillBtn.innerHTML = `<span class="sk-cost">${sk.cost}</span>${sk.art} ${sk.name}${sk.treasureCost ? ` <small>💰${sk.treasureCost}</small>` : ''}${skCond ? `<small class="sk-cond c-${skCond.tone}">${skCond.short}</small>` : ''}`;
+  skillBtn.title = `리더 스킬: ${sk.text}${skCond ? ` · ${skCond.long}` : ''}`;
   skillBtn.disabled = !myTurn;
   skillBtn.classList.toggle('usable', myTurn && !skillErr);
   skillBtn.classList.toggle('used', me.skillUsed);
@@ -246,12 +251,15 @@ function hintText(myTurn) {
   }
   if (selected?.kind === 'skill') {
     const sk = skillOf(ME);
-    return `✨「${sk.name}」 ${sk.text} · ${sk.target === 'foeCrew' ? '🎯 대상 적 선원을 고르세요.' : '🎯 대상 아군 선원을 고르세요.'}`;
+    const sc = skillCondition(state.players[ME], state.players[FOE]);
+    return `✨「${sk.name}」 ${sk.text}${sc ? ` · 👉 ${sc.long}` : ''} · ${sk.target === 'foeCrew' ? '🎯 대상 적 선원을 고르세요.' : '🎯 대상 아군 선원을 고르세요.'}`;
   }
   if (selected?.kind === 'hand') {
-    const d = CARDS[state.players[ME].hand[selected.index].defId];
+    const card = state.players[ME].hand[selected.index];
+    const d = CARDS[card.defId];
     const kws = (d.keywords || []).map((k) => KEYWORDS[k].name).join('·');
-    const about = `「${d.name}」 ${[kws && `[${kws}]`, d.text].filter(Boolean).join(' ')}`;
+    const cond = cardCondition(state.players[ME], state.players[FOE], card);
+    const about = `「${d.name}」 ${[kws && `[${kws}]`, d.text].filter(Boolean).join(' ')}${cond ? ` · 👉 ${cond.long}` : ''}`;
     if (!d.target) return `${about} · 한 번 더 누르면 낸다`;
     return `${about} · ${d.target === 'foeCrew' ? '🎯 대상 적 선원을 고르세요.' : '🎯 대상 아군 선원을 고르세요.'}`;
   }
