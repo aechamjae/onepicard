@@ -7,15 +7,21 @@ export const DIFFICULTIES = {
     handicap: { hull: [26, 16], extraCards: [1, 0] },
   },
   normal: {
-    name: '보통', emoji: '⚓',
+    name: '보통', emoji: '😽',
     desc: 'AI가 가끔 실수합니다. 조건은 똑같아요.',
     ai: 'normal',
     handicap: { hull: [20, 20], extraCards: [0, 0] },
   },
   hard: {
-    name: '어려움', emoji: '💀',
+    name: '어려움', emoji: '🥵',
     desc: 'AI가 실수 없이 싸우고, 배도 더 튼튼합니다.',
     ai: 'hard',
+    handicap: { hull: [20, 24], extraCards: [0, 1] },
+  },
+  insight: {
+    name: '견문색', emoji: '👀',
+    desc: 'AI가 상대의 반격까지 미리 내다보고 둡니다. 배는 어려움처럼 더 튼튼합니다.',
+    ai: 'insight',
     handicap: { hull: [20, 24], extraCards: [0, 1] },
   },
 };

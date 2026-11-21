@@ -20,7 +20,7 @@ export const EFFECT = {
   headnurse: 1, sedative: 2, incisor: 3, chiefsurgeon: 4, anatomist: 2,
   gull: 1, cachalot: 1, ghostrats: 2, skewer: 1, coconut: 1, orangutan: 3,
   frostmage: 2, frostqueen: 4, greenapple: 1, cherry: 2, peach: 1, mango: 2, orchardboss: 3, mandarin: 1, lemon: 2,
-  panda: 1, elephant: 2, baitfish: 1, sharkboat: 1, squid: 2, culturist: 2, mykos: 3,
+  panda: 1, elephant: 2, baitfish: 1, sharkboat: 1, squid: 2, culturist: 2, mykos: 3, troll: 1,
   sasha: 1, jean: 1, hange: 2, armin: 2, erwin: 2,
   fuery: 1, hughes: 1, hawkeye: 3, winry: 3, edward: 2, armstrong: 2, kimblee: 2, mustang: 4,
 };

@@ -21,7 +21,7 @@ for (let i = 0; i < ids.length; i++) {
       const aFirst = n % 2 === 0;
       const s = createGame({ playerFaction: aFirst ? a : b, aiFaction: aFirst ? b : a });
       for (let steps = 0; s.winner === null; steps++) {
-        const err = applyAction(s, aiNextAction(s));
+        const err = applyAction(s, aiNextAction(s, 'insight'));
         if (err) throw new Error(`AI가 잘못된 행동: ${err}`);
         if (steps > 3000) throw new Error('게임이 끝나지 않음');
       }

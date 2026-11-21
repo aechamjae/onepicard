@@ -7,7 +7,11 @@ export const AI_LEVELS = {
   easy: { mistake: 0.55 },
   normal: { mistake: 0.35 },
   hard: { mistake: 0 },
+  insight: { mistake: 0, lookahead: true }, // 견문색: 턴을 마치기 전에 상대 반격까지 내다본다
 };
+
+// 지금 생각 중인 AI가 한 수 앞을 보는지(aiNextAction이 정한다).
+let lookahead = false;
 
 const value = (c) => c.atk + c.hp;
 const dmg = (n, target) => {
@@ -432,7 +436,7 @@ function finishTurn(s, pi) {
 // 턴을 마친 뒤 상대가 바로 칠 수 있는 공격까지 해 보고 판을 평가한다(한 수 앞 보기).
 // 내 선원을 무방비로 두거나 상대에게 쉽게 잡히는 수를 피하려고. s는 버려도 되는 복제본이어야 한다.
 function evaluateWithReply(s, pi) {
-  if (s.winner !== null || s.current !== pi) return evaluate(s, pi);
+  if (!lookahead || s.winner !== null || s.current !== pi) return evaluate(s, pi);
   if (applyAction(s, { type: 'end' })) return evaluate(s, pi);
   for (let i = 0; i < 12 && s.winner === null && s.current !== pi; i++) {
     const a = chooseAttack(s);
@@ -466,7 +470,8 @@ function chooseAction(s) {
 }
 
 export function aiNextAction(s, level = 'hard') {
-  const { mistake } = AI_LEVELS[level] ?? AI_LEVELS.hard;
+  const { mistake, lookahead: see = false } = AI_LEVELS[level] ?? AI_LEVELS.hard;
+  lookahead = see;
   if (mistake && s.rng() < mistake) return randomAction(s);
   return chooseAction(s) || { type: 'end' };
 }

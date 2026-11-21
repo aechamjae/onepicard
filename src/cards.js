@@ -215,7 +215,7 @@ export const CARDS = {
 
   // ── 유령선단 ──
   wisp: { name: '도깨비불', type: 'crew', cost: 2, atk: 2, hp: 3, art: '🕯️', keywords: ['ghost'], text: '' },
-  bones: { name: '해골 갑판원', type: 'crew', cost: 3, atk: 2, hp: 3, art: '💀', keywords: ['ghost'], text: '' },
+  bones: { name: '해골 갑판원', type: 'crew', cost: 3, atk: 3, hp: 3, art: '💀', keywords: ['ghost'], text: '' },
   haunt: { name: '원혼 수부', type: 'crew', cost: 3, atk: 2, hp: 3, art: '⚰️', keywords: ['ghost'], text: '' },
   lantern: {
     name: '등불 무녀', type: 'crew', cost: 2, atk: 1, hp: 1, art: '🏮',
@@ -288,7 +288,7 @@ export const CARDS = {
   },
 
   // ── 정글 원숭이 무리 ──
-  chimp: { name: '장난꾸러기 원숭이', type: 'crew', cost: 1, atk: 1, hp: 2, art: '🙉', keywords: ['charge'], text: '' },
+  chimp: { name: '장난꾸러기 원숭이', type: 'crew', cost: 1, atk: 1, hp: 1, art: '🙉', keywords: ['charge'], text: '' },
   monkey: { name: '꼬마 원숭이', type: 'crew', cost: 1, atk: 1, hp: 1, art: '🐵', keywords: ['charge'], token: true, text: '' },
   banana: {
     name: '바나나 상인', type: 'crew', cost: 2, atk: 2, hp: 2, art: '🍌',
@@ -356,11 +356,11 @@ export const CARDS = {
   prentice: { name: '목검 수련생', type: 'crew', cost: 1, atk: 1, hp: 1, art: '🥋', keywords: ['slash'], text: '' },
   bamboo: { name: '죽도 검사', type: 'crew', cost: 2, atk: 1, hp: 3, art: '🎋', keywords: ['slash'], text: '' },
   iai: {
-    name: '거합 검객', type: 'crew', cost: 3, atk: 2, hp: 3, art: '🗡️', keywords: ['slash'],
+    name: '거합 검객', type: 'crew', cost: 3, atk: 2, hp: 4, art: '🗡️', keywords: ['slash'],
     text: '등장: 무작위 적 선원에게 1 피해.',
     onPlay: (g) => { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 1); },
   },
-  shieldsman: { name: '방패 무사', type: 'crew', cost: 3, atk: 2, hp: 4, art: '🛡️', keywords: ['guard'], text: '' },
+  shieldsman: { name: '방패 무사', type: 'crew', cost: 3, atk: 2, hp: 5, art: '🛡️', keywords: ['guard'], text: '' },
   sensei: {
     name: '검술 사범', type: 'crew', cost: 3, atk: 2, hp: 3, art: '🧓',
     text: '등장: 무작위 다른 아군 선원 하나에게 공격력 +1과 일섬을 준다.',
@@ -521,7 +521,7 @@ export const CARDS = {
       if (list.length) { g.swapStats(list[0].uid); g.damageCrew(list[0].uid, 1); }
     },
   },
-  torpedo: { name: '어뢰병', type: 'crew', cost: 5, atk: 5, hp: 7, art: '🚤', keywords: ['submerge'], text: '' },
+  torpedo: { name: '어뢰병', type: 'crew', cost: 5, atk: 5, hp: 6, art: '🚤', keywords: ['submerge'], text: '' },
   chiefsurgeon: {
     name: '로우', type: 'crew', cost: 7, atk: 5, hp: 7, art: '🫀', keywords: ['submerge'],
     text: '잠수함 외과단의 수석 집도의. 등장: 모든 적 선원의 공격력과 체력을 뒤바꾼다.',
@@ -863,7 +863,11 @@ export const CARDS = {
     text: '등장: 적 갑판에 포자 2개를 심는다.',
     onPlay: (g) => g.plantSpores(2),
   },
-  troll: { name: '이끼 트롤', type: 'crew', cost: 5, atk: 5, hp: 7, art: '🧌', keywords: ['spore'], text: '' },
+  troll: {
+    name: '이끼 트롤', type: 'crew', cost: 5, atk: 5, hp: 6, art: '🧌', keywords: ['spore'],
+    text: '내 턴이 끝날 때 체력 2 회복.',
+    onTurnEnd: (g, self) => { self.hp = Math.min(self.maxHp, self.hp + 2); },
+  },
   mykos: {
     name: '미코스', type: 'crew', cost: 6, atk: 5, hp: 7, art: '🌲',
     text: '숲 전체에 뿌리를 뻗은 균사 거목. 등장: 적 갑판에 포자 3개를 심는다.',
@@ -984,7 +988,7 @@ export const CARDS = {
     text: '등가교환: 카드 1장을 뽑는다.',
     onPlay: (g) => { if (g.exchange()) g.draw(1); },
   },
-  havoc: { name: '하보크', type: 'crew', cost: 2, atk: 3, hp: 3, art: '🚬', text: '' },
+  havoc: { name: '하보크', type: 'crew', cost: 2, atk: 3, hp: 2, art: '🚬', text: '' },
   falman: { name: '팔만', type: 'crew', cost: 2, atk: 1, hp: 4, art: '📚', text: '' },
   hughes: {
     name: '휴즈', type: 'crew', cost: 2, atk: 1, hp: 4, art: '📸', keywords: ['guard'],
