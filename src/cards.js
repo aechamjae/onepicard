@@ -865,8 +865,8 @@ export const CARDS = {
   },
   troll: {
     name: '이끼 트롤', type: 'crew', cost: 5, atk: 5, hp: 6, art: '🧌', keywords: ['spore'],
-    text: '내 턴이 끝날 때 체력 2 회복.',
-    onTurnEnd: (g, self) => { self.hp = Math.min(self.maxHp, self.hp + 2); },
+    text: '내 턴이 끝날 때 체력 1 회복.',
+    onTurnEnd: (g, self) => { self.hp = Math.min(self.maxHp, self.hp + 1); },
   },
   mykos: {
     name: '미코스', type: 'crew', cost: 6, atk: 5, hp: 7, art: '🌲',
@@ -885,8 +885,8 @@ export const CARDS = {
   },
   mushsoup: {
     name: '버섯 수프', type: 'tactic', cost: 1, art: '🍵',
-    text: '내 배의 선체를 5 회복한다.',
-    effect: (g) => g.healShip(5),
+    text: '내 배의 선체를 3 회복하고 카드 1장을 뽑는다.',
+    effect: (g) => { g.healShip(3); g.draw(1); },
   },
 
   // ── 한국과수협회 (추가) ──

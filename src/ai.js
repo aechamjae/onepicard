@@ -107,7 +107,7 @@ const TACTIC_AI = {
   sharknet: (me, foe) => strongest(foe.board.filter((c) => c.atk >= 3), (c) => c.atk),
   wither: (me, foe) => strongest(foe.board.filter((c) => dmg(3, c) >= c.hp), value) || strongest(foe.board, value),
   sporecloud: (me, foe) => foe.board.length <= RULES.boardLimit - 2,
-  mushsoup: (me) => me.hull <= RULES.startHull - 4,
+  mushsoup: (me) => me.hull <= RULES.startHull - 3 || me.hand.length <= 5,
   insurance: (me) => me.hull <= RULES.startHull - 4,
   flare: (me) => strongest(me.board.filter((c) => !c.canAttack && !c.attacked && !c.held && !c.frozen && c.atk >= 2), (c) => c.atk),
   thunderspear: (me, foe) => strongest(foe.board.filter((c) => dmg(c.hp >= 5 ? 6 : 4, c) >= c.hp), value) || strongest(foe.board.filter((c) => c.atk >= 4), (c) => c.atk),
