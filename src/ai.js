@@ -400,7 +400,7 @@ function searchAttack(s) {
   const pi = s.current;
   const me = s.players[pi];
   const more = (!canUseSkill(s, pi) || me.hand.some((_, i) => !canPlay(s, pi, i)));
-  const rollout2 = more ? finishTurn : rollout;
+  const rollout2 = more ? finishTurn : (t, p) => { rollout(t, p); return evaluateWithReply(t, p); };
   let best = null;
   let bestScore = rollout2(cloneState(s), pi); // 규칙대로만 쳤을 때가 기준
   for (const a of me.board.filter((c) => c.canAttack)) {
@@ -424,6 +424,18 @@ function searchAttack(s) {
 function finishTurn(s, pi) {
   for (let i = 0; i < 30 && s.winner === null && s.current === pi; i++) {
     const a = choosePlay(s) || chooseSkill(s) || chooseAttack(s);
+    if (!a || applyAction(s, a)) break;
+  }
+  return evaluateWithReply(s, pi);
+}
+
+// 턴을 마친 뒤 상대가 바로 칠 수 있는 공격까지 해 보고 판을 평가한다(한 수 앞 보기).
+// 내 선원을 무방비로 두거나 상대에게 쉽게 잡히는 수를 피하려고. s는 버려도 되는 복제본이어야 한다.
+function evaluateWithReply(s, pi) {
+  if (s.winner !== null || s.current !== pi) return evaluate(s, pi);
+  if (applyAction(s, { type: 'end' })) return evaluate(s, pi);
+  for (let i = 0; i < 12 && s.winner === null && s.current !== pi; i++) {
+    const a = chooseAttack(s);
     if (!a || applyAction(s, a)) break;
   }
   return evaluate(s, pi);
