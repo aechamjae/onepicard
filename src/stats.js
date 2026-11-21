@@ -193,5 +193,5 @@ function renderMatrix(body) {
   wrap.append(table);
   body.append(wrap);
   const missing = ids.filter((f) => avg(f) === null);
-  body.insertAdjacentHTML('beforeend', `<p class="stats-foot">AI(실수 없음)끼리 해적단 쌍마다 ${MATCHUPS.games}판을 선후공 번갈아 붙인 결과예요 (${MATCHUPS.date} 기준). 사람이 둘 때와는 다를 수 있어요.${missing.length ? ` 아직 측정하지 않은 해적단: ${missing.map((f) => FACTIONS[f].name).join(', ')}.` : ''}</p>`);
+  body.insertAdjacentHTML('beforeend', `<p class="stats-foot">👀 견문색 AI끼리 해적단 쌍마다 ${MATCHUPS.games}판을 선후공 번갈아 붙인 결과예요 (${MATCHUPS.date} 기준). 사람이 둘 때와는 다를 수 있어요.${missing.length ? ` 아직 측정하지 않은 해적단: ${missing.map((f) => FACTIONS[f].name).join(', ')}.` : ''}</p>`);
 }

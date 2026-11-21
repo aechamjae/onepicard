@@ -47,7 +47,7 @@ for (const [w, l, r] of skewed) console.log(`  ${FACTIONS[w].name} > ${FACTIONS[
 if (args.includes('--write')) {
   const date = new Date().toISOString().slice(0, 10);
   const body = `// node tools/matchups.js ${N} --write 로 만든 파일이다. 손으로 고치지 말고 밸런스를 바꾸면 다시 만든다.
-// AI끼리 해적단 쌍마다 ${N}판(선후공 번갈아)을 붙인 결과. rate[a][b] = a가 b를 이긴 비율.
+// 견문색 AI끼리 해적단 쌍마다 ${N}판(선후공 번갈아)을 붙인 결과. rate[a][b] = a가 b를 이긴 비율.
 export const MATCHUPS = ${JSON.stringify({ games: N, date, rate: table }, null, 1)};
 `;
   writeFileSync(new URL('../src/matchups.js', import.meta.url), body);
