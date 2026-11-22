@@ -314,11 +314,6 @@ main[hidden] { display: none; }
 #log li:last-child { color: var(--ink); }
 
 /* ── 효과 층 ── */
-#fxc { position: fixed; left: 0; top: 0; pointer-events: none; z-index: 25; }
-#fx { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 25; overflow: visible; }
-#fx .arm-outline { stroke-width: 17; }
-#fx .arm-skin { stroke-width: 10; }
-#fx .glove { stroke-width: 3; }
 
 .float {
   position: fixed; z-index: 30; pointer-events: none; transform: translate(-50%, -50%);

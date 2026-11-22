@@ -16,7 +16,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="onepicard">
   <meta name="application-name" content="onepicard">
-  <link rel="stylesheet" href="style.css?v=202611221534">
+  <link rel="stylesheet" href="style.css?v=202611221559">
 </head>
 <body>
   <div class="sea" aria-hidden="true"></div>
@@ -65,7 +65,6 @@
   </div>
 
   <!-- 고무팔이 늘어나는 공격 효과를 그리는 층 -->
-  <svg id="fx" aria-hidden="true"></svg>
 
   <div id="start" class="overlay">
     <div class="panel start-panel">
@@ -203,7 +202,7 @@
   <!-- 홈 화면 앱이나 캐시가 예전 index.html을 쓰고 있으면, 최신 버전 번호(version.json)를 캐시 없이 받아 와 새 주소로 다시 연다. -->
   <script>
     (function () {
-      var BUILD = '?v=202611221534'.slice(3);
+      var BUILD = '?v=202611221559'.slice(3);
       fetch('version.json?t=' + Date.now(), { cache: 'no-store' })
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (j) {
@@ -220,17 +219,17 @@
   <script type="importmap">
     {
       "imports": {
-        "./src/cards.js": "./src/cards.js?v=202611221534",
-        "./src/engine.js": "./src/engine.js?v=202611221534",
-        "./src/ai.js": "./src/ai.js?v=202611221534",
-        "./src/difficulty.js": "./src/difficulty.js?v=202611221534",
-        "./src/matchups.js": "./src/matchups.js?v=202611221534",
-        "./src/stats.js": "./src/stats.js?v=202611221534",
-        "./src/conditions.js": "./src/conditions.js?v=202611221534",
-        "./src/fx.js": "./src/fx.js?v=202611221534"
+        "./src/cards.js": "./src/cards.js?v=202611221559",
+        "./src/engine.js": "./src/engine.js?v=202611221559",
+        "./src/ai.js": "./src/ai.js?v=202611221559",
+        "./src/difficulty.js": "./src/difficulty.js?v=202611221559",
+        "./src/matchups.js": "./src/matchups.js?v=202611221559",
+        "./src/stats.js": "./src/stats.js?v=202611221559",
+        "./src/conditions.js": "./src/conditions.js?v=202611221559",
+        "./src/fx.js": "./src/fx.js?v=202611221559"
       }
     }
   </script>
-  <script type="module" src="src/ui.js?v=202611221534"></script>
+  <script type="module" src="src/ui.js?v=202611221559"></script>
 </body>
 </html>

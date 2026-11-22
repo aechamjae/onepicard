@@ -5,7 +5,7 @@ import { aiNextAction } from './ai.js';
 import { DIFFICULTIES } from './difficulty.js';
 import { openStats, recordResult } from './stats.js';
 import { cardCondition, skillCondition } from './conditions.js';
-import { playAttackFx, hasAttackFx } from './fx.js';
+import { playAttackFx, playRubberFx, hasAttackFx } from './fx.js';
 
 // 화면 아래쪽(나)과 위쪽(상대)에 놓일 플레이어. 친구 모드에서는 턴마다 뒤바뀐다.
 let ME = 0;
@@ -14,7 +14,6 @@ const AI_DELAY = 550;
 
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const SVG_NS = 'http://www.w3.org/2000/svg';
 
 let state = null;
 let selected = null; // {kind:'hand', index} | {kind:'attacker', uid}
@@ -301,57 +300,6 @@ function burst(pt, emoji = '💥') {
   setTimeout(() => el.remove(), 420);
 }
 
-const easeOutBack = (t) => 1 + 2.4 * (t - 1) ** 3 + 1.4 * (t - 1) ** 2;
-const easeIn = (t) => t * t;
-
-// 고무팔이 대상까지 쭉 늘어났다가 튕겨 돌아온다.
-function stretchArm(from, to, tension) {
-  const fx = $('fx');
-  fx.innerHTML = '';
-  const outline = document.createElementNS(SVG_NS, 'path');
-  const skin = document.createElementNS(SVG_NS, 'path');
-  outline.setAttribute('class', 'arm-outline');
-  skin.setAttribute('class', 'arm-skin');
-  const fist = document.createElementNS(SVG_NS, 'g');
-  fist.innerHTML = '<circle r="17" class="glove"/><path d="M-9 -9 q8 -6 16 0" class="glove-shine"/>';
-  fx.append(outline, skin, fist);
-
-  const WIND_UP = tension ? 160 : 0; // 탄력이 있으면 먼저 뒤로 당긴다
-  const OUT = 280;
-  const HOLD = 90;
-  const BACK = 200;
-  const total = WIND_UP + OUT + HOLD + BACK;
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  let hit = false;
-
-  return new Promise((resolve) => {
-    const t0 = performance.now();
-    const frame = (now) => {
-      const t = Math.max(0, now - t0);
-      let p;
-      if (WIND_UP && t < WIND_UP) p = -0.12 * (t / WIND_UP);
-      else if (t < WIND_UP + OUT) p = easeOutBack((t - WIND_UP) / OUT);
-      else if (t < WIND_UP + OUT + HOLD) p = 1;
-      else p = 1 - easeIn(Math.min(1, (t - WIND_UP - OUT - HOLD) / BACK));
-      if (!hit && t >= WIND_UP + OUT * 0.7) {
-        hit = true;
-        burst(to, tension ? '💫' : '💥');
-      }
-      const x = from.x + dx * p;
-      const y = from.y + dy * p;
-      const amp = Math.abs(1 - p) * 16 + 4 + tension * 2;
-      const d = armPath(from.x, from.y, x, y, 2.5 + tension, amp);
-      outline.setAttribute('d', d);
-      skin.setAttribute('d', d);
-      const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
-      fist.setAttribute('transform', `translate(${x} ${y}) rotate(${angle})`);
-      if (t < total) requestAnimationFrame(frame);
-      else { fx.innerHTML = ''; resolve(); }
-    };
-    requestAnimationFrame(frame);
-  });
-}
 
 // 고무팔이 아닌 선원은 몸으로 돌진한다.
 function lunge(el, from, to) {
@@ -374,8 +322,7 @@ async function animateAttack(action) {
   const to = centerOf(targetEl);
   const factionId = state.players[pi].factionId;
   if (CARDS[crew.defId].arm) {
-    attackerEl.classList.add('boing');
-    await stretchArm(from, to, crew.tension || 0);
+    await playRubberFx({ from, to, aEl: attackerEl, tEl: targetEl, tension: crew.tension || 0 });
   } else if (hasAttackFx(factionId)) {
     await playAttackFx(factionId, { from, to, aEl: attackerEl, tEl: targetEl });
   } else {
