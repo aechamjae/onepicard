@@ -24,7 +24,6 @@ export const KEYWORDS = {
   chill: { name: '냉기', desc: '이 선원과 싸워 피해를 입고 살아남은 적 선원은 얼어붙어 다음 턴에 공격할 수 없다.' },
   ripen: { name: '숙성', desc: '손패에 든 채로 내 턴을 맞을 때마다 비용이 1 줄어든다(최대 -2).' },
   devour: { name: '포식', desc: '낼 때 다른 아군 선원 중 가장 약한 하나를 잡아먹고 그 공격력·체력을 얻는다.' },
-  blood: { name: '피 냄새', desc: '체력이 깎인 적 선원을 공격하면 공격력 +2.' },
   odm: { name: '입체기동', desc: '적 선원의 체력이 이 선원의 공격력 이상이면, 그 선원을 공격할 때 공격력 +2.' },
   devotion: { name: '헌신', desc: '쓰러지면 공격력이 가장 높은 아군 선원의 공격력 +1.' },
   titan: { name: '거인화', desc: '처음 쓰러지면 카드에 적힌 거인이 되어 그 자리에서 다시 일어난다(쓰러진 것으로 치지 않는다).' },
@@ -816,37 +815,6 @@ export const CARDS = {
     effect: (g) => { g.buffAll(0, 1); g.draw(1); },
   },
 
-  // ── 상어 사냥단 ──
-  baitfish: {
-    name: '미끼 물고기', type: 'crew', cost: 1, atk: 1, hp: 1, art: '🐟',
-    text: '등장: 무작위 적 선원에게 1 피해.',
-    onPlay: (g) => { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 1); },
-  },
-  diver: { name: '작살 다이버', type: 'crew', cost: 2, atk: 2, hp: 4, art: '🤿', keywords: ['blood'], text: '' },
-  krill: { name: '크릴 방벽', type: 'crew', cost: 2, atk: 1, hp: 4, art: '🦐', keywords: ['guard'], text: '' },
-  surfer: { name: '파도 사냥꾼', type: 'crew', cost: 3, atk: 3, hp: 3, art: '🏄', keywords: ['charge', 'blood'], text: '' },
-  lobster: { name: '집게 바닷가재', type: 'crew', cost: 4, atk: 4, hp: 6, art: '🦞', keywords: ['thorns'], text: '' },
-  sharkboat: {
-    name: '상어잡이 보트', type: 'crew', cost: 5, atk: 4, hp: 6, art: '🚣', keywords: ['blood'],
-    text: '등장: 무작위 적 선원에게 1 피해.',
-    onPlay: (g) => { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 1); },
-  },
-  megalodon: { name: '메갈로돈', type: 'crew', cost: 7, atk: 5, hp: 6, art: '🌑', keywords: ['blood', 'double'], text: '심연에서 깨어난 고대 상어.' },
-  chum: {
-    name: '피바다', type: 'tactic', cost: 2, art: '🩸',
-    text: '모든 적 선원에게 1 피해. 카드 1장을 뽑는다.',
-    effect: (g) => { g.damageAllFoes(1); g.draw(1); },
-  },
-  lure: {
-    name: '미끼 던지기', type: 'tactic', cost: 1, art: '🎏', target: 'foeCrew',
-    text: '적 선원 하나에게 1 피해. 무작위 아군 선원 공격력 +1.',
-    effect: (g, t) => { g.damageCrew(t, 1); const a = g.randomAllyCrew(); if (a) g.buff(a.uid, 1, 0); },
-  },
-  sharknet: {
-    name: '상어 그물', type: 'tactic', cost: 2, art: '🪤', target: 'foeCrew',
-    text: '적 선원 하나에게 1 피해를 주고 다음 턴에 공격하지 못하게 묶는다.',
-    effect: (g, t) => { g.damageCrew(t, 1); g.freeze(t); },
-  },
 
   // ── 버섯 포자 군집 ──
   spore: {
@@ -909,12 +877,6 @@ export const CARDS = {
   // ── 아이스 에이지 (추가) ──
   iceseal: { name: '얼음 물범', type: 'crew', cost: 3, atk: 1, hp: 5, art: '🦭', keywords: ['guard', 'chill'], text: '' },
 
-  // ── 상어 사냥단 (추가) ──
-  squid: {
-    name: '먹물 오징어', type: 'crew', cost: 2, atk: 2, hp: 2, art: '🦑',
-    text: '등장: 무작위 적 선원 하나는 먹물에 가려 다음 턴에 공격할 수 없다.',
-    onPlay: (g) => { const t = g.randomFoeCrew(); if (t) g.freeze(t.uid); },
-  },
 
   // ── 버섯 포자 군집 (추가) ──
   mosssnail: { name: '이끼 달팽이', type: 'crew', cost: 2, atk: 2, hp: 4, art: '🐌', keywords: ['spore'], text: '' },
@@ -1210,17 +1172,6 @@ export const FACTIONS = {
       effect: (g) => g.summon('bunny', 1),
     },
     deck: { rabbit: 3, zebra: 2, goat: 2, panda: 2, giraffe: 2, leopard: 2, hippo: 2, rhino: 2, elephant: 1, tiger: 2, lionking: 1, safaribus: 2, freshgrass: 2, veteran: 1, gull: 1, cannon: 1, supply: 1, lookout: 1 },
-  },
-  shark: {
-    name: '상어 사냥단',
-    emblem: '🦈',
-    desc: '사냥형. 미끼로 적 선원에게 상처를 내고, 피 냄새를 맡은 사냥꾼이 달려들어 끝낸다.',
-    skill: {
-      name: '지느러미 출몰', art: '🔺', cost: 3, target: 'foeCrew',
-      text: '적 선원 하나에게 1 피해. 이미 다친 선원이면 2 피해.',
-      effect: (g, t) => { const c = g.foe.board.find((c) => c.uid === t); if (c) g.damageCrew(t, c.hp < c.maxHp ? 2 : 1); },
-    },
-    deck: { baitfish: 3, diver: 3, krill: 2, squid: 2, surfer: 3, lobster: 2, sharkboat: 2, megalodon: 1, chum: 2, lure: 3, sharknet: 2, veteran: 1, cannon: 1, rum: 1, supply: 1, carpenter: 1 },
   },
   mush: {
     name: '버섯 포자 군집',

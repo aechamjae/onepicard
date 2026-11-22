@@ -102,9 +102,6 @@ const TACTIC_AI = {
   compost: (me) => me.hand.some((c) => (CARDS[c.defId].keywords || []).includes('ripen') && (c.ripe || 0) < RULES.ripenLimit) || me.hand.length <= 4,
   safaribus: (me) => me.board.length <= RULES.boardLimit - 2,
   freshgrass: (me) => me.board.length >= 2,
-  chum: (me, foe) => foe.board.length >= 2,
-  lure: (me, foe) => strongest(foe.board, value),
-  sharknet: (me, foe) => strongest(foe.board.filter((c) => c.atk >= 3), (c) => c.atk),
   wither: (me, foe) => strongest(foe.board.filter((c) => dmg(3, c) >= c.hp), value) || strongest(foe.board, value),
   sporecloud: (me, foe) => foe.board.length <= RULES.boardLimit - 2,
   mushsoup: (me) => me.hull <= RULES.startHull - 3 || me.hand.length <= 5,
@@ -150,7 +147,6 @@ const SKILL_AI = {
   frost: (me, foe) => strongest(foe.board.filter((c) => c.frozen ? dmg(2, c) >= c.hp : c.atk >= 2), (c) => (c.frozen ? 10 : 0) + c.atk),
   fruit: () => true,
   zoo: (me) => hasRoom(me),
-  shark: (me, foe) => strongest(foe.board.filter((c) => dmg(c.hp < c.maxHp ? 2 : 1, c) >= c.hp), value) || strongest(foe.board, (c) => (c.hp < c.maxHp ? 10 : 0) + c.atk),
   mush: (me, foe) => foe.board.length < RULES.boardLimit,
   merchant: (me, foe) => strongest(foe.board.filter((c) => c.atk >= 3 && !c.frozen), (c) => c.atk),
 };
@@ -269,9 +265,7 @@ function chooseAttack(s) {
   const foe = s.players[1 - pi];
   // 내가 먼저 움직이니 같은 턴 수면 내가 이긴다. 상대가 더 빠르면 배 대신 공격 선원을 끊는다.
   const losingRace = raceTurns(foe, me) < raceTurns(me, foe);
-  // 피 냄새 선원은 다른 선원이 먼저 상처를 낸 뒤에 달려든다.
-  const blood = (c) => (hasKeyword(c, 'blood') ? 1 : 0);
-  const attackers = me.board.filter((c) => c.canAttack).sort((a, b) => blood(a) - blood(b) || b.atk - a.atk);
+  const attackers = me.board.filter((c) => c.canAttack).sort((a, b) => b.atk - a.atk);
   for (const a of attackers) {
     const power = a.atk + (a.tension || 0);
     const legal = attackTargets(s, pi, a);
@@ -289,7 +283,7 @@ function chooseAttack(s) {
       if (doomed(d)) continue;
       const slash = hasKeyword(a, 'slash');
       const back = slash ? 0 : d.atk + (hasKeyword(d, 'thorns') ? 1 : 0);
-      const bite = (hasKeyword(a, 'blood') && d.hp < d.maxHp ? 2 : 0) + (hasKeyword(a, 'odm') && d.hp >= a.atk ? 2 : 0);
+      const bite = (hasKeyword(a, 'odm') && d.hp >= a.atk ? 2 : 0);
       const kills = dmg(power + bite, d) >= d.hp;
       const survives = a.hp - dmg(back, a) > (a.burning ? RULES.burnDamage : 0);
       let score = 0;
@@ -421,7 +415,7 @@ function searchAttack(s) {
 
 // ── 순서 정하기 ──
 // 카드·스킬을 먼저 쓸지, 먼저 칠지. 때린 다음에야 쓸모가 커지는 카드가 많다.
-// (냉기로 얼린 뒤 고드름·서리 입김, 상처 낸 뒤 지느러미·피 냄새, 이미 친 선원에게 과부하, 친 선원을 잡아먹고 포식 돌격)
+// (냉기로 얼린 뒤 고드름·서리 입김, 이미 친 선원에게 과부하, 친 선원을 잡아먹고 포식 돌격)
 // 두 갈래를 판을 복제해 이번 턴 끝까지 해 보고, 끝난 판이 나은 쪽을 고른다.
 
 // 이번 턴 남은 행동을 규칙대로 끝까지 해 본 뒤 판 점수.

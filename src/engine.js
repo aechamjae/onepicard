@@ -638,10 +638,6 @@ export function applyAction(s, action) {
         power += 2;
         log(s, `🪢 입체기동! 큰 적의 목덜미를 노린다. (공격력 +2)`);
       }
-      if (hasKeyword(attacker, 'blood') && defender.hp < defender.maxHp) {
-        power += 2;
-        log(s, `🩸 피 냄새를 맡았다! (공격력 +2)`);
-      }
       const dealt = hurt(defender, power, true, !!attacker.revived); // 망령으로 되살아난 선원은 고무를 뚫고 지나간다
       const slash = hasKeyword(attacker, 'slash');
       const thorns = hasKeyword(defender, 'thorns') && !slash ? 1 : 0;

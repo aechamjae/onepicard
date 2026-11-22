@@ -273,7 +273,6 @@ main[hidden] { display: none; }
 .f-frost { --fa: #7cc8ee; --fb: #173a5a; --fc: #e6f7ff; --art-bg: radial-gradient(circle at 50% 30%, #ffffff, #a9dcf5 60%, #6aaed6); }
 .f-fruit { --fa: #e5483b; --fb: #4f7a1f; --fc: #ffe9a8; --art-bg: radial-gradient(circle at 50% 35%, #fff6e0, #f2a15a 60%, #8cc152); }
 .f-zoo { --fa: #e8a33d; --fb: #4a3418; --fc: #fff1c9; --art-bg: radial-gradient(circle at 50% 40%, #fff7dd, #d9b66f 60%, #8fae5c); }
-.f-shark { --fa: #4a7fa8; --fb: #10233a; --fc: #ff8a8a; --art-bg: radial-gradient(circle at 50% 35%, #dff1ff, #5b8fb8 60%, #8b1e2b); }
 .f-scout { --fa: #4f6b3a; --fb: #1c2616; --fc: #e9e1c8; --art-bg: radial-gradient(circle at 50% 35%, #f3eedc, #a8a37a 60%, #4f6b3a); }
 .f-alchemy { --fa: #2f5fa8; --fb: #141f38; --fc: #f2d27a; --art-bg: radial-gradient(circle at 50% 35%, #fff4d6, #c9a24a 60%, #2f5fa8); }
 .f-mush { --fa: #a0623f; --fb: #2e2418; --fc: #e9d8b5; --art-bg: radial-gradient(circle at 50% 35%, #f6ecd8, #b98a5c 60%, #5e7a3a); }

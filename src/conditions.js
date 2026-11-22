@@ -77,10 +77,6 @@ export function skillCondition(me, foe) {
     const n = list.filter((c) => c.frozen).length;
     return { tone: n ? 'ok' : 'info', short: n ? `언 적 ${n}: 2 피해` : '얼리기만', long: n ? `이미 얼어붙은 적 ${n}명 중 하나를 고르면 2 피해, 아니면 얼려요.` : '얼어붙은 적이 없어 고른 적을 얼려요.' };
   }
-  if (id === 'shark') {
-    const n = list.filter((c) => c.hp < c.maxHp).length;
-    return { tone: n ? 'ok' : 'info', short: n ? `다친 적 ${n}: 2 피해` : '1 피해', long: n ? `다친 적 ${n}명 중 하나를 고르면 2 피해, 아니면 1 피해.` : '다친 적이 없어 1 피해를 줘요.' };
-  }
   if (id === 'fruit') {
     const n = me.hand.filter((c) => kws(CARDS[c.defId]).includes('ripen') && (c.ripe || 0) < 2).length;
     return { tone: n ? 'ok' : 'info', short: n ? `익힐 카드 ${n}` : '대신 1장 뽑기', long: n ? `손패의 숙성 카드 ${n}장을 한 번 더 익혀요.` : '익힐 숙성 카드가 없어 대신 카드 1장을 뽑아요.' };
