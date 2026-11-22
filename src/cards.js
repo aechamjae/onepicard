@@ -229,7 +229,7 @@ export const CARDS = {
     onDeath: (g) => g.damageAllFoes(1),
   },
   phantom: {
-    name: '덱켄', type: 'crew', cost: 6, atk: 4, hp: 4, art: '☠️', keywords: ['ghost'],
+    name: '브룩', type: 'crew', cost: 6, atk: 4, hp: 4, art: '☠️', keywords: ['ghost'],
     text: '유령선을 이끄는 선장. 등장: 무작위 적 선원에게 1 피해.',
     onPlay: (g) => { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 1); },
   },
