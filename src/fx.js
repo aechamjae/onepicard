@@ -676,38 +676,18 @@ const FX = {
     const { A, B, dir, aEl, tEl } = c;
     move(aEl, [{ transform: 'none' }, { transform: 'translateY(-8px) scale(1.06)', offset: 0.4 }, { transform: 'none' }], 520);
     const S = { x: A.x + dir.x * 26, y: A.y + dir.y * 26 };
-    const flip = dir.x < 0 ? -1 : 1;
-    const T = clamp(c.dist * 1.2, 420, 580);
-    let n = 0;
+    // 파도 그림 대신 물줄기: 머리 쪽에 물방울과 거품을 몰아 뿌리며 대상까지 밀려간다.
+    const T = clamp(c.dist * 1.1, 380, 540);
     await phase(T, (x, t) => {
       const p = lerpPt(S, B, t);
-      const s = 18 + 34 * t;
-      x.translate(p.x, p.y + s * 0.2);
-      x.scale(flip, 1);
-      const gr = x.createLinearGradient(0, -s, 0, s * 0.6);
-      gr.addColorStop(0, 'rgba(232,251,255,.95)');
-      gr.addColorStop(0.3, 'rgba(95,199,232,.92)');
-      gr.addColorStop(1, 'rgba(15,74,107,.85)');
-      x.fillStyle = gr;
-      x.beginPath();
-      x.moveTo(-s * 1.4, s * 0.55);
-      x.bezierCurveTo(-s * 0.9, s * 0.2, -s * 0.4, -s * 0.9, s * 0.25, -s * 0.95);
-      x.bezierCurveTo(s * 0.8, -s * 0.95, s * 0.95, -s * 0.45, s * 0.6, -s * 0.2);
-      x.bezierCurveTo(s * 0.45, -s * 0.45, s * 0.15, -s * 0.4, s * 0.2, -s * 0.05);
-      x.bezierCurveTo(s * 0.3, s * 0.25, s * 0.7, s * 0.4, s * 0.9, s * 0.55);
-      x.closePath();
-      x.fill();
-      x.strokeStyle = 'rgba(255,255,255,.95)';
-      x.lineWidth = 3;
-      x.lineCap = 'round';
-      x.beginPath();
-      x.moveTo(-s * 0.6, -s * 0.35);
-      x.bezierCurveTo(-s * 0.2, -s * 0.9, s * 0.6, -s * 1.05, s * 0.62, -s * 0.25);
-      x.stroke();
-      if (n++ % 2 === 0) {
-        emit({ kind: 'dot', x: p.x - dir.x * s, y: p.y + s * 0.5, vx: -flip * rnd(20, 80), vy: rnd(-160, -40), gy: 600, life: [0.4, 0.7], size: [2, 4], color: '232,251,255' });
-        emit({ kind: 'bubble', x: p.x - dir.x * s * 0.5 + rnd(-10, 10), y: p.y + rnd(0, s * 0.4), vy: rnd(-40, -10), life: 0.6, size: [2, 5], color: '200,240,255' });
+      const s = 10 + 16 * t;
+      glowAt(p.x, p.y, s * 2.2, '90,180,230', 0.55, true);
+      glowAt(p.x, p.y, s * 1.1, '232,251,255', 0.7, true);
+      for (let i = 0; i < 3; i++) {
+        emit({ kind: 'dot', x: p.x + c.perp.x * rnd(-s, s), y: p.y + c.perp.y * rnd(-s, s), vx: dir.x * rnd(60, 160) + rnd(-40, 40), vy: dir.y * rnd(60, 160) + rnd(-140, -20), gy: 700, drag: 1, life: [0.35, 0.6], size: [2, 4.5], color: pick(['127,211,255', '232,251,255', '90,180,230']) });
       }
+      emit({ kind: 'smoke', x: p.x, y: p.y, vx: -dir.x * 40, vy: -dir.y * 40, drag: 2, life: 0.45, size: s * 0.6, size1: s * 1.6, color: '200,240,255', a0: 0.35 });
+      if (Math.random() < 0.5) emit({ kind: 'bubble', x: p.x + rnd(-8, 8), y: p.y + rnd(-8, 8), vy: rnd(-50, -15), life: 0.6, size: [2, 5], color: '200,240,255' });
     }, EASE.in);
     flash(B, 70, '170,230,255', 0.2);
     shockwave(B, 80, '200,240,255', 0.45);
