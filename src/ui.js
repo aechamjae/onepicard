@@ -323,7 +323,7 @@ async function animateAttack(action) {
   const factionId = state.players[pi].factionId;
   if (CARDS[crew.defId].arm) {
     await playRubberFx({ from, to, aEl: attackerEl, tEl: targetEl, tension: crew.tension || 0 });
-  } else if (hasAttackFx(factionId)) {
+  } else if (hasAttackFx(factionId) && !COMMON.has(crew.defId)) { // 공용 카드는 해적단 연출 없이 가볍게 돌진한다
     await playAttackFx(factionId, { from, to, aEl: attackerEl, tEl: targetEl });
   } else {
     await lunge(attackerEl, from, to);

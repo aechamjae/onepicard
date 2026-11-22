@@ -671,7 +671,7 @@ const FX = {
     await wait(170);
   },
 
-  // 심해 함대: 해일
+  // 심해 함대: 물대포
   async deep(c) {
     const { A, B, dir, aEl, tEl } = c;
     move(aEl, [{ transform: 'none' }, { transform: 'translateY(-8px) scale(1.06)', offset: 0.4 }, { transform: 'none' }], 520);
@@ -1050,116 +1050,168 @@ const FX = {
       emit({ kind: 'smoke', x: M.x, y: M.y, vx: Math.cos(c.ang) * D * 2.2, vy: Math.sin(c.ang) * D * 2.2, drag: 2, life: 0.55, size: 8, size1: 30, color: '210,240,255', a0: 0.35 });
       if (Math.random() < 0.5) emit({ kind: 'star', x: M.x, y: M.y, vx: Math.cos(c.ang + rnd(-0.25, 0.25)) * D * 2.4, vy: Math.sin(c.ang + rnd(-0.25, 0.25)) * D * 2.4, drag: 2, life: 0.5, size: 4, size1: 1, color: '255,255,255', vr: 6 });
     });
-    // 얼음 결정: 카드를 감싸는 들쭉날쭉한 외곽선을 중심에서 삼각형 면으로 나눈다.
+    // 얼음: 처음에는 금 없이 매끈한 덩어리가 서리 결을 따라 아래부터 차오르고,
+    // 다 얼면 맞은 쪽에서 금이 퍼져 나가다가 그 금을 따라 조각나 깨진다.
     const r = tEl ? pageRect(tEl) : { left: B.x - 40, top: B.y - 55, width: 80, height: 110, bottom: B.y + 55 };
-    const cx = B.x + rnd(-6, 6);
-    const cy = B.y - r.height * 0.08;
-    const rx = r.width / 2 + 12;
-    const ry = r.height / 2 + 12;
-    const NV = 14;
+    const rx = r.width / 2 + 10;
+    const ry = r.height / 2 + 10;
+    const NV = 22;
     const verts = Array.from({ length: NV }, (_, i) => {
-      const an = (i / NV) * TAU + rnd(-0.12, 0.12);
-      const k = 1 / Math.max(Math.abs(Math.cos(an)), Math.abs(Math.sin(an))) ** 0.6; // 타원을 둥근 사각형 쪽으로
-      const j = rnd(0.88, 1.12);
-      return { x: B.x + Math.cos(an) * rx * k * j * 0.95, y: B.y + Math.sin(an) * ry * k * j * 0.95 };
+      const an = (i / NV) * TAU;
+      const k = 1 / Math.max(Math.abs(Math.cos(an)), Math.abs(Math.sin(an))) ** 0.75; // 둥근 사각형
+      const j = rnd(0.96, 1.05);
+      return { x: B.x + Math.cos(an) * rx * k * j * 0.93, y: B.y + Math.sin(an) * ry * k * j * 0.93 };
     });
-    const facets = verts.map((v, i) => {
-      const w = verts[(i + 1) % NV];
-      const mx = (v.x + w.x) / 2;
-      const my = (v.y + w.y) / 2;
-      const lit = clamp(0.5 - ((mx - cx) / rx) * 0.25 - ((my - cy) / ry) * 0.35 + rnd(-0.12, 0.12), 0, 1); // 왼쪽 위가 밝다
-      return { pts: [{ x: cx, y: cy }, v, w], lit };
+    const outline = (x) => {
+      x.beginPath();
+      // 꼭짓점 사이를 곡선으로 이어 모서리를 부드럽게
+      for (let i = 0; i <= NV; i++) {
+        const p = verts[i % NV];
+        const q = verts[(i + 1) % NV];
+        const m = { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 };
+        if (i === 0) x.moveTo(m.x, m.y);
+        else x.quadraticCurveTo(p.x, p.y, m.x, m.y);
+      }
+      x.closePath();
+    };
+    // 서리 결: 아래와 가장자리에 몰린 고사리 모양 가지
+    const ferns = Array.from({ length: 14 }, () => {
+      const v = verts[Math.floor(rnd(0, NV))];
+      const an = Math.atan2(B.y - v.y, B.x - v.x) + rnd(-0.5, 0.5);
+      const len = rnd(10, 26);
+      return { x: v.x, y: v.y, an, len, side: Array.from({ length: 4 }, (_, k) => ({ t: (k + 1) / 5, l: rnd(3, 7) })) };
     });
-    const spikes = verts.filter((_, i) => i % 2 === 0).map((v) => ({ x: v.x, y: v.y, an: Math.atan2(v.y - cy, v.x - cx) + rnd(-0.3, 0.3), len: rnd(8, 18) }));
-    const cracks = Array.from({ length: 5 }, () => {
-      let p = { x: cx + rnd(-6, 6), y: cy + rnd(-6, 6) };
-      const an0 = rnd(0, TAU);
+    const specks = Array.from({ length: 36 }, () => ({ x: B.x + rnd(-rx, rx) * 0.9, y: B.y + rnd(-ry, ry) * 0.9, s: rnd(0.6, 1.8), a: rnd(0.3, 0.8) }));
+    // 금은 공격이 들어온 쪽 가장자리에서 시작한다
+    const O = { x: B.x - dir.x * rx * 0.55, y: B.y - dir.y * ry * 0.55 };
+    const cracks = Array.from({ length: 7 }, (_, i) => {
+      const an0 = c.ang + ((i - 3) / 3) * 1.3 + rnd(-0.15, 0.15);
+      let p = { ...O };
       const seg = [p];
-      for (let k = 0; k < 4; k++) {
-        const an = an0 + rnd(-0.5, 0.5);
-        p = { x: p.x + Math.cos(an) * rx * 0.28, y: p.y + Math.sin(an) * ry * 0.28 };
+      for (let k = 0; k < 5; k++) {
+        const an = an0 + rnd(-0.45, 0.45);
+        p = { x: p.x + Math.cos(an) * rx * 0.32, y: p.y + Math.sin(an) * ry * 0.3 };
         seg.push(p);
       }
-      return seg;
+      const branch = seg.length > 2 ? { from: seg[2], an: an0 + (Math.random() < 0.5 ? 0.8 : -0.8), len: rx * 0.35 } : null;
+      return { seg, branch };
     });
-    const drawFacet = (x, f, a, edge) => {
-      x.beginPath();
-      f.pts.forEach((p, i) => (i ? x.lineTo(p.x, p.y) : x.moveTo(p.x, p.y)));
-      x.closePath();
-      const L = 200 + f.lit * 55;
-      x.fillStyle = `rgba(${Math.round(L * 0.82)},${Math.round(L * 0.95)},255,${(0.42 + f.lit * 0.3) * a})`;
-      x.fill();
-      x.strokeStyle = `rgba(255,255,255,${0.35 * a * edge})`;
-      x.lineWidth = 1;
-      x.stroke();
-    };
     hitReact(tEl, dir, 4, { flashColor: '210,240,255' });
     spray({ x: B.x, y: r.bottom }, 10, { kind: 'smoke', angle: -Math.PI / 2, spread: 1.4, speed: [20, 60], life: [0.6, 0.9], size: 10, size1: 30, color: '220,245,255', a0: 0.4 });
-    const GROW = 240;
-    const HOLD = 300;
-    const CRACK = 140;
+    const GROW = 300;
+    const HOLD = 220;
+    const CRACK = 200;
     await phase(GROW + HOLD + CRACK, (x, _, raw) => {
       const t = raw * (GROW + HOLD + CRACK);
       const grow = clamp(t / GROW, 0, 1);
       const eg = EASE.out3(grow);
-      const top = r.bottom + 14 - (r.height + 50) * eg;
+      const level = r.bottom + 14 - (r.height + 40) * eg; // 얼음 높이
+      glowAt(B.x, B.y, Math.max(rx, ry) * 1.3, '150,215,255', 0.3 * eg, true);
       x.save();
-      x.beginPath();
-      x.rect(B.x - rx * 2, top, rx * 4, r.height + 80); // 아래부터 얼어 올라간다
+      outline(x);
       x.clip();
-      glowAt(B.x, B.y, Math.max(rx, ry) * 1.25, '150,215,255', 0.35, true);
-      for (const f of facets) drawFacet(x, f, 1, grow);
+      // 차오르는 경계는 살짝 물결치게
       x.beginPath();
-      verts.forEach((p, i) => (i ? x.lineTo(p.x, p.y) : x.moveTo(p.x, p.y)));
-      x.closePath();
-      x.strokeStyle = 'rgba(120,200,255,.5)';
-      x.lineWidth = 5;
-      x.globalCompositeOperation = 'lighter';
-      x.stroke();
-      x.globalCompositeOperation = 'source-over';
-      x.strokeStyle = 'rgba(255,255,255,.95)';
-      x.lineWidth = 2;
-      x.stroke();
-      for (const s of spikes) {
-        const len = s.len * eg;
-        x.beginPath();
-        x.moveTo(s.x + Math.cos(s.an + 1.4) * 4, s.y + Math.sin(s.an + 1.4) * 4);
-        x.lineTo(s.x + Math.cos(s.an) * len, s.y + Math.sin(s.an) * len);
-        x.lineTo(s.x + Math.cos(s.an - 1.4) * 4, s.y + Math.sin(s.an - 1.4) * 4);
-        x.closePath();
-        x.fillStyle = 'rgba(225,245,255,.9)';
-        x.fill();
+      x.moveTo(B.x - rx * 2, r.bottom + 40);
+      for (let i = 0; i <= 12; i++) {
+        const px = B.x - rx * 1.2 + (rx * 2.4 * i) / 12;
+        x.lineTo(px, level + Math.sin(i * 1.7 + t / 60) * 4 * (1 - eg));
       }
-      x.strokeStyle = 'rgba(255,255,255,.8)';
-      x.lineWidth = 2.5;
+      x.lineTo(B.x + rx * 2, r.bottom + 40);
+      x.closePath();
+      x.clip();
+      const gr = x.createLinearGradient(B.x - rx, r.top, B.x + rx, r.bottom);
+      gr.addColorStop(0, 'rgba(235,250,255,.72)');
+      gr.addColorStop(0.45, 'rgba(160,215,245,.5)');
+      gr.addColorStop(1, 'rgba(110,180,230,.62)');
+      x.fillStyle = gr;
+      x.fillRect(B.x - rx * 1.5, r.top - 30, rx * 3, r.height + 80);
+      // 안쪽 빛 번짐과 반사
+      glowAt(B.x - rx * 0.35, B.y - ry * 0.45, rx * 0.9, '255,255,255', 0.35, true);
+      x.strokeStyle = 'rgba(255,255,255,.55)';
+      x.lineWidth = 6;
       x.lineCap = 'round';
-      x.beginPath();
-      x.moveTo(cx - rx * 0.7, cy - ry * 0.3); x.lineTo(cx - rx * 0.35, cy - ry * 0.72);
-      x.moveTo(cx - rx * 0.72, cy - ry * 0.05); x.lineTo(cx - rx * 0.55, cy - ry * 0.25);
-      x.stroke();
-      x.restore();
-      if (grow >= 1 && Math.random() < 0.25) emit({ kind: 'star', x: cx + rnd(-rx, rx) * 0.8, y: cy + rnd(-ry, ry) * 0.8, life: 0.35, size: rnd(4, 8), size1: 0.5, color: '255,255,255', add: true, rot: 0 });
+      x.beginPath(); x.moveTo(B.x - rx * 0.75, B.y - ry * 0.1); x.quadraticCurveTo(B.x - rx * 0.7, B.y - ry * 0.7, B.x - rx * 0.2, B.y - ry * 0.82); x.stroke();
+      x.strokeStyle = 'rgba(255,255,255,.3)';
+      x.lineWidth = 3;
+      x.beginPath(); x.moveTo(B.x + rx * 0.6, B.y + ry * 0.3); x.lineTo(B.x + rx * 0.7, B.y + ry * 0.65); x.stroke();
+      // 서리 결
+      x.strokeStyle = 'rgba(255,255,255,.75)';
+      x.lineWidth = 1.2;
+      for (const f of ferns) {
+        const L = f.len * eg;
+        const ex = f.x + Math.cos(f.an) * L;
+        const ey = f.y + Math.sin(f.an) * L;
+        x.beginPath(); x.moveTo(f.x, f.y); x.lineTo(ex, ey);
+        for (const sd of f.side) {
+          const px = f.x + Math.cos(f.an) * L * sd.t;
+          const py = f.y + Math.sin(f.an) * L * sd.t;
+          for (const sg of [-1, 1]) {
+            x.moveTo(px, py);
+            x.lineTo(px + Math.cos(f.an + sg * 0.8) * sd.l * eg, py + Math.sin(f.an + sg * 0.8) * sd.l * eg);
+          }
+        }
+        x.stroke();
+      }
+      for (const sp of specks) {
+        x.fillStyle = `rgba(255,255,255,${sp.a})`;
+        x.beginPath(); x.arc(sp.x, sp.y, sp.s, 0, TAU); x.fill();
+      }
+      // 금: 다 얼고 나서 맞은 쪽에서 퍼져 나간다
       if (t > GROW + HOLD) {
-        const k = (t - GROW - HOLD) / CRACK;
-        x.strokeStyle = 'rgba(255,255,255,.95)';
-        x.lineWidth = 1.6;
-        for (const seg of cracks) {
-          const n = Math.max(1, Math.floor(k * (seg.length - 1)) + 1);
-          x.beginPath();
-          seg.slice(0, n + 1).forEach((p, i) => (i ? x.lineTo(p.x, p.y) : x.moveTo(p.x, p.y)));
-          x.stroke();
+        const k = EASE.out((t - GROW - HOLD) / CRACK);
+        for (const { seg, branch } of cracks) {
+          const total = seg.length - 1;
+          const upto = k * total;
+          for (const [lw, col] of [[3, 'rgba(120,190,240,.6)'], [1.3, 'rgba(255,255,255,.95)']]) {
+            x.lineWidth = lw;
+            x.strokeStyle = col;
+            x.beginPath();
+            x.moveTo(seg[0].x, seg[0].y);
+            for (let i = 1; i <= total; i++) {
+              if (i <= upto) x.lineTo(seg[i].x, seg[i].y);
+              else { const f = upto - (i - 1); if (f > 0) x.lineTo(lerp(seg[i - 1].x, seg[i].x, f), lerp(seg[i - 1].y, seg[i].y, f)); break; }
+            }
+            if (branch && k > 0.5) {
+              const bl = branch.len * (k - 0.5) * 2;
+              x.moveTo(branch.from.x, branch.from.y);
+              x.lineTo(branch.from.x + Math.cos(branch.an) * bl, branch.from.y + Math.sin(branch.an) * bl);
+            }
+            x.stroke();
+          }
         }
       }
+      x.restore();
+      // 테두리: 다 언 부분만
+      x.save();
+      x.beginPath();
+      x.rect(B.x - rx * 2, level - 6, rx * 4, r.height + 80);
+      x.clip();
+      outline(x);
+      x.globalCompositeOperation = 'lighter';
+      x.strokeStyle = 'rgba(120,200,255,.45)';
+      x.lineWidth = 6;
+      x.stroke();
+      x.globalCompositeOperation = 'source-over';
+      x.strokeStyle = 'rgba(255,255,255,.9)';
+      x.lineWidth = 1.8;
+      x.stroke();
+      x.restore();
+      if (grow >= 1 && t < GROW + HOLD && Math.random() < 0.2) emit({ kind: 'star', x: B.x + rnd(-rx, rx) * 0.8, y: B.y + rnd(-ry, ry) * 0.8, life: 0.35, size: rnd(4, 7), size1: 0.5, color: '255,255,255', add: true, rot: 0 });
     });
-    // 산산조각: 얼음 면이 그대로 조각이 되어 튄다
-    flash({ x: cx, y: cy }, 110, '220,245,255', 0.22);
-    shockwave({ x: cx, y: cy }, 90, '220,245,255', 0.4);
+    // 산산조각: 금이 시작된 점에서 부채꼴 조각으로 나뉘어 튄다
+    flash(O, 110, '220,245,255', 0.22);
+    shockwave(B, 90, '220,245,255', 0.4);
+    const facets = verts.map((v, i) => {
+      const w = verts[(i + 1) % NV];
+      return { pts: [{ x: B.x + rnd(-6, 6), y: B.y + rnd(-6, 6) }, v, w], lit: clamp(0.5 - ((v.x - B.x) / rx) * 0.25 - ((v.y - B.y) / ry) * 0.3, 0, 1) };
+    });
     const pieces = facets.map((f) => {
       const gx = (f.pts[0].x + f.pts[1].x + f.pts[2].x) / 3;
       const gy = (f.pts[0].y + f.pts[1].y + f.pts[2].y) / 3;
-      const an = Math.atan2(gy - cy, gx - cx);
-      const sp = rnd(160, 360);
-      return { f, gx, gy, vx: Math.cos(an) * sp + dir.x * 60, vy: Math.sin(an) * sp - 160, rot: 0, vr: rnd(-9, 9), rel: f.pts.map((p) => ({ x: p.x - gx, y: p.y - gy })) };
+      const an = Math.atan2(gy - B.y, gx - B.x);
+      const sp = rnd(150, 340);
+      return { f, gx, gy, vx: Math.cos(an) * sp + dir.x * 90, vy: Math.sin(an) * sp - 150, rot: 0, vr: rnd(-9, 9), rel: f.pts.map((p) => ({ x: p.x - gx, y: p.y - gy })) };
     });
     phase(700, (x, t, raw, dt) => {
       for (const p of pieces) {
@@ -1169,14 +1221,25 @@ const FX = {
         p.rot += p.vr * dt;
         const cs = Math.cos(p.rot);
         const sn = Math.sin(p.rot);
-        const sc = 1 - raw * 0.35;
-        const pts = p.rel.map((q) => ({ x: p.gx + (q.x * cs - q.y * sn) * sc, y: p.gy + (q.x * sn + q.y * cs) * sc }));
-        drawFacet(x, { pts, lit: p.f.lit }, 1 - raw, 1);
+        const sc = 1 - raw * 0.4;
+        x.beginPath();
+        p.rel.forEach((q, i) => {
+          const px = p.gx + (q.x * cs - q.y * sn) * sc;
+          const py = p.gy + (q.x * sn + q.y * cs) * sc;
+          if (i) x.lineTo(px, py); else x.moveTo(px, py);
+        });
+        x.closePath();
+        const L = 205 + p.f.lit * 50;
+        x.fillStyle = `rgba(${Math.round(L * 0.82)},${Math.round(L * 0.95)},255,${(0.5 + p.f.lit * 0.3) * (1 - raw)})`;
+        x.fill();
+        x.strokeStyle = `rgba(255,255,255,${0.8 * (1 - raw)})`;
+        x.lineWidth = 1;
+        x.stroke();
       }
     });
-    spray({ x: cx, y: cy }, 16, { kind: 'shard', radius: 20, speed: [180, 420], drag: 1, gy: 900, life: [0.5, 0.8], size: [3, 7], color: ['200,236,255', '235,250,255'] });
-    spray({ x: cx, y: cy }, 12, { kind: 'star', speed: [60, 220], drag: 2.5, life: [0.4, 0.7], size: [3, 7], size1: 1, color: '255,255,255', vr: 6 });
-    spray({ x: cx, y: cy }, 8, { kind: 'smoke', speed: [40, 120], drag: 2, life: [0.6, 0.9], size: 12, size1: 34, color: '225,245,255', a0: 0.45 });
+    spray(B, 16, { kind: 'shard', radius: 20, speed: [180, 420], drag: 1, gy: 900, life: [0.5, 0.8], size: [3, 7], color: ['200,236,255', '235,250,255'] });
+    spray(B, 12, { kind: 'star', speed: [60, 220], drag: 2.5, life: [0.4, 0.7], size: [3, 7], size1: 1, color: '255,255,255', vr: 6 });
+    spray(B, 8, { kind: 'smoke', speed: [40, 120], drag: 2, life: [0.6, 0.9], size: 12, size1: 34, color: '225,245,255', a0: 0.45 });
     hitReact(tEl, dir, 12, { flashColor: '220,245,255' });
     overlay(tEl, '120,200,255', 700, { a0: 0.4 });
     screenShake(5);
