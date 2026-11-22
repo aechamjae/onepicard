@@ -199,7 +199,7 @@ export const CARDS = {
   },
   rubberwall: { name: '고무벽 문지기', type: 'crew', cost: 4, atk: 2, hp: 6, art: '🧱', keywords: ['guard', 'elastic'], text: '' },
   pinball: {
-    name: '핀볼 곡예사', type: 'crew', cost: 3, atk: 2, hp: 1, art: '🤹', arm: true, keywords: ['reach'],
+    name: '핀볼 곡예사', type: 'crew', cost: 3, atk: 2, hp: 2, art: '🤹', arm: true, keywords: ['reach'],
     text: '등장: 무작위 적 선원에게 1 피해를 두 번.',
     onPlay: (g) => { for (let i = 0; i < 2; i++) { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 1); } },
   },
@@ -407,7 +407,7 @@ export const CARDS = {
   lighthouse: { name: '등대지기', type: 'crew', cost: 4, atk: 2, hp: 6, art: '🔦', keywords: ['guard'], text: '' },
   shortcut: { name: '지름길 항해사', type: 'crew', cost: 4, atk: 3, hp: 5, art: '🛶', keywords: ['sneak', 'tailwind'], text: '' },
   guildmaster: {
-    name: '하레다스', type: 'crew', cost: 6, atk: 4, hp: 6, art: '🧙‍♂️', keywords: ['tailwind'],
+    name: '하레다스', type: 'crew', cost: 6, atk: 4, hp: 5, art: '🧙‍♂️', keywords: ['tailwind'],
     text: '하늘섬 웨더리아의 기상 학자. 등장: 카드 2장을 뽑는다.',
     onPlay: (g) => g.draw(2),
   },
@@ -833,8 +833,8 @@ export const CARDS = {
   },
   troll: {
     name: '이끼 트롤', type: 'crew', cost: 5, atk: 5, hp: 5, art: '🧌', keywords: ['spore'],
-    text: '내 턴이 끝날 때 체력 1 회복.',
-    onTurnEnd: (g, self) => { self.hp = Math.min(self.maxHp, self.hp + 1); },
+    text: '내 턴이 끝날 때 체력 2 회복.',
+    onTurnEnd: (g, self) => { self.hp = Math.min(self.maxHp, self.hp + 2); },
   },
   mykos: {
     name: '미코스', type: 'crew', cost: 6, atk: 5, hp: 7, art: '🌲',
