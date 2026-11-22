@@ -9,7 +9,9 @@ const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const lerp = (a, b, t) => a + (b - a) * t;
 const lerpPt = (P, Q, t) => ({ x: lerp(P.x, Q.x, t), y: lerp(P.y, Q.y, t) });
-const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+// 연출 속도 배율. 해적단마다 원래 길이가 달라서(0.55~1.5초) 0.8초 쪽으로 당겨 비슷하게 맞춘다.
+let TIME = 1;
+const wait = (ms) => new Promise((r) => setTimeout(r, ms * TIME));
 const EASE = {
   linear: (t) => t,
   in: (t) => t * t,
@@ -99,7 +101,7 @@ function loop(now) {
 function phase(ms, fn, ease = EASE.linear, layer = 1) {
   ensure();
   return new Promise((done) => {
-    drawers.push({ t0: performance.now(), dur: ms, fn, ease, layer, done });
+    drawers.push({ t0: performance.now(), dur: ms * TIME, fn, ease, layer, done });
     kick();
   });
 }
@@ -432,7 +434,7 @@ function overlay(el, color, ms, { a0 = 0.8, add = true } = {}) {
 let live = [];
 function move(el, frames, ms, easing = 'ease-out') {
   if (!el) return Promise.resolve();
-  const a = el.animate(frames, { duration: ms, easing, fill: 'both' });
+  const a = el.animate(frames, { duration: ms * TIME, easing, fill: 'both' });
   live.push(a);
   return a.finished.catch(() => {});
 }
@@ -1283,7 +1285,7 @@ const FX = {
     const ar = pageRect(aEl);
     const crouch = `translate(${-dir.x * 14}px,${-dir.y * 14}px) scale(1.04,.92)`;
     move(aEl, [{ transform: 'none' }, { transform: crouch }], 200);
-    for (let i = 0; i < 2; i++) setTimeout(() => spray({ x: A.x - dir.x * 10, y: ar.bottom - 4 }, 5, { kind: 'smoke', angle: Math.atan2(-dir.y, -dir.x), spread: 0.8, speed: [60, 160], drag: 3, life: [0.4, 0.7], size: 7, size1: 20, color: '205,170,120', a0: 0.6 }), i * 100);
+    for (let i = 0; i < 2; i++) setTimeout(() => spray({ x: A.x - dir.x * 10, y: ar.bottom - 4 }, 5, { kind: 'smoke', angle: Math.atan2(-dir.y, -dir.x), spread: 0.8, speed: [60, 160], drag: 3, life: [0.4, 0.7], size: 7, size1: 20, color: '205,170,120', a0: 0.6 }), i * 100 * TIME);
     await wait(210);
     const reach = c.dist * 0.74;
     const CH = 240;
@@ -1513,6 +1515,10 @@ export function hasAttackFx(factionId) {
   return Object.hasOwn(FX, factionId);
 }
 
+// 배율 1에서 잰 연출 길이(ms). 배율 = (800 / 길이)^0.75 → 길이 차이가 크게 줄되 개성은 조금 남는다.
+const NATURAL = { red: 680, deep: 550, ghost: 730, flame: 570, monkey: 710, clock: 900, swords: 625, guild: 690, surgeon: 610, merchant: 800, frost: 1470, fruit: 1060, zoo: 840, mush: 1050, scout: 900, alchemy: 1010, rubber: 800 };
+const timeScale = (id) => (800 / (NATURAL[id] || 800)) ** 0.75;
+
 function setup(from, to, aEl, tEl, sh) {
   ensure();
   shakeEl = sh === undefined ? document.getElementById('game') : sh;
@@ -1525,7 +1531,8 @@ function setup(from, to, aEl, tEl, sh) {
   const dir = { x: dx / dist, y: dy / dist };
   return { A, B, dir, perp: { x: -dir.y, y: dir.x }, dist, ang: Math.atan2(dy, dx), aEl, tEl };
 }
-async function run(aEl, fn) {
+async function run(aEl, scale, fn) {
+  TIME = scale;
   const old = aEl.style.transition;
   aEl.style.transition = 'none';
   aEl.style.zIndex = '20';
@@ -1537,17 +1544,18 @@ async function run(aEl, fn) {
     live = [];
     aEl.style.transition = old;
     aEl.style.zIndex = '';
+    TIME = 1;
   }
 }
 
 // 해적단 공격 연출. from/to는 화면(client) 좌표. 맞는 순간과 짧은 여운이 끝나면 resolve된다.
 export function playAttackFx(factionId, { from, to, aEl, tEl, shakeEl: sh }) {
   const c = setup(from, to, aEl, tEl, sh);
-  return run(aEl, () => FX[factionId](c));
+  return run(aEl, timeScale(factionId), () => FX[factionId](c));
 }
 
 // 고무팔 해적단: 고무팔이 쭉 늘어나 친다. tension(탄력)이 클수록 더 세게 감았다가 터진다.
 export function playRubberFx({ from, to, aEl, tEl, tension = 0, shakeEl: sh }) {
   const c = setup(from, to, aEl, tEl, sh);
-  return run(aEl, () => rubber(c, tension));
+  return run(aEl, timeScale('rubber'), () => rubber(c, tension));
 }
