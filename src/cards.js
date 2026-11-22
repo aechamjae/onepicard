@@ -704,7 +704,7 @@ export const CARDS = {
       if (list.length) g.freeze(list[0].uid);
     },
   },
-  polar: { name: '털매머드 갑판장', type: 'crew', cost: 3, atk: 2, hp: 4, art: '🦣', keywords: ['chill'], text: '' },
+  polar: { name: '털매머드 갑판장', type: 'crew', cost: 3, atk: 2, hp: 3, art: '🦣', keywords: ['chill'], text: '' },
   iceram: { name: '빙산 충각선', type: 'crew', cost: 5, atk: 4, hp: 4, art: '🏔️', keywords: ['charge', 'chill'], text: '' },
   frostqueen: {
     name: '쿠잔', type: 'crew', cost: 7, atk: 5, hp: 6, art: '🚲', keywords: ['chill'],
