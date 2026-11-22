@@ -5,6 +5,7 @@ import { aiNextAction } from './ai.js';
 import { DIFFICULTIES } from './difficulty.js';
 import { openStats, recordResult } from './stats.js';
 import { cardCondition, skillCondition } from './conditions.js';
+import { playAttackFx, hasAttackFx } from './fx.js';
 
 // 화면 아래쪽(나)과 위쪽(상대)에 놓일 플레이어. 친구 모드에서는 턴마다 뒤바뀐다.
 let ME = 0;
@@ -371,9 +372,12 @@ async function animateAttack(action) {
   if (!crew || !attackerEl || !targetEl) return;
   const from = centerOf(attackerEl);
   const to = centerOf(targetEl);
+  const factionId = state.players[pi].factionId;
   if (CARDS[crew.defId].arm) {
     attackerEl.classList.add('boing');
     await stretchArm(from, to, crew.tension || 0);
+  } else if (hasAttackFx(factionId)) {
+    await playAttackFx(factionId, { from, to, aEl: attackerEl, tEl: targetEl });
   } else {
     await lunge(attackerEl, from, to);
   }

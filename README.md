@@ -89,6 +89,7 @@ index.html, style.css   화면
 src/cards.js            카드·진영 데이터 (카드 추가는 여기서)
 src/engine.js           규칙 엔진 (화면과 독립)
 src/ai.js               AI 상대
+src/fx.js               해적단별 공격 연출 (캔버스 입자)
 src/stats.js            📊 승률·상성 화면
 src/matchups.js         AI 상성표 데이터 (tools/matchups.js --write 로 생성)
 tools/simulate.js       AI끼리 대전시켜 밸런스 확인
