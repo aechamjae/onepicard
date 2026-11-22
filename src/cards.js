@@ -875,7 +875,7 @@ export const CARDS = {
   kiwi: { name: '키위 자객', type: 'crew', cost: 2, atk: 2, hp: 1, art: '🥝', keywords: ['stealth'], text: '' },
 
   // ── 아이스 에이지 (추가) ──
-  iceseal: { name: '얼음 물범', type: 'crew', cost: 3, atk: 1, hp: 6, art: '🦭', keywords: ['guard', 'chill'], text: '' },
+  iceseal: { name: '얼음 물범', type: 'crew', cost: 3, atk: 2, hp: 5, art: '🦭', keywords: ['guard', 'chill'], text: '' },
 
 
   // ── 버섯 포자 군집 (추가) ──
