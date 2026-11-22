@@ -21,7 +21,7 @@ export const KEYWORDS = {
   tailwind: { name: '순풍', desc: '이 카드를 내면 이번 턴에 다음으로 내는 카드의 비용이 1 줄어든다. 순풍 카드를 이어서 내면 할인이 쌓인다(최대 -2).' },
   submerge: { name: '잠항', desc: '낸 뒤 내 다음 턴이 올 때까지 바닷속에 숨어, 공격이나 대상 지정 카드로 고를 수 없다.' },
   trade: { name: '거래', desc: '낼 때 보물이 있으면 1개를 자동으로 써서 카드에 적힌 추가 효과를 낸다.' },
-  chill: { name: '냉기', desc: '이 선원과 싸워 피해를 입고 살아남은 적 선원은 얼어붙어 다음 턴에 공격할 수 없다.' },
+  chill: { name: '냉기', desc: '공격해서 피해를 준 적 선원이 살아남으면 얼어붙어 다음 턴에 공격할 수 없다. 반격할 때는 얼리지 않는다.' },
   ripen: { name: '숙성', desc: '손패에 든 채로 내 턴을 맞을 때마다 비용이 1 줄어든다(최대 -2).' },
   devour: { name: '포식', desc: '낼 때 다른 아군 선원 중 가장 약한 하나를 잡아먹고 그 공격력·체력을 얻는다.' },
   odm: { name: '입체기동', desc: '적 선원의 체력이 이 선원의 공격력 이상이면, 그 선원을 공격할 때 공격력 +2.' },
@@ -695,7 +695,7 @@ export const CARDS = {
   // ── 아이스 에이지 ── (얼어붙은 적 = 다음 턴 공격 불가 상태인 선원)
   frostpup: { name: '빙판 견습생', type: 'crew', cost: 2, atk: 2, hp: 4, art: '🐧', keywords: ['chill'], text: '' },
   icepick: { name: '얼음송곳 작살꾼', type: 'crew', cost: 3, atk: 3, hp: 5, art: '⛏️', keywords: ['chill'], text: '' },
-  snowguard: { name: '눈벽 파수꾼', type: 'crew', cost: 3, atk: 1, hp: 5, art: '⛄', keywords: ['guard', 'chill'], text: '' },
+  snowguard: { name: '눈벽 파수꾼', type: 'crew', cost: 3, atk: 2, hp: 5, art: '⛄', keywords: ['guard', 'chill'], text: '' },
   frostmage: {
     name: '서리 무당', type: 'crew', cost: 3, atk: 1, hp: 6, art: '🥶',
     text: '등장: 공격력이 가장 높은 적 선원 하나를 얼린다.',
@@ -704,7 +704,7 @@ export const CARDS = {
       if (list.length) g.freeze(list[0].uid);
     },
   },
-  polar: { name: '털매머드 갑판장', type: 'crew', cost: 3, atk: 1, hp: 4, art: '🦣', keywords: ['chill'], text: '' },
+  polar: { name: '털매머드 갑판장', type: 'crew', cost: 3, atk: 2, hp: 4, art: '🦣', keywords: ['chill'], text: '' },
   iceram: { name: '빙산 충각선', type: 'crew', cost: 5, atk: 4, hp: 4, art: '🏔️', keywords: ['charge', 'chill'], text: '' },
   frostqueen: {
     name: '쿠잔', type: 'crew', cost: 7, atk: 5, hp: 6, art: '🚲', keywords: ['chill'],
@@ -875,7 +875,7 @@ export const CARDS = {
   kiwi: { name: '키위 자객', type: 'crew', cost: 2, atk: 2, hp: 1, art: '🥝', keywords: ['stealth'], text: '' },
 
   // ── 아이스 에이지 (추가) ──
-  iceseal: { name: '얼음 물범', type: 'crew', cost: 3, atk: 1, hp: 5, art: '🦭', keywords: ['guard', 'chill'], text: '' },
+  iceseal: { name: '얼음 물범', type: 'crew', cost: 3, atk: 1, hp: 6, art: '🦭', keywords: ['guard', 'chill'], text: '' },
 
 
   // ── 버섯 포자 군집 (추가) ──

@@ -655,14 +655,10 @@ export function applyAction(s, action) {
         defender.burning = true;
         log(s, `🔥 「${CARDS[defender.defId].name}」에 불이 붙었다.`);
       }
-      // 냉기: 서로 피해를 주고받은 뒤 살아남은 상대를 얼린다.
+      // 냉기: 공격해서 피해를 준 뒤 살아남은 적을 얼린다. 화염처럼 반격으로는 묻지 않는다.
       if (dealt && hasKeyword(attacker, 'chill') && defender.hp > 0) {
         defender.frozen = true;
         log(s, `❄ 「${CARDS[defender.defId].name}」이(가) 얼어붙었다.`);
-      }
-      if (back && hasKeyword(defender, 'chill') && attacker.hp > 0) {
-        attacker.frozen = true;
-        log(s, `❄ 「${aName}」이(가) 얼어붙었다.`);
       }
       // 뻗기: 양옆에 있는 적 선원 중 무작위 하나에게 1 피해.
       if (hasKeyword(attacker, 'reach')) {
