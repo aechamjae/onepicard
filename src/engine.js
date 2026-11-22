@@ -642,8 +642,10 @@ export function applyAction(s, action) {
       const slash = hasKeyword(attacker, 'slash');
       const thorns = hasKeyword(defender, 'thorns') && !slash ? 1 : 0;
       const hadShield = attacker.shield;
-      const back = slash ? 0 : hurt(attacker, defender.atk + thorns, true, !!defender.revived);
-      if (hadShield && !attacker.shield && defender.atk + thorns <= 0) log(s, `🛡 「${CARDS[defender.defId].name}」의 반격에 「${aName}」의 보호막이 깨졌다.`);
+      // 반격도 화면에 보이는 공격력(공격력 + 탄력)으로 친다. 탄력은 내가 공격할 때만 풀린다.
+      const counter = defender.atk + (defender.tension || 0);
+      const back = slash ? 0 : hurt(attacker, counter + thorns, true, !!defender.revived);
+      if (hadShield && !attacker.shield && counter + thorns <= 0) log(s, `🛡 「${CARDS[defender.defId].name}」의 반격에 「${aName}」의 보호막이 깨졌다.`);
       if (thorns) log(s, `🌵 가시에 찔렸다!`);
       if (slash) log(s, `⚔ 일섬! 반격을 받지 않았다.`);
       if (hasKeyword(attacker, 'lifesteal')) heal(s, me, dealt);

@@ -602,7 +602,7 @@ function inspect(card, pi, factionId = state.players[pi].factionId) {
     ...(d.keywords || []).map((k) => `<li><b>${KEYWORDS[k].name}</b> ${KEYWORDS[k].desc}</li>`),
     ...(card.gained || []).filter((k) => !(d.keywords || []).includes(k)).map((k) => `<li><b>${KEYWORDS[k].name}</b> <i>(효과로 얻음)</i> ${KEYWORDS[k].desc}</li>`),
   ];
-  if (card.tension) kws.push(`<li><b>탄력 ${card.tension}</b> 다음 공격 때 공격력 +${card.tension}</li>`);
+  if (card.tension) kws.push(`<li><b>탄력 ${card.tension}</b> 공격력 +${card.tension} (반격 포함, 공격하면 풀림)</li>`);
   if (card.frozen) kws.push('<li><b>❄ 얼어붙음</b> 다음 턴에 공격할 수 없다. (닻 내리기·바나나 껍질·뇌물에 묶인 선원도 얼어붙은 것으로 친다.)</li>');
   if (card.burning) kws.push(`<li><b>🔥 불붙음</b> 주인의 턴이 시작될 때마다 ${RULES.burnDamage} 피해.</li>`);
   if (card.revived) kws.push('<li><b>👻 되살아남</b> 이미 한 번 되살아났다.</li>');

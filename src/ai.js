@@ -282,7 +282,7 @@ function chooseAttack(s) {
       // 불붙어 곧 타 죽을 선원은 주인 턴 시작에 쓰러지니 굳이 칠 필요가 없다.
       if (doomed(d)) continue;
       const slash = hasKeyword(a, 'slash');
-      const back = slash ? 0 : d.atk + (hasKeyword(d, 'thorns') ? 1 : 0);
+      const back = slash ? 0 : d.atk + (d.tension || 0) + (hasKeyword(d, 'thorns') ? 1 : 0);
       const bite = (hasKeyword(a, 'odm') && d.hp >= a.atk ? 2 : 0);
       const kills = dmg(power + bite, d) >= d.hp;
       const survives = a.hp - dmg(back, a) > (a.burning ? RULES.burnDamage : 0);
