@@ -16,7 +16,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="onepicard">
   <meta name="application-name" content="onepicard">
-  <link rel="stylesheet" href="style.css?v=202611221616">
+  <link rel="stylesheet" href="style.css?v=202611221700">
 </head>
 <body>
   <div class="sea" aria-hidden="true"></div>
@@ -36,6 +36,7 @@
         <div class="mini-btns">
           <button id="deck-btn" class="ghost">🃏 내 덱</button>
           <button id="log-btn" class="ghost">📜 일지</button>
+          <button id="fx-btn" class="ghost" aria-pressed="true" title="공격 연출 켜기/끄기">✨ 연출 켬</button>
           <button id="rules-btn2" class="ghost">규칙</button>
           <button id="home-btn" class="ghost">🏠 홈</button>
         </div>
@@ -202,7 +203,7 @@
   <!-- 홈 화면 앱이나 캐시가 예전 index.html을 쓰고 있으면, 최신 버전 번호(version.json)를 캐시 없이 받아 와 새 주소로 다시 연다. -->
   <script>
     (function () {
-      var BUILD = '?v=202611221616'.slice(3);
+      var BUILD = '?v=202611221700'.slice(3);
       fetch('version.json?t=' + Date.now(), { cache: 'no-store' })
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (j) {
@@ -219,17 +220,17 @@
   <script type="importmap">
     {
       "imports": {
-        "./src/cards.js": "./src/cards.js?v=202611221616",
-        "./src/engine.js": "./src/engine.js?v=202611221616",
-        "./src/ai.js": "./src/ai.js?v=202611221616",
-        "./src/difficulty.js": "./src/difficulty.js?v=202611221616",
-        "./src/matchups.js": "./src/matchups.js?v=202611221616",
-        "./src/stats.js": "./src/stats.js?v=202611221616",
-        "./src/conditions.js": "./src/conditions.js?v=202611221616",
-        "./src/fx.js": "./src/fx.js?v=202611221616"
+        "./src/cards.js": "./src/cards.js?v=202611221700",
+        "./src/engine.js": "./src/engine.js?v=202611221700",
+        "./src/ai.js": "./src/ai.js?v=202611221700",
+        "./src/difficulty.js": "./src/difficulty.js?v=202611221700",
+        "./src/matchups.js": "./src/matchups.js?v=202611221700",
+        "./src/stats.js": "./src/stats.js?v=202611221700",
+        "./src/conditions.js": "./src/conditions.js?v=202611221700",
+        "./src/fx.js": "./src/fx.js?v=202611221700"
       }
     }
   </script>
-  <script type="module" src="src/ui.js?v=202611221616"></script>
+  <script type="module" src="src/ui.js?v=202611221700"></script>
 </body>
 </html>

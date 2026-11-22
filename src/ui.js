@@ -29,6 +29,13 @@ function loadMode() {
   try { if (localStorage.getItem('mode') === 'duo') return 'duo'; } catch {}
   return 'ai';
 }
+// 공격 연출(해적단별 이펙트) 켬/끔. 끄면 모든 공격이 가볍게 돌진만 한다.
+let fxOn = (() => { try { return localStorage.getItem('fx') !== 'off'; } catch { return true; } })();
+function renderFxBtn() {
+  $('fx-btn').textContent = fxOn ? '✨ 연출 켬' : '💤 연출 끔';
+  $('fx-btn').setAttribute('aria-pressed', String(fxOn));
+}
+
 function loadOrder() {
   try { const v = localStorage.getItem('order'); if (v === 'first' || v === 'second') return v; } catch {}
   return 'random';
@@ -321,7 +328,9 @@ async function animateAttack(action) {
   const from = centerOf(attackerEl);
   const to = centerOf(targetEl);
   const factionId = state.players[pi].factionId;
-  if (CARDS[crew.defId].arm) {
+  if (!fxOn) {
+    await lunge(attackerEl, from, to);
+  } else if (CARDS[crew.defId].arm) {
     await playRubberFx({ from, to, aEl: attackerEl, tEl: targetEl, tension: crew.tension || 0 });
   } else if (hasAttackFx(factionId) && !COMMON.has(crew.defId)) { // 공용 카드는 해적단 연출 없이 가볍게 돌진한다
     await playAttackFx(factionId, { from, to, aEl: attackerEl, tEl: targetEl });
@@ -894,6 +903,12 @@ $('rules-btn').onclick = () => { $('rules').hidden = false; };
 $('rules-btn2').onclick = () => { $('rules').hidden = false; };
 $('log-btn').onclick = () => { $('log-ov').hidden = false; $('log').scrollTop = $('log').scrollHeight; };
 $('deck-btn').onclick = openDeck;
+$('fx-btn').onclick = () => {
+  fxOn = !fxOn;
+  try { localStorage.setItem('fx', fxOn ? 'on' : 'off'); } catch {}
+  renderFxBtn();
+};
+renderFxBtn();
 $('deck-close').onclick = () => { $('deck-ov').hidden = true; };
 $('deck-ov').onclick = (e) => { if (e.target.id === 'deck-ov') $('deck-ov').hidden = true; };
 $('log-close').onclick = () => { $('log-ov').hidden = true; };
