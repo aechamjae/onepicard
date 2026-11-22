@@ -33,6 +33,7 @@ function ensure() {
   cv = document.createElement('canvas');
   cv.id = 'fxc';
   cv.setAttribute('aria-hidden', 'true');
+  Object.assign(cv.style, { position: 'fixed', left: '0', top: '0', pointerEvents: 'none', zIndex: '25' });
   document.body.append(cv);
   resize();
   addEventListener('resize', resize);
