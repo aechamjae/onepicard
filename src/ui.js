@@ -1004,16 +1004,17 @@ function startTutorial() {
   try { localStorage.setItem('tutorialSeen', '1'); } catch {}
   startGame('stretch', 'deep', { tutorial: true });
   state.tutorial = true;
-  // 첫 턴에 낼 카드가 손에 있도록 비용 1·2 선원을 손으로 옮긴다.
+  // 손패를 정해 둔다: 1턴에 낼 말랑 고무손, 2턴에 낼 고무주먹 권투사, 그 밖에 보여 줄 카드들.
+  // 원래 손패는 덱으로 돌려보내고, 덱에서 같은 카드를 꺼낸다(없으면 새로 만든다).
   const me = state.players[ME];
-  ['rookie', 'boxer'].forEach((id, k) => {
-    if (me.hand.some((c) => c.defId === id)) return;
+  const FIXED = ['rookie', 'boxer', 'bubble', 'grab'];
+  me.deck.unshift(...me.hand); // 덱은 끝에서 뽑으니 앞쪽(바닥)으로 보낸다
+  me.hand = [];
+  let nextUid = Math.max(0, ...state.players.flatMap((p) => [...p.deck, ...p.hand, ...p.board].map((c) => c.uid))) + 1;
+  for (const id of FIXED) {
     const di = me.deck.findIndex((c) => c.defId === id);
-    if (di < 0) return;
-    const [card] = me.deck.splice(di, 1);
-    const out = me.hand.splice(k, 1, card)[0];
-    if (out) me.deck.unshift(out);
-  });
+    me.hand.push(di >= 0 ? me.deck.splice(di, 1)[0] : { uid: nextUid++, defId: id });
+  }
   tutFlags.attacks = 0;
   tutFlags.inspected = false;
   render();
