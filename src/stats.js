@@ -119,6 +119,38 @@ function renderMine(body) {
   body.append(actions);
 }
 
+// 표준편차표: 해적단마다 상대별 승률이 얼마나 퍼져 있는지(상대를 얼마나 타는지) 보여 준다.
+function renderSpread(body, ids, rate, has, avg, ranked) {
+  const sd = (xs) => {
+    const m = xs.reduce((x, y) => x + y, 0) / xs.length;
+    return Math.sqrt(xs.reduce((n, x) => n + (x - m) ** 2, 0) / xs.length);
+  };
+  const rows = ranked.map((f) => {
+    const list = ids.filter((o) => o !== f && has(f, o)).map((o) => rate[f][o]);
+    return { f, avg: avg(f), sd: sd(list), lo: Math.min(...list), hi: Math.max(...list) };
+  }).sort((a, b) => b.sd - a.sd);
+  if (!rows.length) return;
+  const maxSd = Math.max(...rows.map((r) => r.sd));
+  const games = MATCHUPS.games || 0;
+  const err = games ? Math.sqrt(0.25 / games) : 0; // 승률 50% 근처에서 한 상성 값의 표준오차
+  const spreadAvg = sd(rows.map((r) => r.avg));
+  body.insertAdjacentHTML('beforeend', `<h3 class="stats-h">상성 표준편차</h3>
+    <p class="sub" style="margin:0">해적단마다 상대 16곳에 대한 승률이 평균에서 얼마나 벌어져 있는지예요. 클수록 상대를 많이 타는(가위바위보 같은) 해적단이고, 작을수록 누구와 붙어도 비슷해요.</p>`);
+  const wrap = document.createElement('div');
+  wrap.className = 'sd-wrap';
+  wrap.innerHTML = `<table class="sd">
+    <thead><tr><th>해적단</th><th>표준편차</th><th>평균</th><th>최악</th><th>최고</th></tr></thead>
+    <tbody>${rows.map((r) => `<tr>
+      <td class="nm">${fname(r.f)}</td>
+      <td class="sdv"><span class="sdbar"><i style="width:${(r.sd / maxSd) * 100}%"></i></span><b>${(r.sd * 100).toFixed(1)}</b>%p</td>
+      <td>${(r.avg * 100).toFixed(1)}%</td>
+      <td class="${r.lo < 0.3 ? 'warn' : ''}">${pct(r.lo)}</td>
+      <td class="${r.hi > 0.7 ? 'warn' : ''}">${pct(r.hi)}</td>
+    </tr>`).join('')}</tbody></table>`;
+  body.append(wrap);
+  body.insertAdjacentHTML('beforeend', `<p class="stats-foot">해적단 평균 승률끼리의 표준편차는 <b>${(spreadAvg * 100).toFixed(1)}%p</b>예요(작을수록 해적단 사이 힘이 고르다). 쌍마다 ${games}판이라 상성 값 하나에는 ±${(err * 100).toFixed(1)}%p쯤(표준오차) 측정 오차가 있어요. 30% 미만·70% 초과는 붉게 표시했어요.</p>`);
+}
+
 // 50%를 가운데로, 낮으면 붉게 높으면 푸르게.
 function cellColor(r) {
   const t = Math.min(1, Math.abs(r - 0.5) / 0.3);
@@ -148,6 +180,7 @@ function renderMatrix(body) {
     rows.append(el);
   }
   body.append(rows);
+  renderSpread(body, ids, rate, has, avg, ranked);
 
   body.insertAdjacentHTML('beforeend', '<h3 class="stats-h">상성표</h3><p class="sub" style="margin:0">가로줄 해적단이 세로줄 해적단을 이긴 비율이에요. 왼쪽 엠블럼을 누르면 그 해적단의 강한 상대와 약한 상대를 보여 줍니다.</p>');
   const pick = document.createElement('p');
