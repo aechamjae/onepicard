@@ -722,3 +722,17 @@ main[hidden] { display: none; }
   content: "🎯"; position: absolute; z-index: 5; right: -8px; top: -10px; font-size: 1.05rem;
   filter: drop-shadow(0 1px 2px #000); animation: bounce .8s ease-in-out infinite; pointer-events: none;
 }
+
+/* ── 공지사항 ── */
+#notice-btn {
+  position: fixed; z-index: 21; top: calc(8px + env(safe-area-inset-top, 0px)); right: calc(10px + env(safe-area-inset-right, 0px));
+  font-size: .82rem; padding: 5px 12px; background: #021018cc; backdrop-filter: blur(4px);
+}
+#notice-btn .dot { position: absolute; top: -3px; right: -3px; width: 11px; height: 11px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 0 2px #021018; }
+#notice-btn .dot[hidden] { display: none; }
+.notice-panel { max-width: 620px; max-height: 86vh; overflow-y: auto; text-align: left; }
+.notice-ver h3 { margin: 14px 0 6px; font-family: var(--display); font-weight: 400; font-size: 1.15rem; color: var(--gold); }
+.notice-ver .new { font-size: .7rem; padding: 1px 8px; border-radius: 999px; background: var(--danger); color: #fff; vertical-align: middle; }
+.notice-ver ul { margin: 0; padding-left: 1.2em; display: grid; gap: 5px; font-size: .9rem; line-height: 1.5; }
+.notice-panel #notice-close { display: block; margin: 16px auto 0; }
+.start-extra.top { margin-bottom: 10px; }

@@ -16,7 +16,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="onepicard">
   <meta name="application-name" content="onepicard">
-  <link rel="stylesheet" href="style.css?v=202611231440">
+  <link rel="stylesheet" href="style.css?v=202611231445">
 </head>
 <body>
   <div class="sea" aria-hidden="true"></div>
@@ -69,6 +69,11 @@
 
   <div id="start" class="overlay">
     <div class="panel start-panel">
+      <div class="start-extra top">
+        <button id="tut-btn" class="ghost dex-open">🎓 튜토리얼</button>
+        <button id="dex-btn" class="ghost dex-open">📖 카드 도감</button>
+        <button id="stats-btn" class="ghost dex-open">📊 승률·상성</button>
+      </div>
       <div class="hero" aria-hidden="true">
         <span class="hero-face">🤠</span>
         <div class="hero-arm">
@@ -98,11 +103,6 @@
       </div>
       <p id="pick-title" class="pick-title" hidden></p>
       <div id="faction-list"></div>
-      <div class="start-extra">
-        <button id="tut-btn" class="ghost dex-open">🎓 튜토리얼</button>
-        <button id="dex-btn" class="ghost dex-open">📖 카드 도감</button>
-        <button id="stats-btn" class="ghost dex-open">📊 승률·상성</button>
-      </div>
     </div>
   </div>
 
@@ -201,13 +201,22 @@
   <div id="inspect" class="overlay" hidden></div>
   <!-- 튜토리얼: 화면 요소를 짚는 스포트라이트와 말풍선 -->
   <div id="coach" hidden><div class="coach-spot"></div><div class="coach-bubble" role="dialog" aria-live="polite"></div></div>
+  <!-- 공지사항: 화면 오른쪽 위에 늘 떠 있는 버튼 -->
+  <button id="notice-btn" class="ghost" type="button" aria-label="공지사항">📢 공지<span class="dot" hidden></span></button>
+  <div id="notice" class="overlay" hidden>
+    <div class="panel notice-panel">
+      <h2 class="title">📢 공지사항</h2>
+      <div id="notice-body"></div>
+      <button id="notice-close">닫기</button>
+    </div>
+  </div>
   <div id="banner" aria-live="polite"></div>
   <div id="toast" role="status"></div>
 
   <!-- 홈 화면 앱이나 캐시가 예전 index.html을 쓰고 있으면, 최신 버전 번호(version.json)를 캐시 없이 받아 와 새 주소로 다시 연다. -->
   <script>
     (function () {
-      var BUILD = '?v=202611231440'.slice(3);
+      var BUILD = '?v=202611231445'.slice(3);
       fetch('version.json?t=' + Date.now(), { cache: 'no-store' })
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (j) {
@@ -224,17 +233,18 @@
   <script type="importmap">
     {
       "imports": {
-        "./src/cards.js": "./src/cards.js?v=202611231440",
-        "./src/engine.js": "./src/engine.js?v=202611231440",
-        "./src/ai.js": "./src/ai.js?v=202611231440",
-        "./src/difficulty.js": "./src/difficulty.js?v=202611231440",
-        "./src/matchups.js": "./src/matchups.js?v=202611231440",
-        "./src/stats.js": "./src/stats.js?v=202611231440",
-        "./src/conditions.js": "./src/conditions.js?v=202611231440",
-        "./src/fx.js": "./src/fx.js?v=202611231440"
+        "./src/cards.js": "./src/cards.js?v=202611231445",
+        "./src/engine.js": "./src/engine.js?v=202611231445",
+        "./src/ai.js": "./src/ai.js?v=202611231445",
+        "./src/difficulty.js": "./src/difficulty.js?v=202611231445",
+        "./src/matchups.js": "./src/matchups.js?v=202611231445",
+        "./src/stats.js": "./src/stats.js?v=202611231445",
+        "./src/conditions.js": "./src/conditions.js?v=202611231445",
+        "./src/fx.js": "./src/fx.js?v=202611231445",
+        "./src/notice.js": "./src/notice.js?v=202611231445"
       }
     }
   </script>
-  <script type="module" src="src/ui.js?v=202611231440"></script>
+  <script type="module" src="src/ui.js?v=202611231445"></script>
 </body>
 </html>

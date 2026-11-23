@@ -6,6 +6,7 @@ import { DIFFICULTIES } from './difficulty.js';
 import { openStats, recordResult } from './stats.js';
 import { cardCondition, skillCondition } from './conditions.js';
 import { playAttackFx, playRubberFx, hasAttackFx } from './fx.js';
+import { setupNotice } from './notice.js';
 
 // 화면 아래쪽(나)과 위쪽(상대)에 놓일 플레이어. 친구 모드에서는 턴마다 뒤바뀐다.
 let ME = 0;
@@ -1142,4 +1143,5 @@ document.addEventListener('keydown', (e) => {
   if (selected) { selected = null; render(); }
 });
 
+setupNotice();
 showStart();
