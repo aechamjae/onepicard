@@ -44,7 +44,8 @@ function loadRivalMode() {
   try { if (localStorage.getItem('rival') === 'choose') return 'choose'; } catch {}
   return 'random';
 }
-const isDuo = () => mode === 'duo';
+const isDuo = () => mode === 'duo' && !tutorialOn;
+let tutorialOn = false; // 튜토리얼 판: 쉬운 AI, 전적에 남기지 않는다
 // 해적단을 두 번 고르는가: 친구 모드(1P, 2P) 또는 AI 대전에서 상대를 직접 고를 때(나, 상대).
 const twoPicks = () => isDuo() || rivalMode === 'choose';
 const randomFaction = (except = null) => {
@@ -374,15 +375,15 @@ async function showAftermath(before) {
       const bounced = state.players[b.pi].hand.some((h) => h.uid === uid);
       el.classList.add(bounced ? 'yeet' : 'dying');
       floatText(centerOf(el), bounced ? '휘익~' : '☠', 'word');
-      wait = 520;
+      wait = 430;
     } else if (c.hp < b.hp) {
       floatText(centerOf(el), `-${b.hp - c.hp}`);
       el.classList.add(b.elastic ? 'boing' : 'hit');
-      wait = Math.max(wait, 380);
+      wait = Math.max(wait, 220);
     } else if (b.shield && !c.shield) {
       floatText(centerOf(el), '🛡 막았다!', 'word');
       el.classList.add('boing');
-      wait = Math.max(wait, 380);
+      wait = Math.max(wait, 220);
     } else if (c.hp > b.hp) {
       floatText(centerOf(el), `+${c.hp - b.hp}`, 'heal');
     }
@@ -395,7 +396,7 @@ async function showAftermath(before) {
       hud.classList.remove('hit');
       void hud.offsetWidth;
       hud.classList.add('hit');
-      wait = Math.max(wait, 380);
+      wait = Math.max(wait, 220);
     } else if (dh > 0) floatText(centerOf(hud), `+${dh}`, 'heal');
     const dt = p.treasure - before.treasure[pi];
     if (dt > 0) {
@@ -443,13 +444,35 @@ async function perform(action) {
 
 // ── 입력 ──
 
+// 내 행동이 연출 중일 때 다음 공격을 미리 골라 둘 수 있다(연타). 연출이 끝나면 바로 이어서 친다.
+let acting = false;
+let queued = null;
+const canQueue = () => acting && state && state.current === ME && state.winner === null;
+
 async function act(action) {
+  if (action.type === 'attack') tutFlags.attacks++;
   busy = true;
+  acting = true;
   selected = null;
   render();
   await perform(action);
+  acting = false;
   busy = false;
+  const next = queued;
+  queued = null;
+  if (next && isMyTurn()) {
+    const a = state.players[ME].board.find((c) => c.uid === next.attacker);
+    if (a?.canAttack && legalAttackTargets(state, ME, a).includes(next.target)) { act(next); return; }
+    selected = null;
+  }
   render();
+}
+
+// 연출 중에 다음 공격자를 고른다. 판을 다시 그리지 않고 표시만 바꾼다(그리면 연출이 끊긴다).
+function preselect(uid) {
+  document.querySelectorAll('.card.selected').forEach((el) => el.classList.remove('selected'));
+  selected = { kind: 'attacker', uid };
+  crewEl(uid)?.classList.add('selected');
 }
 
 function onHand(i) {
@@ -481,9 +504,11 @@ function onSkill() {
 
 function onMyCrew(uid) {
   const c = state.players[ME].board.find((c) => c.uid === uid);
+  if (canQueue() && c?.canAttack && !queued) { preselect(uid); return; }
   if (!isMyTurn()) { inspect(c, ME); return; }
   if (selectedTargetKind() === 'allyCrew') { useOn(uid); return; }
-  if (selected?.kind === 'attacker' && selected.uid === uid) { selected = null; render(); return; }
+  // 고른 선원을 한 번 더 누르면 그 선원의 상태와 정보를 보여 준다.
+  if (selected?.kind === 'attacker' && selected.uid === uid) { selected = null; render(); inspect(c, ME); return; }
   if (!c.canAttack) { inspect(c, ME); return; }
   selected = { kind: 'attacker', uid };
   render();
@@ -491,6 +516,7 @@ function onMyCrew(uid) {
 
 function onFoeCrew(uid) {
   const c = state.players[FOE].board.find((c) => c.uid === uid);
+  if (canQueue() && selected?.kind === 'attacker') { queued = { type: 'attack', attacker: selected.uid, target: uid }; return; }
   if (!isMyTurn() || !selected) { inspect(c, FOE); return; }
   if (selected.kind === 'attacker') {
     act({ type: 'attack', attacker: selected.uid, target: uid });
@@ -501,6 +527,7 @@ function onFoeCrew(uid) {
 }
 
 function onFoeShip() {
+  if (canQueue() && selected?.kind === 'attacker') { queued = { type: 'attack', attacker: selected.uid, target: 'ship' }; return; }
   if (!isMyTurn() || selected?.kind !== 'attacker') return;
   act({ type: 'attack', attacker: selected.uid, target: 'ship' });
 }
@@ -539,7 +566,7 @@ async function runAI() {
   for (let steps = 0; state.current === FOE && state.winner === null; steps++) {
     await sleep(AI_DELAY);
     if (game !== session) return; // 홈으로 나갔다
-    const action = steps > 40 ? { type: 'end' } : aiNextAction(state, DIFFICULTIES[difficulty].ai);
+    const action = steps > 40 ? { type: 'end' } : aiNextAction(state, tutorialOn ? 'easy' : DIFFICULTIES[difficulty].ai);
     const ok = await perform(action);
     if (game !== session) return;
     if (!ok) await perform({ type: 'end' }); // 안전장치
@@ -553,6 +580,7 @@ async function runAI() {
 // 카드를 크게 보여 준다. 판 위 선원이면 원래 수치와 달라진 점도 함께 보여 준다.
 function inspect(card, pi, factionId = state.players[pi].factionId) {
   if (!card) return;
+  if (pi === ME && state.players[ME].board.includes(card)) tutFlags.inspected = true;
   const d = CARDS[card.defId];
   const box = document.createElement('div');
   box.className = 'inspect-box';
@@ -784,6 +812,9 @@ function pickFaction(id) {
 }
 
 function showStart() {
+  let seen = false;
+  try { seen = !!localStorage.getItem('tutorialSeen'); } catch {}
+  $('tut-btn').classList.toggle('fresh', !seen);
   renderDifficulty();
   renderMode();
   const list = $('faction-list');
@@ -815,8 +846,11 @@ function showStart() {
 
 // 하던 판을 버리고 시작 화면으로 간다.
 function quitToHome() {
+  endTutorial();
   session++;
   busy = false;
+  acting = false;
+  queued = null;
   selected = null;
   $('quit').hidden = true;
   $('inspect').hidden = true;
@@ -826,12 +860,14 @@ function quitToHome() {
 }
 
 // rival: 친구 모드의 2P나 직접 고른 AI 상대. 없으면 AI가 다른 해적단 중 하나를 무작위로 고른다.
-async function startGame(factionId, rival = null) {
+async function startGame(factionId, rival = null, { tutorial = false } = {}) {
+  endTutorial();
+  tutorialOn = tutorial;
   session++;
   const others = Object.keys(FACTIONS).filter((f) => f !== factionId);
   const aiFaction = rival ?? others[Math.floor(Math.random() * others.length)];
   // AI 대전: 후공이면 AI가 0번 자리(선공)에 앉는다. 난이도 조건([나, AI])도 자리에 맞춰 뒤집는다.
-  const meFirst = isDuo() || order === 'first' || (order === 'random' && Math.random() < 0.5);
+  const meFirst = tutorial || isDuo() || order === 'first' || (order === 'random' && Math.random() < 0.5);
   const hc = DIFFICULTIES[difficulty].handicap;
   state = createGame(isDuo()
     ? { playerFaction: factionId, aiFaction, names: ['1P', '2P'], handicap: DIFFICULTIES.normal.handicap }
@@ -844,6 +880,8 @@ async function startGame(factionId, rival = null) {
   goLandscape();
   selected = null;
   busy = false;
+  acting = false;
+  queued = null;
   $('start').hidden = true;
   $('game').hidden = false;
   const all = new Set(state.players.flatMap((p) => p.board.map((c) => c.uid)));
@@ -853,7 +891,7 @@ async function startGame(factionId, rival = null) {
     showBanner(`${FACTIONS[factionId].emblem} 1P VS 2P ${FACTIONS[aiFaction].emblem}<span class="who">1P 먼저!</span>`, 1300);
     return;
   }
-  showBanner(`🌊 VS ${FACTIONS[aiFaction].emblem} ${FACTIONS[aiFaction].name}<span class="who">${diff.emoji} ${diff.name} · ${meFirst ? '내가 선공' : '내가 후공 🪙'}</span>`, 1300);
+  showBanner(`🌊 VS ${FACTIONS[aiFaction].emblem} ${FACTIONS[aiFaction].name}<span class="who">${tutorial ? '🎓 튜토리얼' : `${diff.emoji} ${diff.name}`} · ${meFirst ? '내가 선공' : '내가 후공 🪙'}</span>`, 1300);
   if (!meFirst) {
     // AI가 먼저 둔다. 시작 배너가 끝난 뒤 AI 차례를 진행한다.
     busy = true;
@@ -875,7 +913,8 @@ function goLandscape() {
 
 function showGameOver() {
   const won = isDuo() || state.winner === ME;
-  if (!isDuo() && !state.recorded) {
+  if (tutorialOn) endTutorial();
+  if (!isDuo() && !state.recorded && !state.tutorial) {
     state.recorded = true;
     recordResult(difficulty, state.players[ME].factionId, state.players[FOE].factionId, state.winner === ME);
   }
@@ -887,6 +926,132 @@ function showGameOver() {
     : `${label(1 - state.winner)}의 배가 침몰했습니다.`;
   const game = session;
   setTimeout(() => { if (game === session) $('gameover').hidden = false; }, 700);
+}
+
+// ── 튜토리얼 ──
+// 실제로 한 판을 두면서 화면 요소를 하나씩 짚어 준다. do 단계는 직접 해야 넘어간다.
+
+const tutFlags = { attacks: 0, inspected: false };
+let tut = null; // { i, timer }
+const myBoard = () => state.players[ME].board;
+const TUT_STEPS = [
+  { title: '어서 와요, 선장님!', text: 'onepicard는 해적단끼리 싸우는 카드게임이에요. 지금부터 실제로 한 판을 두면서 화면에 있는 것들을 하나씩 알려 드릴게요. 그만두고 싶으면 언제든 「건너뛰기」를 누르세요.' },
+  { el: '#foe-hud', title: '이기는 방법', text: '위쪽은 상대 배예요. 상대 배의 선체 🚢 를 0으로 만들거나, 보물 💰 12개를 먼저 모으면 이겨요.' },
+  { el: '#my-hud', title: '내 배', text: '아래쪽은 내 배예요. 🚢 선체가 0이 되면 져요. 💰 는 지금까지 모은 보물, 오른쪽 위 🂠 는 손패 장수, 「덱」은 남은 카드 수예요.' },
+  { el: '#my-hud .sails', title: '바람 ⛵', text: '카드를 내려면 바람을 써요. 내 차례마다 최대치가 1씩 늘고(최대 10) 다시 가득 차요. 첫 턴에는 바람이 1이에요.' },
+  { el: '#hand', title: '손패', text: '맨 아래 카드들이 손패예요. 카드 왼쪽 위 파란 숫자가 비용, 즉 필요한 바람이에요. 지금 낼 수 있는 카드는 밝고, 바람이 모자란 카드는 어둡게 보여요.' },
+  { el: '#hand .card', title: '카드 읽는 법', text: '왼쪽 아래 빨간 숫자는 공격력, 오른쪽 아래 초록 숫자는 체력이에요. 이름 밑의 작은 꼬리표는 키워드(특수 능력)예요. 「전술」 리본이 달린 카드는 한 번 쓰고 버리는 카드예요.' },
+  { el: '#hand', do: true, title: '선원 내기', text: '비용 1인 「말랑 고무손」을 눌러 갑판에 내 보세요. 화면이 작으면 처음 누를 때 설명이 뜨고, 한 번 더 누르면 나가요.', done: () => myBoard().length >= 1 },
+  { el: '#my-board', title: '갑판과 선원', text: '낸 선원은 갑판에 서요. 선원은 낸 다음 턴부터 공격할 수 있어요. 「돌격」 키워드가 있으면 바로 칠 수 있어요. 공격할 수 있는 선원은 반짝여요.' },
+  { el: '#my-board .card', do: true, title: '선원 정보 보기', text: '갑판에 있는 내 선원을 눌러 보세요. 원래 수치, 지금 받은 피해나 강해진 점, 키워드 설명을 크게 볼 수 있어요. 다 봤으면 아무 데나 눌러 닫으세요.', done: () => tutFlags.inspected && $('inspect').hidden },
+  { el: '#skill-btn', title: '리더 스킬 ✨', text: () => `해적단마다 고유 스킬이 있어요. 한 턴에 한 번, 바람을 써서 쓸 수 있어요. 지금 해적단의 스킬은 「${skillOf(ME).name}」: ${skillOf(ME).text}` },
+  { el: '#end-btn', do: true, title: '턴 종료', text: '이번 턴에 할 일을 다 했으면 ⚓ 턴 종료를 누르세요. 그러면 상대(AI) 차례가 돼요.', done: () => state.current !== ME },
+  { wait: true, title: '상대 차례', text: 'AI가 두는 동안 지켜보세요. 상대가 낸 카드는 화면 가운데에 잠깐 크게 보여요.', done: () => isMyTurn() },
+  { el: '#my-hud .sails', title: '바람이 늘었어요', text: '다시 내 차례예요. 바람 최대치가 1 늘어 2가 됐고, 카드도 1장 새로 뽑았어요. 비용 2짜리 「고무주먹 권투사」도 이제 낼 수 있어요.' },
+  { el: '#my-board', do: true, title: '공격하기', text: '반짝이는 내 선원을 누른 다음, 적 선원이나 위쪽 상대 배를 눌러 공격해 보세요.', done: () => tutFlags.attacks > 0 && !busy },
+  { el: '#foe-hud', title: '습격과 싸움', text: '상대 배를 치는 걸 습격이라고 해요. 선체를 깎고 보물 1개를 얻어요. 선원끼리 싸우면 서로 상대 공격력만큼 체력이 깎여요(반격). 적에게 「수호」 선원이 있으면 그 선원부터 쳐야 해요.' },
+  { el: '#my-board', title: '빠르게 연달아 치기', text: '공격 연출이 나오는 동안에도 다음 선원과 대상을 미리 눌러 두면, 앞 공격이 끝나자마자 이어서 쳐요. 고른 선원을 한 번 더 누르면 그 선원의 정보를 볼 수 있어요.' },
+  { el: '#deck-btn', title: '내 덱', text: '내 덱에 든 카드의 원래 수치와 남은 장수를 볼 수 있어요.' },
+  { el: '#log-btn', title: '일지', text: '지금까지 판에서 일어난 일이 순서대로 적혀 있어요. 피해가 어디서 왔는지 헷갈리면 여기를 보세요.' },
+  { el: '#fx-btn', title: '연출 켬/끔', text: '해적단마다 다른 공격 연출을 켜고 끌 수 있어요. 끄면 카드가 가볍게 돌진만 해서 더 빨리 진행돼요.' },
+  { el: '#home-btn', title: '홈', text: '이 판을 그만두고 시작 화면으로 돌아가요.' },
+  { title: '키워드와 규칙', text: '키워드는 30가지쯤 있어요. 카드를 누르면 그 카드의 키워드 설명이 같이 나오고, 「규칙」에서 전체 목록을 볼 수 있어요. 후공은 카드 1장과 행운의 동전(그 턴 바람 +1)을 더 받아요. 덱이 다 떨어지면 카드를 뽑을 때마다 선체 피해가 점점 커져요.' },
+  { title: '시작 화면에서 더 알아보기', text: '해적단은 17개이고 저마다 싸우는 방식이 달라요. 시작 화면의 📖 카드 도감에서 모든 카드를, 📊 승률·상성에서 내 전적과 해적단끼리의 상성을 볼 수 있어요. 난이도(쉬움~견문색), 상대 해적단, 선공·후공을 고를 수 있고, 👥 친구와 대결로 폰 하나를 번갈아 둘 수도 있어요.' },
+  { title: '준비 끝!', text: '이제 이 판을 끝까지 둬 보세요. 쉬운 AI라 편하게 연습할 수 있어요. 행운을 빌어요, 선장님!', last: true },
+];
+
+function startTutorial() {
+  try { localStorage.setItem('tutorialSeen', '1'); } catch {}
+  startGame('stretch', 'deep', { tutorial: true });
+  state.tutorial = true;
+  // 첫 턴에 낼 카드가 손에 있도록 비용 1·2 선원을 손으로 옮긴다.
+  const me = state.players[ME];
+  ['rookie', 'boxer'].forEach((id, k) => {
+    if (me.hand.some((c) => c.defId === id)) return;
+    const di = me.deck.findIndex((c) => c.defId === id);
+    if (di < 0) return;
+    const [card] = me.deck.splice(di, 1);
+    const out = me.hand.splice(k, 1, card)[0];
+    if (out) me.deck.unshift(out);
+  });
+  tutFlags.attacks = 0;
+  tutFlags.inspected = false;
+  render();
+  tut = { i: 0, timer: setInterval(tutTick, 250) };
+  $('coach').hidden = false;
+  setTimeout(showTutStep, 1400); // 시작 배너가 지나간 뒤
+}
+
+function endTutorial() {
+  if (!tut && !tutorialOn) return;
+  if (tut) clearInterval(tut.timer);
+  tut = null;
+  tutorialOn = false;
+  $('coach').hidden = true;
+}
+
+function tutNext() {
+  if (!tut) return;
+  tut.i++;
+  if (tut.i >= TUT_STEPS.length) { $('coach').hidden = true; clearInterval(tut.timer); tut = null; return; } // 판은 계속 이어서 둔다
+  showTutStep();
+}
+
+function showTutStep() {
+  if (!tut) return;
+  const st = TUT_STEPS[tut.i];
+  const text = typeof st.text === 'function' ? st.text() : st.text;
+  const bubble = document.querySelector('.coach-bubble');
+  bubble.innerHTML = `<h4>${st.title}</h4><p>${text}</p>
+    ${st.do ? '<span class="doit">👉 직접 해 보세요</span>' : st.wait ? '<span class="doit">⏳ 기다려 주세요</span>' : ''}
+    <div class="nav"><span class="step">${tut.i + 1} / ${TUT_STEPS.length}</span>
+      <span>${st.last ? '' : '<button class="skip" type="button">건너뛰기</button>'}
+      ${st.do || st.wait ? '' : `<button class="go" type="button">${st.last ? '시작!' : '다음'}</button>`}</span></div>`;
+  bubble.querySelector('.go')?.addEventListener('click', tutNext);
+  bubble.querySelector('.skip')?.addEventListener('click', () => { $('coach').hidden = true; clearInterval(tut.timer); tut = null; });
+  tutPlace();
+}
+
+// 스포트라이트와 말풍선 위치를 맞춘다. 판이 다시 그려져도 따라가도록 주기적으로 부른다.
+function tutPlace() {
+  if (!tut) return;
+  const st = TUT_STEPS[tut.i];
+  const spot = document.querySelector('.coach-spot');
+  const bubble = document.querySelector('.coach-bubble');
+  const overlayOpen = ['inspect', 'log-ov', 'deck-ov', 'rules', 'quit', 'gameover'].some((id) => !$(id).hidden);
+  const el = st.el && document.querySelector(st.el);
+  const r = el?.getBoundingClientRect();
+  const visible = r && r.width > 0 && r.height > 0;
+  spot.classList.toggle('off', !visible);
+  spot.classList.toggle('clear', overlayOpen || !!st.wait);
+  if (visible) {
+    const pad = 6;
+    Object.assign(spot.style, { left: `${r.left - pad}px`, top: `${r.top - pad}px`, width: `${r.width + pad * 2}px`, height: `${r.height + pad * 2}px` });
+  }
+  const bw = bubble.offsetWidth;
+  const bh = bubble.offsetHeight;
+  let x = (innerWidth - bw) / 2;
+  let y = (innerHeight - bh) / 2;
+  if (visible) {
+    x = Math.min(Math.max(12, r.left + r.width / 2 - bw / 2), innerWidth - bw - 12);
+    // 아래에 자리가 있으면 아래, 아니면 위, 둘 다 없으면 옆
+    if (r.bottom + 14 + bh < innerHeight) y = r.bottom + 14;
+    else if (r.top - 14 - bh > 0) y = r.top - 14 - bh;
+    else {
+      y = Math.min(Math.max(12, r.top + r.height / 2 - bh / 2), innerHeight - bh - 12);
+      x = r.right + 14 + bw < innerWidth ? r.right + 14 : Math.max(12, r.left - 14 - bw);
+    }
+  }
+  if (overlayOpen) { y = 12; x = Math.max(12, innerWidth - bw - 12); } // 카드 크게 보기 등을 가리지 않게
+  bubble.style.left = `${x}px`;
+  bubble.style.top = `${y}px`;
+}
+
+function tutTick() {
+  if (!tut || !state) return;
+  const st = TUT_STEPS[tut.i];
+  if ((st.do || st.wait) && st.done?.()) { tutNext(); return; }
+  tutPlace();
 }
 
 // ── 연결 ──
@@ -918,6 +1083,7 @@ $('rules-close').onclick = () => { $('rules').hidden = true; };
 $('rules').onclick = (e) => { if (e.target.id === 'rules') $('rules').hidden = true; };
 $('inspect').onclick = () => { $('inspect').hidden = true; };
 $('dex-btn').onclick = openDex;
+$('tut-btn').onclick = startTutorial;
 $('dex-close').onclick = () => { $('dex').hidden = true; };
 $('stats-btn').onclick = openStats;
 $('stats-close').onclick = () => { $('stats').hidden = true; };
