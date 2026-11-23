@@ -693,6 +693,9 @@ export function applyAction(s, action) {
   if (action.type === 'end') {
     const g = effectApi(s, pi);
     for (const c of me.board) {
+      // 얼음·닻 등으로 이번 턴을 쉰 선원은 턴이 끝나면 풀린다(다음 내 턴에는 공격할 수 있다).
+      c.held = false;
+      c.heldBy = null;
       if (hasKeyword(c, 'tension') && !c.attacked && c.tension < 3) c.tension++;
       if (hasKeyword(c, 'grow') && c.grown < RULES.growLimit) {
         c.grown++;
