@@ -16,7 +16,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="onepicard">
   <meta name="application-name" content="onepicard">
-  <link rel="stylesheet" href="style.css?v=202611231459">
+  <link rel="stylesheet" href="style.css?v=202611231515">
 </head>
 <body>
   <div class="sea" aria-hidden="true"></div>
@@ -216,7 +216,7 @@
   <!-- 홈 화면 앱이나 캐시가 예전 index.html을 쓰고 있으면, 최신 버전 번호(version.json)를 캐시 없이 받아 와 새 주소로 다시 연다. -->
   <script>
     (function () {
-      var BUILD = '?v=202611231459'.slice(3);
+      var BUILD = '?v=202611231515'.slice(3);
       fetch('version.json?t=' + Date.now(), { cache: 'no-store' })
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (j) {
@@ -233,18 +233,18 @@
   <script type="importmap">
     {
       "imports": {
-        "./src/cards.js": "./src/cards.js?v=202611231459",
-        "./src/engine.js": "./src/engine.js?v=202611231459",
-        "./src/ai.js": "./src/ai.js?v=202611231459",
-        "./src/difficulty.js": "./src/difficulty.js?v=202611231459",
-        "./src/matchups.js": "./src/matchups.js?v=202611231459",
-        "./src/stats.js": "./src/stats.js?v=202611231459",
-        "./src/conditions.js": "./src/conditions.js?v=202611231459",
-        "./src/fx.js": "./src/fx.js?v=202611231459",
-        "./src/notice.js": "./src/notice.js?v=202611231459"
+        "./src/cards.js": "./src/cards.js?v=202611231515",
+        "./src/engine.js": "./src/engine.js?v=202611231515",
+        "./src/ai.js": "./src/ai.js?v=202611231515",
+        "./src/difficulty.js": "./src/difficulty.js?v=202611231515",
+        "./src/matchups.js": "./src/matchups.js?v=202611231515",
+        "./src/stats.js": "./src/stats.js?v=202611231515",
+        "./src/conditions.js": "./src/conditions.js?v=202611231515",
+        "./src/fx.js": "./src/fx.js?v=202611231515",
+        "./src/notice.js": "./src/notice.js?v=202611231515"
       }
     }
   </script>
-  <script type="module" src="src/ui.js?v=202611231459"></script>
+  <script type="module" src="src/ui.js?v=202611231515"></script>
 </body>
 </html>
