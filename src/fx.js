@@ -631,6 +631,7 @@ async function rubber(c, tension) {
       spray(B, 10 + tension * 4, { kind: 'star', speed: [140, 340], drag: 3, life: [0.35, 0.6], size: [5, 9], size1: 1, color: ['255,230,90', '255,255,255', '255,160,80'], vr: 9 });
       spray(B, 10, { kind: 'spark', angle: c.ang, spread: 1.2, speed: [250, 560], drag: 3, life: 0.25, size: 2, color: '255,235,180', add: true });
       hitReact(tEl, dir, 12 + tension * 5, { rot: dir.x * (3 + tension * 2) });
+      c.impact();
       screenShake(3 + tension * 3);
     }
   });
@@ -669,6 +670,7 @@ const FX = {
     explosion(B, 1.1);
     spray(B, 12, { kind: 'chip', speed: [180, 420], angle: -Math.PI / 2, spread: 1.4, drag: 1, gy: 1100, life: [0.6, 0.9], size: [3, 6], color: '122,74,34' });
     hitReact(tEl, dir, 16, { rot: dir.x * 4, flashColor: '255,200,120' });
+    c.impact();
     screenShake(9);
     await wait(170);
   },
@@ -696,6 +698,7 @@ const FX = {
     spray(B, 46, { kind: 'dot', angle: -Math.PI / 2, spread: 1.35, speed: [160, 460], gy: 1000, drag: 0.5, life: [0.5, 0.9], size: [2.5, 5], color: ['127,211,255', '232,251,255', '90,180,230'] });
     spray(B, 10, { kind: 'smoke', speed: [30, 90], drag: 2, life: [0.6, 1], size: 12, size1: 34, color: '190,235,255', a0: 0.4 });
     hitReact(tEl, dir, 18, { flashColor: '150,220,255' });
+    c.impact();
     await wait(160);
   },
 
@@ -762,6 +765,7 @@ const FX = {
         shockwave(B, 64, '200,170,255', 0.45);
         spray(B, 22, { kind: 'glow', speed: [40, 200], drag: 2, gy: -120, life: [0.5, 0.9], size: [5, 9], size1: 1, color: ['180,140,255', '140,255,190'], add: true });
         hitReact(tEl, dir, 8, { flashColor: '180,140,255' });
+        c.impact();
         overlay(tEl, '60,30,110', 700, { a0: 0.45, add: false });
       }
     });
@@ -797,6 +801,7 @@ const FX = {
     flash(B, 80, '255,160,60', 0.25);
     spray(B, 10, { kind: 'glow', speed: [60, 220], drag: 3, gy: -60, life: [0.3, 0.6], size: [10, 16], size1: 1, color: '255,140,40', add: true });
     hitReact(tEl, dir, 14, { flashColor: '255,140,50' });
+    c.impact();
     overlay(tEl, '255,110,20', 800, { a0: 0.45 });
     await wait(150);
     move(aEl, [{ transform: P1 }, { transform: 'none' }], 280);
@@ -808,7 +813,7 @@ const FX = {
     const { A, B, dir, aEl, tEl } = c;
     move(aEl, [0, 1, 2, 3].map((i) => ({ transform: i === 3 ? 'none' : `translate(${-dir.x * 4}px,${i % 2 ? -10 : 0}px) rotate(${i % 2 ? -dir.x * 12 : 0}deg)` })), 450);
     const throwOne = async (i) => {
-      await wait(i * 140);
+      await wait(i * 100);
       const off = (i - 1) * 14;
       const T0 = { x: B.x + c.perp.x * off, y: B.y + c.perp.y * off };
       const h = clamp(c.dist * 0.24, 40, 110) - i * 10;
@@ -828,6 +833,7 @@ const FX = {
       flash(T0, lastOne ? 60 : 38, '255,240,150', 0.16);
       emit({ kind: 'banana', x: T0.x, y: T0.y, vx: rnd(-120, 120), vy: rnd(-280, -180), gy: 1100, life: 0.7, size: 13, vr: rnd(-12, 12) });
       hitReact(tEl, dir, lastOne ? 14 : 6, { rot: (i - 1) * 4, flashColor: lastOne ? '255,255,255' : '' });
+      if (lastOne) c.impact();
       if (lastOne) { shockwave(T0, 50, '255,240,150', 0.3); pow(T0, 0.8, '255,236,120', '#7a4d00'); }
     };
     await Promise.all([0, 1, 2].map(throwOne));
@@ -871,6 +877,7 @@ const FX = {
     spray(B, 9, { kind: 'gear', speed: [160, 360], drag: 1, gy: 900, life: [0.6, 0.9], size: [7, 12], color: ['230,200,130', '200,175,120', '250,230,170'], vr: rnd(-12, 12) });
     spray(B, 20, { kind: 'spark', speed: [250, 600], drag: 2.5, gy: 500, life: [0.2, 0.4], size: 2, color: '255,236,160', add: true });
     hitReact(tEl, dir, 18, { rot: dir.x * 5 });
+    c.impact();
     screenShake(7);
     await wait(90);
     move(aEl, [{ transform: hitPose }, { transform: 'none' }], 360, 'cubic-bezier(.3,1.4,.5,1)');
@@ -921,6 +928,7 @@ const FX = {
     slash({ x: B.x - perp.x * L - dir.x * 10, y: B.y - perp.y * L - dir.y * 10 }, { x: B.x + perp.x * L + dir.x * 10, y: B.y + perp.y * L + dir.y * 10 }, 6, { width: 4, ms: 380 });
     flash(B, 60, '220,240,255', 0.16);
     hitReact(tEl, dir, 10);
+    c.impact();
     await wait(220);
   },
 
@@ -948,6 +956,7 @@ const FX = {
       });
     });
     hitReact(tEl, dir, 24, { rot: dir.x * 8, flashColor: '200,255,240' });
+    c.impact();
     spray(B, 10, { kind: 'leaf', speed: [120, 300], drag: 2, life: [0.6, 0.9], size: [4, 7], color: ['110,190,90', '160,210,100', '200,220,120'] });
     phase(460, (x, t) => {
       x.globalCompositeOperation = 'lighter';
@@ -1015,7 +1024,7 @@ const FX = {
     const N = 8;
     move(aEl, [{ transform: 'none' }, { transform: `rotate(${-dir.x * 5}deg) scale(1.05)`, offset: 0.2 }, { transform: `rotate(${dir.x * 4}deg) scale(1.05)`, offset: 0.7 }, { transform: 'none' }], 640);
     const one = async (i) => {
-      await wait(i * 55);
+      await wait(i * 38);
       const T0 = { x: B.x + rnd(-14, 14), y: B.y + rnd(-18, 18) };
       const h = rnd(40, 100);
       const spin = rnd(14, 22);
@@ -1030,6 +1039,7 @@ const FX = {
       spray(T0, lastOne ? 10 : 3, { kind: 'spark', speed: [120, 300], drag: 3, life: 0.25, size: 1.6, color: '255,230,120', add: true });
       emit({ kind: 'coin', x: T0.x, y: T0.y, vx: rnd(-140, 140), vy: rnd(-260, -120), gy: 1100, life: 0.8, size: 10, vr: rnd(4, 8) });
       hitReact(tEl, dir, lastOne ? 14 : 4, { flashColor: lastOne ? '255,230,140' : '' });
+      if (lastOne) c.impact();
       if (lastOne) { flash(B, 80, '255,225,120', 0.22); shockwave(B, 64, '255,230,140', 0.35); }
     };
     await Promise.all(Array.from({ length: N }, (_, i) => one(i)));
@@ -1039,14 +1049,14 @@ const FX = {
   // 아이스 에이지: 얼음 숨결 — 아래부터 얼어붙는 수정 덩어리, 금이 가며 조각조각 깨진다
   async frost(c) {
     const { A, B, dir, aEl, tEl } = c;
-    move(aEl, [{ transform: 'none' }, { transform: 'scale(1.08,.95)', offset: 0.3 }, { transform: `translate(${dir.x * 6}px,${dir.y * 6}px) scale(.96,1.04)`, offset: 0.6 }, { transform: 'none' }], 760);
-    await wait(200);
+    move(aEl, [{ transform: 'none' }, { transform: 'scale(1.08,.95)', offset: 0.3 }, { transform: `translate(${dir.x * 6}px,${dir.y * 6}px) scale(.96,1.04)`, offset: 0.6 }, { transform: 'none' }], 560);
+    await wait(80);
     const M = { x: A.x + dir.x * 28, y: A.y + dir.y * 28 };
     const D = Math.max(60, c.dist - 28);
-    await phase(360, () => {
+    await phase(260, () => {
       for (let i = 0; i < 4; i++) {
         const a = c.ang + rnd(-0.2, 0.2);
-        const sp = (D / 0.36) * rnd(0.75, 1.05);
+        const sp = (D / 0.26) * rnd(0.75, 1.05);
         emit({ kind: 'glow', x: M.x, y: M.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, drag: 1.2, life: [0.35, 0.45], size: 5, size1: 18, color: pick(['230,248,255', '150,215,255', '200,235,255']), add: true, a0: 0.7 });
       }
       emit({ kind: 'smoke', x: M.x, y: M.y, vx: Math.cos(c.ang) * D * 2.2, vy: Math.sin(c.ang) * D * 2.2, drag: 2, life: 0.55, size: 8, size1: 30, color: '210,240,255', a0: 0.35 });
@@ -1100,9 +1110,9 @@ const FX = {
     });
     hitReact(tEl, dir, 4, { flashColor: '210,240,255' });
     spray({ x: B.x, y: r.bottom }, 10, { kind: 'smoke', angle: -Math.PI / 2, spread: 1.4, speed: [20, 60], life: [0.6, 0.9], size: 10, size1: 30, color: '220,245,255', a0: 0.4 });
-    const GROW = 300;
-    const HOLD = 220;
-    const CRACK = 200;
+    const GROW = 230;
+    const HOLD = 90;
+    const CRACK = 150;
     await phase(GROW + HOLD + CRACK, (x, _, raw) => {
       const t = raw * (GROW + HOLD + CRACK);
       const grow = clamp(t / GROW, 0, 1);
@@ -1243,6 +1253,7 @@ const FX = {
     spray(B, 12, { kind: 'star', speed: [60, 220], drag: 2.5, life: [0.4, 0.7], size: [3, 7], size1: 1, color: '255,255,255', vr: 6 });
     spray(B, 8, { kind: 'smoke', speed: [40, 120], drag: 2, life: [0.6, 0.9], size: 12, size1: 34, color: '225,245,255', a0: 0.45 });
     hitReact(tEl, dir, 12, { flashColor: '220,245,255' });
+    c.impact();
     overlay(tEl, '120,200,255', 700, { a0: 0.4 });
     screenShake(5);
     await wait(160);
@@ -1254,16 +1265,16 @@ const FX = {
     move(aEl, [0, 1, 2, 3, 4, 5, 6].map((i) => ({ transform: i === 6 ? 'none' : `rotate(${i % 2 ? 7 : -7}deg) translateY(${i % 2 ? -2 : 0}px)` })), 380, 'ease-in-out');
     const ar = pageRect(aEl);
     for (let i = 0; i < 7; i++) emit({ kind: 'leaf', x: A.x + rnd(-ar.width / 2, ar.width / 2), y: ar.top - 6, vx: rnd(-50, 50), vy: rnd(-80, -20), gy: 160, drag: 1.5, life: [0.8, 1.1], size: [4, 7], color: pick(['90,170,60', '130,200,80', '70,140,40']), vr: rnd(-8, 8) });
-    await wait(300);
+    await wait(160);
     const fruits = [['🍎', '229,72,59'], ['🍐', '220,230,120'], ['🍊', '255,160,40'], ['🍑', '255,170,150'], ['🍇', '150,80,190']];
     const tr = tEl ? pageRect(tEl) : { top: B.y - 50 };
     const top = tr.top - 170;
     await Promise.all(fruits.map(async ([f, col], i) => {
-      await wait(i * 80);
+      await wait(i * 55);
       const x0 = B.x + rnd(-30, 30);
       const yEnd = B.y - 6 + rnd(-10, 10);
       const rot0 = rnd(-1, 1);
-      await phase(300, (x, t) => {
+      await phase(250, (x, t) => {
         x.fillStyle = `rgba(0,0,0,${0.2 * t})`;
         x.beginPath(); x.ellipse(x0, B.y + 30, 12 * t, 4 * t, 0, 0, TAU); x.fill();
         drawEmoji(f, x0, lerp(top, yEnd, t), 32, rot0 * (1 - t));
@@ -1274,6 +1285,7 @@ const FX = {
       emit({ kind: 'emoji', text: f, x: x0, y: yEnd, vx: rnd(-160, 160), vy: rnd(-300, -200), gy: 1200, life: 0.6, size: 30, size1: 24, vr: rnd(-10, 10) });
       const lastOne = i === fruits.length - 1;
       hitReact(tEl, { x: 0, y: 1 }, lastOne ? 12 : 5, { flashColor: lastOne ? '255,240,200' : '' });
+      if (lastOne) c.impact();
       if (lastOne) { shockwave(B, 60, '255,230,170', 0.35); flash(B, 70, '255,220,180', 0.18); }
     }));
     await wait(130);
@@ -1311,6 +1323,7 @@ const FX = {
     spray(B, 12, { kind: 'smoke', speed: [80, 240], drag: 2.5, life: [0.6, 1], size: 12, size1: 38, color: '205,170,120', a0: 0.6 });
     spray(B, 10, { kind: 'chip', speed: [200, 420], angle: -Math.PI / 2, spread: 1.5, gy: 1100, life: [0.6, 0.9], size: [3, 5], color: '120,90,60' });
     hitReact(tEl, dir, 28, { rot: dir.x * 10 });
+    c.impact();
     screenShake(12);
     await move(aEl, [{ transform: end }, { transform: `translate(${dir.x * reach * 0.85}px,${dir.y * reach * 0.85 - 12}px) scale(1.02)`, offset: 0.3 }, { transform: 'none' }], 380);
   },
@@ -1347,6 +1360,7 @@ const FX = {
         spray(B, 14, { kind: 'smoke', radius: 30, speed: [10, 50], drag: 1, life: [0.7, 1], size: 14, size1: 42, color: ['150,130,80', '120,140,70'], a0: 0.5, fadeIn: 0.25 });
         shockwave(B, 54, '220,230,140', 0.4);
         hitReact(tEl, dir, 6, { flashColor: '220,230,140' });
+        c.impact();
         overlay(tEl, '110,90,30', 900, { a0: 0.45, add: false });
       }
     });
@@ -1393,6 +1407,7 @@ const FX = {
     slash({ x: B.x + perp.x * L - dir.x * 22, y: B.y + perp.y * L - dir.y * 22 }, { x: B.x - perp.x * L + dir.x * 22, y: B.y - perp.y * L + dir.y * 22 }, -12, style);
     flash(B, 64, '230,255,235', 0.16);
     hitReact(tEl, dir, 14);
+    c.impact();
     await wait(80);
     const BACK = 300;
     move(aEl, [{ transform: `translate(${dir.x * reach}px,${dir.y * reach}px)` }, { transform: `translate(${dir.x * reach * 0.5}px,${dir.y * reach * 0.5 - 30}px)`, offset: 0.5 }, { transform: 'none' }], BACK, 'ease-in-out');
@@ -1490,6 +1505,7 @@ const FX = {
         pillar = true;
         tEl?.animate([{ transform: 'none' }, { transform: 'translateY(-16px)', offset: 0.3 }, { transform: 'none' }], { duration: 480, easing: 'ease-out' });
         overlay(tEl, '200,230,255', 300, { a0: 0.8 });
+        c.impact();
         flash(C, 80, '200,230,255', 0.25);
         shockwave(C, R * 1.3, '170,215,255', 0.45, { flat: true });
         phase(480, (y, u) => {
@@ -1515,9 +1531,10 @@ export function hasAttackFx(factionId) {
   return Object.hasOwn(FX, factionId);
 }
 
-// 배율 1에서 잰 연출 길이(ms). 배율 = (800 / 길이)^0.75 → 길이 차이가 크게 줄되 개성은 조금 남는다.
-const NATURAL = { red: 680, deep: 550, ghost: 730, flame: 570, monkey: 710, clock: 900, swords: 625, guild: 690, surgeon: 610, merchant: 800, frost: 1470, fruit: 1060, zoo: 840, mush: 1050, scout: 900, alchemy: 1010, rubber: 800 };
-const timeScale = (id) => (800 / (NATURAL[id] || 800)) ** 0.75;
+// 배율 1에서 잰, 공격 시작부터 맞는 순간까지의 시간(ms). 맞는 순간이 350ms쯤 오도록 배율을 정한다.
+// (연타할 때 답답하지 않게. 너무 빨라 보이지 않도록 배율은 0.55~1.1 사이로 묶는다.)
+const IMPACT = { rubber: 415, red: 532, deep: 383, ghost: 515, flame: 294, monkey: 505, clock: 649, swords: 416, guild: 483, surgeon: 513, merchant: 552, frost: 833, fruit: 650, zoo: 466, mush: 600, scout: 503, alchemy: 512 };
+const timeScale = (id) => clamp(350 / (IMPACT[id] || 350), 0.55, 1.1);
 
 function setup(from, to, aEl, tEl, sh) {
   ensure();
@@ -1531,31 +1548,43 @@ function setup(from, to, aEl, tEl, sh) {
   const dir = { x: dx / dist, y: dy / dist };
   return { A, B, dir, perp: { x: -dir.y, y: dir.x }, dist, ang: Math.atan2(dy, dx), aEl, tEl };
 }
-async function run(aEl, scale, fn) {
+// 연출을 재생한다. 맞는 순간(c.impact())에 resolve해서 다음 행동을 바로 받고, 여운은 뒤에서 마저 재생한다.
+// impact를 부르지 않는 연출이면 끝날 때 resolve된다.
+function run(c, aEl, scale, fn) {
   TIME = scale;
   const old = aEl.style.transition;
   aEl.style.transition = 'none';
   aEl.style.zIndex = '20';
-  live = [];
-  try {
-    await fn();
-  } finally {
-    for (const a of live) a.cancel();
-    live = [];
-    aEl.style.transition = old;
-    aEl.style.zIndex = '';
-    TIME = 1;
-  }
+  const mine = [];
+  live = mine;
+  let hitDone;
+  const hit = new Promise((r) => { hitDone = r; });
+  c.impact = () => setTimeout(hitDone, 90); // 맞는 순간을 살짝 보여 준 뒤 넘긴다
+  const all = (async () => {
+    try {
+      await fn();
+    } finally {
+      for (const a of mine) a.cancel();
+      if (live === mine) {
+        live = [];
+        TIME = 1;
+      }
+      aEl.style.transition = old;
+      aEl.style.zIndex = '';
+      hitDone();
+    }
+  })();
+  return Promise.race([hit, all]);
 }
 
-// 해적단 공격 연출. from/to는 화면(client) 좌표. 맞는 순간과 짧은 여운이 끝나면 resolve된다.
+// 해적단 공격 연출. from/to는 화면(client) 좌표. 맞는 순간에 resolve된다.
 export function playAttackFx(factionId, { from, to, aEl, tEl, shakeEl: sh }) {
   const c = setup(from, to, aEl, tEl, sh);
-  return run(aEl, timeScale(factionId), () => FX[factionId](c));
+  return run(c, aEl, timeScale(factionId), () => FX[factionId](c));
 }
 
 // 고무팔 해적단: 고무팔이 쭉 늘어나 친다. tension(탄력)이 클수록 더 세게 감았다가 터진다.
 export function playRubberFx({ from, to, aEl, tEl, tension = 0, shakeEl: sh }) {
   const c = setup(from, to, aEl, tEl, sh);
-  return run(aEl, timeScale('rubber'), () => rubber(c, tension));
+  return run(c, aEl, timeScale('rubber'), () => rubber(c, tension));
 }
