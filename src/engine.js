@@ -439,11 +439,12 @@ function effectApi(s, pi) {
     burn: (uid) => {
       const f = findCrew(s, uid);
       if (!f) return;
+      if (CARDS[f.crew.defId].fireproof) { log(s, `🧊 「${CARDS[f.crew.defId].name}」에는 불이 붙지 않는다.`); return; }
       f.crew.burning = true;
       log(s, `🔥 「${CARDS[f.crew.defId].name}」에 불이 붙었다.`);
     },
     burnAllFoes: () => {
-      for (const c of foe.board) c.burning = true;
+      for (const c of foe.board) if (!CARDS[c.defId].fireproof) c.burning = true;
       if (foe.board.length) log(s, '🔥 적 선원 모두에게 불이 붙었다.');
     },
     summon: (defId, n = 1) => {
@@ -651,7 +652,7 @@ export function applyAction(s, action) {
       if (hasKeyword(attacker, 'lifesteal')) heal(s, me, dealt);
       if (hasKeyword(defender, 'lifesteal')) heal(s, foe, back);
       log(s, `⚔ 「${aName}」 vs 「${CARDS[defender.defId].name}」`);
-      if (dealt && hasKeyword(attacker, 'scorch') && defender.hp > 0) {
+      if (dealt && hasKeyword(attacker, 'scorch') && defender.hp > 0 && !CARDS[defender.defId].fireproof) {
         defender.burning = true;
         log(s, `🔥 「${CARDS[defender.defId].name}」에 불이 붙었다.`);
       }

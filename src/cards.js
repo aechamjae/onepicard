@@ -113,7 +113,7 @@ export const CARDS = {
     text: '등장: 무작위 적 선원에게 2 피해.',
     onPlay: (g) => { const t = g.randomFoeCrew(); if (t) g.damageCrew(t.uid, 2); },
   },
-  duelist: { name: '레이피어 결투가', type: 'crew', cost: 3, atk: 3, hp: 5, art: '🤺', text: '' },
+  duelist: { name: '레이피어 결투가', type: 'crew', cost: 3, atk: 3, hp: 4, art: '🤺', text: '' },
   raider: { name: '갈고리 약탈꾼', type: 'crew', cost: 4, atk: 4, hp: 4, art: '🪝', keywords: ['plunder', 'sneak'], text: '' },
   raid: {
     name: '기습 약탈', type: 'tactic', cost: 2, art: '💎',
@@ -161,7 +161,7 @@ export const CARDS = {
     effect: (g) => g.foe.board.map((c) => c.uid).forEach((uid) => g.damageCrew(uid, 2)),
   },
   turtle: { name: '거북 철갑선', type: 'crew', cost: 5, atk: 5, hp: 6, art: '🐢', keywords: ['guard'], text: '' },
-  jelly: { name: '해파리 방벽', type: 'crew', cost: 2, atk: 0, hp: 5, art: '🪼', keywords: ['guard'], text: '' },
+  jelly: { name: '해파리 방벽', type: 'crew', cost: 2, atk: 0, hp: 4, art: '🪼', keywords: ['guard'], text: '' },
   pearl: {
     name: '진주 마녀', type: 'crew', cost: 3, atk: 2, hp: 5, art: '🦪',
     text: '등장: 무작위 다른 아군 선원에게 체력 +2.',
@@ -247,7 +247,7 @@ export const CARDS = {
   },
 
   // ── 불꽃 요리단 ──
-  ember: { name: '잿불 사환', type: 'crew', cost: 1, atk: 1, hp: 1, art: '🪔', keywords: ['scorch'], text: '' },
+  ember: { name: '잿불 사환', type: 'crew', cost: 1, atk: 1, hp: 2, art: '🪔', keywords: ['scorch'], text: '' },
   spicy: {
     name: '청양고추 폭격수', type: 'crew', cost: 2, atk: 2, hp: 2, art: '🌶️',
     text: '등장: 무작위 적 선원에게 불을 붙인다.',
@@ -457,7 +457,7 @@ export const CARDS = {
     onTurnEnd: (g) => g.gainTreasure(1),
   },
   armsdealer: {
-    name: '무기 밀매상', type: 'crew', cost: 4, atk: 4, hp: 5, art: '🏹', keywords: ['trade'],
+    name: '무기 밀매상', type: 'crew', cost: 4, atk: 4, hp: 4, art: '🏹', keywords: ['trade'],
     text: '거래: 적 배에 2 피해.',
     onPlay: (g) => { if (g.trade()) g.damageFoeShip(2); },
   },
@@ -705,7 +705,7 @@ export const CARDS = {
     },
   },
   polar: { name: '털매머드 갑판장', type: 'crew', cost: 3, atk: 2, hp: 3, art: '🦣', keywords: ['chill'], text: '' },
-  iceram: { name: '빙산 충각선', type: 'crew', cost: 5, atk: 4, hp: 4, art: '🏔️', keywords: ['charge', 'chill'], text: '' },
+  iceram: { name: '빙산 충각선', type: 'crew', cost: 5, atk: 5, hp: 4, art: '🏔️', keywords: ['charge', 'chill'], text: '' },
   frostqueen: {
     name: '쿠잔', type: 'crew', cost: 7, atk: 5, hp: 6, art: '🚲', keywords: ['chill'],
     text: '바다를 얼려 자전거로 건너는 전 해군 대장. 등장: 모든 적 선원을 얼린다.',
@@ -875,7 +875,7 @@ export const CARDS = {
   kiwi: { name: '키위 자객', type: 'crew', cost: 2, atk: 2, hp: 1, art: '🥝', keywords: ['stealth'], text: '' },
 
   // ── 아이스 에이지 (추가) ──
-  iceseal: { name: '얼음 물범', type: 'crew', cost: 3, atk: 2, hp: 5, art: '🦭', keywords: ['guard', 'chill'], text: '' },
+  iceseal: { name: '얼음 물범', type: 'crew', cost: 3, atk: 1, hp: 6, art: '🦭', keywords: ['guard', 'chill'], fireproof: true, text: '얼음 몸이라 불이 붙지 않는다.' },
 
 
   // ── 버섯 포자 군집 (추가) ──
@@ -951,7 +951,7 @@ export const CARDS = {
     onPlay: (g) => { if (g.exchange()) g.draw(1); },
   },
   havoc: { name: '하보크', type: 'crew', cost: 2, atk: 3, hp: 3, art: '🚬', text: '' },
-  falman: { name: '팔만', type: 'crew', cost: 2, atk: 1, hp: 4, art: '📚', text: '' },
+  falman: { name: '팔만', type: 'crew', cost: 2, atk: 1, hp: 3, art: '📚', text: '' },
   hughes: {
     name: '휴즈', type: 'crew', cost: 2, atk: 1, hp: 4, art: '📸', keywords: ['guard'],
     text: '유언: 카드 1장을 뽑는다.',
