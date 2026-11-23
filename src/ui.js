@@ -214,7 +214,7 @@ function render(entered = new Set()) {
     el.onclick = () => onFoeCrew(c.uid);
   });
   drawBoard($('my-board'), me, (el, c) => {
-    if (myTurn && c.canAttack) el.classList.add('ready');
+    if ((myTurn || canQueue()) && c.canAttack) el.classList.add('ready');
     if (selected?.kind === 'attacker' && selected.uid === c.uid) el.classList.add('selected');
     if (targets.allyCrew.includes(c.uid)) el.classList.add('targetable');
     el.onclick = () => onMyCrew(c.uid);
@@ -463,7 +463,8 @@ async function act(action) {
   if (next && isMyTurn()) {
     const a = state.players[ME].board.find((c) => c.uid === next.attacker);
     if (a?.canAttack && legalAttackTargets(state, ME, a).includes(next.target)) { act(next); return; }
-    selected = null;
+    // 미리 눌러 둔 대상이 그사이 쓰러졌으면, 공격자는 고른 채로 두고 새 대상만 누르게 한다.
+    selected = a?.canAttack ? { kind: 'attacker', uid: a.uid } : null;
   }
   render();
 }
