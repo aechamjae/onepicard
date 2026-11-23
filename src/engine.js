@@ -97,7 +97,8 @@ function startTurn(s) {
   p.played = 0; // 이번 턴에 낸 카드 수(연쇄)
   for (const c of p.board) {
     c.canAttack = !c.frozen && !CARDS[c.defId].noAttack;
-    c.held = c.frozen; // 얼어서 이번 턴 공격을 못 하게 된 선원(칼 갈기로 풀 수 있다)
+    c.held = c.frozen; // 얼어서(또는 묶여서) 이번 턴 공격을 못 하게 된 선원(칼 갈기로 풀 수 있다)
+    c.heldBy = c.frozen ? c.frozenBy || 'ice' : null;
     c.frozen = false;
     c.submerged = false;
     c.attacked = false;
@@ -241,6 +242,16 @@ export function findCrew(s, uid) {
   }
   return null;
 }
+
+// '다음 턴에 공격할 수 없다'를 거는 원인. 규칙은 모두 같고(frozen → 다음 턴 held), 화면 표시와 일지 문구만 다르다.
+export const STUN = {
+  ice: { icon: '❄', name: '얼어붙음', verb: '얼어붙었다' },
+  anchor: { icon: '⚓', name: '닻에 묶임', verb: '닻에 묶였다' },
+  slip: { icon: '🍌', name: '미끄러짐', verb: '바나나 껍질에 미끄러졌다' },
+  sleep: { icon: '💤', name: '마취됨', verb: '마취되어 잠들었다' },
+  grab: { icon: '🪢', name: '붙잡힘', verb: '붙잡혔다' },
+  bribe: { icon: '💰', name: '매수됨', verb: '금화에 매수되었다' },
+};
 
 export function hasKeyword(crew, kw) {
   return (CARDS[crew.defId].keywords || []).includes(kw) || !!crew.gained?.includes(kw);
@@ -439,12 +450,11 @@ function effectApi(s, pi) {
     burn: (uid) => {
       const f = findCrew(s, uid);
       if (!f) return;
-      if (CARDS[f.crew.defId].fireproof) { log(s, `🧊 「${CARDS[f.crew.defId].name}」에는 불이 붙지 않는다.`); return; }
       f.crew.burning = true;
       log(s, `🔥 「${CARDS[f.crew.defId].name}」에 불이 붙었다.`);
     },
     burnAllFoes: () => {
-      for (const c of foe.board) if (!CARDS[c.defId].fireproof) c.burning = true;
+      for (const c of foe.board) c.burning = true;
       if (foe.board.length) log(s, '🔥 적 선원 모두에게 불이 붙었다.');
     },
     summon: (defId, n = 1) => {
@@ -497,14 +507,15 @@ function effectApi(s, pi) {
       f.crew.burning = false;
       log(s, `💧 「${CARDS[f.crew.defId].name}」의 불이 꺼졌다.`);
     },
-    freeze: (uid) => {
+    freeze: (uid, cause = 'ice') => {
       const f = findCrew(s, uid);
       if (!f) return;
       f.crew.frozen = true;
-      log(s, `❄ 「${CARDS[f.crew.defId].name}」이(가) 얼어붙었다.`);
+      f.crew.frozenBy = cause;
+      log(s, `${STUN[cause].icon} 「${CARDS[f.crew.defId].name}」이(가) ${STUN[cause].verb}.`);
     },
     freezeAllFoes: () => {
-      for (const c of foe.board) c.frozen = true;
+      for (const c of foe.board) { c.frozen = true; c.frozenBy = 'ice'; }
       if (foe.board.length) log(s, '❄ 적 선원 모두가 얼어붙었다.');
     },
     randomFoeCrew: () => (foe.board.length ? foe.board[Math.floor(s.rng() * foe.board.length)] : null),
@@ -652,13 +663,14 @@ export function applyAction(s, action) {
       if (hasKeyword(attacker, 'lifesteal')) heal(s, me, dealt);
       if (hasKeyword(defender, 'lifesteal')) heal(s, foe, back);
       log(s, `⚔ 「${aName}」 vs 「${CARDS[defender.defId].name}」`);
-      if (dealt && hasKeyword(attacker, 'scorch') && defender.hp > 0 && !CARDS[defender.defId].fireproof) {
+      if (dealt && hasKeyword(attacker, 'scorch') && defender.hp > 0) {
         defender.burning = true;
         log(s, `🔥 「${CARDS[defender.defId].name}」에 불이 붙었다.`);
       }
       // 냉기: 공격해서 피해를 준 뒤 살아남은 적을 얼린다. 화염처럼 반격으로는 묻지 않는다.
       if (dealt && hasKeyword(attacker, 'chill') && defender.hp > 0) {
         defender.frozen = true;
+        defender.frozenBy = 'ice';
         log(s, `❄ 「${CARDS[defender.defId].name}」이(가) 얼어붙었다.`);
       }
       // 뻗기: 양옆에 있는 적 선원 중 무작위 하나에게 1 피해.

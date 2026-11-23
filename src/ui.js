@@ -1,6 +1,6 @@
 // 화면 그리기, 연출, 입력 처리. 규칙 판단은 모두 engine.js에 맡긴다.
 import { CARDS, FACTIONS, KEYWORDS, COMMON } from './cards.js';
-import { RULES, createGame, applyAction, canPlay, canUseSkill, costOf, legalAttackTargets, hasKeyword, targetable } from './engine.js';
+import { RULES, STUN, createGame, applyAction, canPlay, canUseSkill, costOf, legalAttackTargets, hasKeyword, targetable } from './engine.js';
 import { aiNextAction } from './ai.js';
 import { DIFFICULTIES } from './difficulty.js';
 import { openStats, recordResult } from './stats.js';
@@ -133,16 +133,27 @@ function cardEl(card, factionId, { inHand = false, showText = inHand, owner = nu
     ${isCrew ? `<div class="gem atk${tension ? ' boost' : ''}">${atk}</div>
       <div class="gem hp${card.maxHp && hp < card.maxHp ? ' hurt' : ''}">${hp}</div>` : ''}
     ${tension ? `<div class="tension">탄력+${tension}</div>` : ''}
-    ${statusIcons(card)}`;
+    ${statusIcons(card)}
+    ${stunKey(card) ? `<div class="stun-tag" title="${stunOf(card).name}: 공격할 수 없다">${stunOf(card).icon} ${stunOf(card).name}</div>` : ''}`;
   if (card.revived) el.classList.add('revived');
+  if (stunKey(card)) el.classList.add('stunned', `stun-${stunKey(card)}`);
   if (card.shield) el.classList.add('shielded');
   if (card.stealth) el.classList.add('stealthy');
   return el;
 }
 
+// 다음 턴(또는 이번 턴) 공격을 못 하게 된 원인. 얼음, 닻, 바나나 껍질 등.
+function stunOf(card) {
+  if (card.frozen) return STUN[card.frozenBy || 'ice'];
+  if (card.held) return STUN[card.heldBy || 'ice'];
+  return null;
+}
+function stunKey(card) {
+  return card.frozen ? card.frozenBy || 'ice' : card.held ? card.heldBy || 'ice' : null;
+}
+
 function statusIcons(card) {
   const icons = [];
-  if (card.frozen) icons.push('<span title="얼어붙음: 다음 턴 공격 불가">❄</span>');
   if (card.shield) icons.push('<span title="보호막">🛡</span>');
   if (card.stealth) icons.push('<span title="안개 속에 숨음">🌫</span>');
   if (card.burning) icons.push('<span title="불붙음: 턴 시작마다 피해">🔥</span>');
@@ -358,7 +369,10 @@ async function showCast(card, pi) {
 
 function snapshot() {
   const crews = new Map();
-  state.players.forEach((p, pi) => p.board.forEach((c) => crews.set(c.uid, { hp: c.hp, pi, elastic: hasKeyword(c, 'elastic'), shield: c.shield })));
+  state.players.forEach((p, pi) => p.board.forEach((c) => crews.set(c.uid, {
+    hp: c.hp, maxHp: c.maxHp, atk: c.atk, pi, elastic: hasKeyword(c, 'elastic'), shield: c.shield,
+    stun: stunKey(c), burning: c.burning, stealth: c.stealth, gained: (c.gained || []).length, tension: c.tension || 0,
+  })));
   return { crews, hull: state.players.map((p) => p.hull), treasure: state.players.map((p) => p.treasure) };
 }
 
@@ -387,6 +401,7 @@ async function showAftermath(before) {
     } else if (c.hp > b.hp) {
       floatText(centerOf(el), `+${c.hp - b.hp}`, 'heal');
     }
+    if (c) wait = Math.max(wait, showChanges(el, b, c));
   }
   state.players.forEach((p, pi) => {
     const hud = hudOf(pi);
@@ -405,6 +420,29 @@ async function showAftermath(before) {
     }
   });
   if (wait) await sleep(wait);
+}
+
+// 피해 말고 바뀐 것(공격력, 상태이상, 불, 보호막, 얻은 키워드…)을 카드 위에 차례로 띄운다.
+// 등장 효과나 전술이 어디에 걸렸는지 한눈에 보이게 한다. 기다릴 시간(ms)을 돌려준다.
+function showChanges(el, b, c) {
+  const notes = [];
+  if (c.atk !== b.atk) notes.push([`공격력 ${c.atk > b.atk ? '+' : ''}${c.atk - b.atk}`, c.atk > b.atk ? 'buff' : 'debuff']);
+  if (c.maxHp > b.maxHp) notes.push([`최대 체력 +${c.maxHp - b.maxHp}`, 'heal']);
+  const st = stunKey(c);
+  if (st && st !== b.stun) notes.push([`${STUN[st].icon} ${STUN[st].name}`, `status stun-${st}`]);
+  if (c.burning && !b.burning) notes.push(['🔥 불붙음', 'status burn']);
+  if (!c.burning && b.burning) notes.push(['💧 불 꺼짐', 'status']);
+  if (c.shield && !b.shield) notes.push(['🛡 보호막', 'status']);
+  if (c.stealth && !b.stealth) notes.push(['🌫 안개', 'status']);
+  if ((c.gained || []).length > b.gained) notes.push([`+ ${KEYWORDS[c.gained[c.gained.length - 1]].name}`, 'buff']);
+  if ((c.tension || 0) > b.tension) notes.push([`탄력 +${c.tension - b.tension}`, 'buff']);
+  if (!notes.length) return 0;
+  el.classList.remove('affected');
+  void el.offsetWidth;
+  el.classList.add('affected');
+  const pt = centerOf(el);
+  notes.forEach(([t, cls], i) => setTimeout(() => floatText({ x: pt.x, y: pt.y - 10 - i * 4 }, t, `note ${cls}`), i * 220));
+  return 300 + notes.length * 160;
 }
 
 // 한 행동을 연출과 함께 실행한다. 성공하면 true.
@@ -592,7 +630,8 @@ function inspect(card, pi, factionId = state.players[pi].factionId) {
     ...(card.gained || []).filter((k) => !(d.keywords || []).includes(k)).map((k) => `<li><b>${KEYWORDS[k].name}</b> <i>(효과로 얻음)</i> ${KEYWORDS[k].desc}</li>`),
   ];
   if (card.tension) kws.push(`<li><b>탄력 ${card.tension}</b> 공격력 +${card.tension} (반격 포함, 공격하면 풀림)</li>`);
-  if (card.frozen) kws.push('<li><b>❄ 얼어붙음</b> 다음 턴에 공격할 수 없다. (닻 내리기·바나나 껍질·뇌물에 묶인 선원도 얼어붙은 것으로 친다.)</li>');
+  const st = stunOf(card);
+  if (st) kws.push(`<li><b>${st.icon} ${st.name}</b> ${card.frozen ? '다음 턴에 공격할 수 없다.' : '이번 턴에 공격할 수 없다.'}</li>`);
   if (card.burning) kws.push(`<li><b>🔥 불붙음</b> 주인의 턴이 시작될 때마다 ${RULES.burnDamage} 피해.</li>`);
   if (card.revived) kws.push('<li><b>👻 되살아남</b> 이미 한 번 되살아났다.</li>');
   if (card.submerged) kws.push('<li><b>🌊 잠항 중</b> 내 다음 턴이 올 때까지 공격하거나 대상으로 고를 수 없다.</li>');

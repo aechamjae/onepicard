@@ -153,7 +153,7 @@ export const CARDS = {
   anchor: {
     name: '닻 내리기', type: 'tactic', cost: 2, art: '⚓', target: 'foeCrew',
     text: '적 선원 하나는 다음 턴에 공격할 수 없다. 카드 1장을 뽑는다.',
-    effect: (g, t) => { g.freeze(t); g.draw(1); },
+    effect: (g, t) => { g.freeze(t, 'anchor'); g.draw(1); },
   },
   volley: {
     name: '일제 사격', type: 'tactic', cost: 5, art: '🎆',
@@ -315,7 +315,7 @@ export const CARDS = {
   bananapeel: {
     name: '바나나 껍질', type: 'tactic', cost: 1, art: '🥴', target: 'foeCrew',
     text: '적 선원 하나는 미끄러져 다음 턴에 공격할 수 없다.',
-    effect: (g, t) => g.freeze(t),
+    effect: (g, t) => g.freeze(t, 'slip'),
   },
   drum: {
     name: '정글 북소리', type: 'tactic', cost: 2, art: '🪘',
@@ -509,7 +509,7 @@ export const CARDS = {
     text: '등장: 공격력이 가장 높은 적 선원 하나는 다음 턴에 공격할 수 없다.',
     onPlay: (g) => {
       const list = g.foe.board.filter((c) => !c.stealth && !c.submerged).sort((a, b) => b.atk - a.atk);
-      if (list.length) g.freeze(list[0].uid);
+      if (list.length) g.freeze(list[0].uid, 'sleep');
     },
   },
   incisor: {
@@ -875,7 +875,7 @@ export const CARDS = {
   kiwi: { name: '키위 자객', type: 'crew', cost: 2, atk: 2, hp: 1, art: '🥝', keywords: ['stealth'], text: '' },
 
   // ── 아이스 에이지 (추가) ──
-  iceseal: { name: '얼음 물범', type: 'crew', cost: 3, atk: 1, hp: 6, art: '🦭', keywords: ['guard', 'chill'], fireproof: true, text: '얼음 몸이라 불이 붙지 않는다.' },
+  iceseal: { name: '얼음 물범', type: 'crew', cost: 3, atk: 2, hp: 5, art: '🦭', keywords: ['guard', 'chill'], text: '' },
 
 
   // ── 버섯 포자 군집 (추가) ──
@@ -896,10 +896,10 @@ export const CARDS = {
   },
   hange: {
     name: '한지', type: 'crew', cost: 3, atk: 2, hp: 3, art: '👓', keywords: ['devotion'],
-    text: '등장: 공격력이 가장 높은 적 선원을 붙잡아 얼린다.',
+    text: '등장: 공격력이 가장 높은 적 선원을 붙잡아 다음 턴에 공격하지 못하게 한다.',
     onPlay: (g) => {
       const list = g.foe.board.filter((c) => !c.stealth && !c.submerged && !CARDS[c.defId].noAttack).sort((a, b) => b.atk - a.atk);
-      if (list.length) g.freeze(list[0].uid);
+      if (list.length) g.freeze(list[0].uid, 'grab');
     },
   },
   armin: {
@@ -1136,7 +1136,7 @@ export const FACTIONS = {
     skill: {
       name: '뇌물', art: '💴', cost: 1, treasureCost: 1, target: 'foeCrew',
       text: '보물 1개를 써서 적 선원 하나를 다음 턴에 공격하지 못하게 한다.',
-      effect: (g, t) => g.freeze(t),
+      effect: (g, t) => g.freeze(t, 'bribe'),
     },
     deck: { pennykid: 3, bodyguard: 2, shady: 2, mercenary: 2, usurer: 1, armsdealer: 2, vaultkeeper: 2, goldcaptain: 1, goldrain: 2, buyout: 2, insurance: 2, changer: 2, goldbar: 2, carpenter: 2, cannon: 1, chest: 1, veteran: 1 },
   },
