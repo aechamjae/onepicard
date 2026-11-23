@@ -31,7 +31,8 @@ let pickRow = null; // 상성표에서 고른 해적단
 export function openStats() {
   const tabs = $('stats-tabs');
   tabs.innerHTML = '';
-  for (const [id, label] of [['mine', '🧑 내 전적'], ['ai', '🤖 AI 상성표']]) {
+  if (tab === 'ai') tab = 'avg'; // 예전 탭 이름
+  for (const [id, label] of [['mine', '🧑 내 전적'], ['avg', '🤖 평균 승률'], ['sd', '📏 표준편차'], ['mx', '🧮 상성표']]) {
     const b = document.createElement('button');
     b.className = `dex-tab${id === tab ? ' on' : ''}`;
     b.setAttribute('role', 'tab');
@@ -41,7 +42,7 @@ export function openStats() {
   }
   const body = $('stats-body');
   body.innerHTML = '';
-  if (tab === 'mine') renderMine(body); else renderMatrix(body);
+  if (tab === 'mine') renderMine(body); else renderMatrix(body, tab);
   $('stats').hidden = false;
 }
 
@@ -158,7 +159,7 @@ function cellColor(r) {
   return `hsl(${hue} ${30 + 45 * t}% ${30 + 8 * t}%)`;
 }
 
-function renderMatrix(body) {
+function renderMatrix(body, part) {
   const ids = Object.keys(FACTIONS);
   const rate = MATCHUPS.rate || {};
   const has = (a, b) => rate[a]?.[b] !== undefined;
@@ -167,10 +168,17 @@ function renderMatrix(body) {
     return list.length ? list.reduce((x, y) => x + y, 0) / list.length : null;
   };
 
+  const ranked = ids.filter((f) => avg(f) !== null).sort((a, b) => avg(b) - avg(a));
+  const foot = () => {
+    const missing = ids.filter((f) => avg(f) === null);
+    body.insertAdjacentHTML('beforeend', `<p class="stats-foot">👀 견문색 AI끼리 해적단 쌍마다 ${MATCHUPS.games}판을 선후공 번갈아 붙인 결과예요 (${MATCHUPS.date} 기준). 사람이 둘 때와는 다를 수 있어요.${missing.length ? ` 아직 측정하지 않은 해적단: ${missing.map((f) => FACTIONS[f].name).join(', ')}.` : ''}</p>`);
+  };
+  if (part === 'sd') { renderSpread(body, ids, rate, has, avg, ranked); foot(); return; }
+  if (part === 'mx') { renderGrid(body, ids, rate, has); foot(); return; }
+
   body.insertAdjacentHTML('beforeend', '<h3 class="stats-h">해적단 평균 승률</h3>');
   const rows = document.createElement('div');
   rows.className = 'stats-rows';
-  const ranked = ids.filter((f) => avg(f) !== null).sort((a, b) => avg(b) - avg(a));
   for (const f of ranked) {
     const r = avg(f);
     const el = barRow(fname(f), 0, 0, { tag: 'div' });
@@ -180,8 +188,10 @@ function renderMatrix(body) {
     rows.append(el);
   }
   body.append(rows);
-  renderSpread(body, ids, rate, has, avg, ranked);
+  foot();
+}
 
+function renderGrid(body, ids, rate, has) {
   body.insertAdjacentHTML('beforeend', '<h3 class="stats-h">상성표</h3><p class="sub" style="margin:0">가로줄 해적단이 세로줄 해적단을 이긴 비율이에요. 왼쪽 엠블럼을 누르면 그 해적단의 강한 상대와 약한 상대를 보여 줍니다.</p>');
   const pick = document.createElement('p');
   pick.className = 'mx-pick';
@@ -225,6 +235,4 @@ function renderMatrix(body) {
   }
   wrap.append(table);
   body.append(wrap);
-  const missing = ids.filter((f) => avg(f) === null);
-  body.insertAdjacentHTML('beforeend', `<p class="stats-foot">👀 견문색 AI끼리 해적단 쌍마다 ${MATCHUPS.games}판을 선후공 번갈아 붙인 결과예요 (${MATCHUPS.date} 기준). 사람이 둘 때와는 다를 수 있어요.${missing.length ? ` 아직 측정하지 않은 해적단: ${missing.map((f) => FACTIONS[f].name).join(', ')}.` : ''}</p>`);
 }
