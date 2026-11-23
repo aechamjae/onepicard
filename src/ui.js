@@ -220,14 +220,19 @@ function render(entered = new Set()) {
       boardEl.append(el);
     }
   };
+  // 대상을 고르는 중이면, 고를 수 없는 카드는 흐리게 해서 '칠 수 있는 카드'가 확실히 구분되게 한다.
+  const aimingFoe = targets.foeCrew.length > 0 || targets.ship;
+  const aimingAlly = targets.allyCrew.length > 0;
   drawBoard($('foe-board'), foe, (el, c) => {
     if (targets.foeCrew.includes(c.uid)) el.classList.add('targetable');
+    else if (aimingFoe) el.classList.add('untargetable');
     el.onclick = () => onFoeCrew(c.uid);
   });
   drawBoard($('my-board'), me, (el, c) => {
     if ((myTurn || canQueue()) && c.canAttack) el.classList.add('ready');
     if (selected?.kind === 'attacker' && selected.uid === c.uid) el.classList.add('selected');
     if (targets.allyCrew.includes(c.uid)) el.classList.add('targetable');
+    else if (aimingAlly) el.classList.add('untargetable');
     el.onclick = () => onMyCrew(c.uid);
   });
 
